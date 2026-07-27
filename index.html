@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Casa 5B</title>
+  <style>
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#e9eef5;color:#1f2937}
+    body{display:grid;place-items:center}
+    #status{padding:18px 22px;background:#fff;border:1px solid #dce4ee;border-radius:16px;box-shadow:0 12px 40px #1f293722}
+  </style>
+</head>
+<body>
+  <div id="status">Caricamento del modello 3D…</div>
+  <script>
+    (async () => {
+      try {
+        if (!('DecompressionStream' in window)) {
+          throw new Error('Il browser non supporta la decompressione necessaria. Usa una versione aggiornata di Safari, Chrome, Edge o Firefox.');
+        }
+        const response = await fetch('./site.gz.b64', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`file del modello non disponibile (${response.status})`);
+        const encoded = (await response.text()).replace(/\s/g, '');
+        const binary = atob(encoded);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        const html = await new Response(stream).text();
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        document.getElementById('status').textContent = `Errore nel caricamento: ${error.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>
