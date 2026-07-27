@@ -25,13 +25,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Build static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/assets
+          cp index.html _site/index.html
+          cp .nojekyll _site/.nojekyll
+          base64 --decode assets/piano-secondo.b64 > _site/assets/piano-secondo.webp
+          base64 --decode assets/piano-sottotetto.b64 > _site/assets/piano-sottotetto.webp
+          test -s _site/assets/piano-secondo.webp
+          test -s _site/assets/piano-sottotetto.webp
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
