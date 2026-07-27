@@ -30,13 +30,12 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf _site
-          mkdir -p _site/assets
-          cp index.html _site/index.html
-          cp .nojekyll _site/.nojekyll
-          base64 --decode assets/piano-secondo.b64 > _site/assets/piano-secondo.webp
-          base64 --decode assets/piano-sottotetto.b64 > _site/assets/piano-sottotetto.webp
-          test -s _site/assets/piano-secondo.webp
-          test -s _site/assets/piano-sottotetto.webp
+          mkdir -p _site
+          cp index.html mobile.css mobile.js .nojekyll _site/
+          sed -i 's#</head>#<link rel="stylesheet" href="mobile.css?v=20260727-2"></head>#' _site/index.html
+          sed -i 's#</body>#<script src="mobile.js?v=20260727-2"></script></body>#' _site/index.html
+          grep -q 'mobile.css' _site/index.html
+          grep -q 'mobile.js' _site/index.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
