@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Casa 5B — 3D architettonico realistico</title>
+<style>
+:root{--bg:#e9eef5;--panel:#fffffff0;--text:#1f2937;--muted:#64748b;--accent:#2563eb}
+*{box-sizing:border-box} html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 28% 10%,#fff,#edf2f8 38%,#dce5ef)}
+.app{height:100%;display:grid;grid-template-columns:350px 1fr 330px}
+.panel{background:var(--panel);backdrop-filter:blur(14px);overflow:auto;border-right:1px solid rgba(30,41,59,.08);z-index:5}.panel.right{border-right:0;border-left:1px solid rgba(30,41,59,.08)}
+.inner{padding:18px} h1{font-size:24px;line-height:1.1;margin:0 0 8px}.sub{font-size:14px;color:var(--muted);line-height:1.45;margin-bottom:14px}
+.card{background:#fff;border:1px solid rgba(30,41,59,.08);border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:0 8px 25px rgba(30,41,59,.05)} .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#526175;margin:0 0 10px}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px} button{border:0;border-radius:11px;background:#edf3ff;color:#24469c;font-weight:700;padding:10px;cursor:pointer} button:hover{background:#dfeaff}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;margin-bottom:7px} input[type=range]{width:100%;accent-color:var(--accent)}
+.room{padding:10px;border-radius:12px;border:1px solid #e0e7ef;margin:7px 0;background:#fff;cursor:pointer}.room:hover,.room.active{border-color:#5790ff;box-shadow:0 0 0 3px #5790ff20}.room small{color:var(--muted);display:block}
+.viewer{position:relative;overflow:hidden}.topbar{position:absolute;left:14px;right:14px;top:14px;display:flex;justify-content:space-between;z-index:3;pointer-events:none;gap:10px;flex-wrap:wrap}
+.badge{pointer-events:auto;background:#ffffffde;border:1px solid rgba(30,41,59,.08);border-radius:999px;padding:9px 13px;font-size:13px;box-shadow:0 8px 24px rgba(30,41,59,.08)}
+#canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}.dragging #canvas{cursor:grabbing}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metric{background:#f7faff;border:1px solid #e1e8f0;border-radius:13px;padding:10px}.metric small{display:block;color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.04em}.metric strong{font-size:16px}
+.entity{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:#f8fafc;border:1px solid #e2e8f0;padding:9px;border-radius:10px;margin:6px 0;overflow-wrap:anywhere}.note{font-size:12px;color:var(--muted);line-height:1.45}.status{display:inline-block;border-radius:999px;padding:4px 8px;background:#e8f5ec;color:#19723b;font-size:11px;font-weight:800}.warn{background:#fff4de;color:#8a5b00}
+.legend-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;color:#475569}.sw{width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.08);flex:0 0 auto}
+.canvas-note{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#ffffffdf;border:1px solid rgba(30,41,59,.08);border-radius:999px;padding:8px 12px;font-size:12px;color:#526175;box-shadow:0 8px 24px rgba(30,41,59,.08);z-index:2;white-space:nowrap}
+
+.mobile-ui,.mobile-backdrop,.panel-close{display:none}
+@media(max-width:1120px){
+  .app{grid-template-columns:320px 1fr}
+  .panel.right{position:fixed;right:10px;top:10px;bottom:10px;width:310px;border-radius:18px;box-shadow:0 20px 50px #1e293b25}
+}
+@media(max-width:820px){
+  html,body{height:100%;overflow:hidden}
+  .app{display:block;height:100dvh;min-height:100dvh}
+  .viewer{height:100dvh;width:100vw}
+  .panel{position:fixed!important;top:0!important;bottom:0!important;width:min(88vw,360px)!important;height:100dvh;border-radius:0!important;box-shadow:0 0 45px #1e293b55!important;transition:transform .24s ease;z-index:30;background:#fffffff8}
+  .panel.left{left:0!important;transform:translateX(-105%)}
+  .panel.right{right:0!important;transform:translateX(105%)}
+  .panel.left.open,.panel.right.open{transform:translateX(0)}
+  .inner{padding:calc(18px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom));position:relative}
+  .panel-close{display:grid;place-items:center;position:sticky;top:0;margin-left:auto;margin-bottom:8px;width:40px;height:40px;padding:0;border-radius:13px;background:#eef3f9;color:#26364d;font-size:24px;z-index:2}
+  .mobile-backdrop{display:block;position:fixed;inset:0;background:#0f172a55;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+  .mobile-backdrop.show{opacity:1;pointer-events:auto}
+  .mobile-ui{display:flex;position:fixed;z-index:15}
+  .mobile-top{top:calc(10px + env(safe-area-inset-top));left:10px;right:10px;justify-content:space-between;pointer-events:none}
+  .mobile-top .group{display:flex;gap:8px;pointer-events:auto}
+  .mobile-btn{width:44px;height:44px;padding:0;border-radius:14px;background:#ffffffed;color:#24324a;border:1px solid #dce4ee;box-shadow:0 8px 24px #1e293b24;font-size:18px;display:grid;place-items:center}
+  .mobile-title{height:44px;padding:0 13px;border-radius:14px;background:#ffffffed;border:1px solid #dce4ee;box-shadow:0 8px 24px #1e293b24;display:flex;align-items:center;font-size:13px;font-weight:800;color:#24324a}
+  .mobile-dock{left:50%;bottom:calc(10px + env(safe-area-inset-bottom));transform:translateX(-50%);gap:7px;padding:7px;background:#ffffffed;border:1px solid #dce4ee;border-radius:17px;box-shadow:0 12px 30px #1e293b2b;backdrop-filter:blur(16px)}
+  .mobile-dock button{min-width:58px;padding:10px 11px;border-radius:12px;font-size:12px}
+  .topbar{top:calc(62px + env(safe-area-inset-top));left:10px;right:10px;justify-content:center}
+  .topbar .badge:first-child{font-size:11px;padding:7px 10px;max-width:calc(100vw - 20px);white-space:normal;text-align:center}
+  .topbar .badge:last-child{display:none}
+  .canvas-note{bottom:calc(76px + env(safe-area-inset-bottom));font-size:11px;padding:7px 10px;max-width:calc(100vw - 24px);white-space:normal;text-align:center}
+  #canvas{height:100dvh}
+  .card{box-shadow:none}
+  h1{font-size:22px}
+}
+@media(max-width:430px){
+  .mobile-title{display:none}
+  .mobile-dock button{min-width:52px;padding:9px 8px}
+  .canvas-note{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="mobile-backdrop" id="mobileBackdrop"></div>
+<div class="mobile-ui mobile-top"><div class="group"><button class="mobile-btn" id="openMenu" aria-label="Apri controlli">☰</button><div class="mobile-title">Casa 5B · 3D</div></div><div class="group"><button class="mobile-btn" id="openInfo" aria-label="Apri dettagli stanza">ⓘ</button></div></div>
+<div class="mobile-ui mobile-dock"><button data-mobile-view="iso">3D</button><button data-mobile-view="top">Alto</button><button data-mobile-view
