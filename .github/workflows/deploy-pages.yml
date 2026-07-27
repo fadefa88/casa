@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -25,36 +25,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Link mobile interface in root page
-        shell: bash
-        run: |
-          set -euo pipefail
-          changed=0
-          if ! grep -q 'mobile.css' index.html; then
-            sed -i 's#</head>#<link rel="stylesheet" href="mobile.css?v=20260727-3"></head>#' index.html
-            changed=1
-          fi
-          if ! grep -q 'mobile.js' index.html; then
-            sed -i 's#</body>#<script src="mobile.js?v=20260727-3"></script></body>#' index.html
-            changed=1
-          fi
-          if [ "$changed" = "1" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add index.html
-            git commit -m "Link mobile interface directly [skip ci]"
-            git push origin HEAD:main
-          fi
-
-      - name: Build static site
+      - name: Build final side-by-side site
         shell: bash
         run: |
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
-          cp index.html mobile.css mobile.js .nojekyll _site/
-          grep -q 'mobile.css' _site/index.html
-          grep -q 'mobile.js' _site/index.html
+          cat payload/final-affiancata-plain/part-* > _site/index.html
+          cp .nojekyll _site/.nojekyll
+          test "$(wc -c < _site/index.html)" -gt 40000
+          grep -q 'Casa 5B — piani affiancati' _site/index.html
+          grep -q 'function floorOffset' _site/index.html
+          grep -q 'drawFloorLabels' _site/index.html
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          html = Path('_site/index.html').read_text()
+          match = re.search(r'<script>(.*)</script>', html, re.S)
+          if not match:
+              raise SystemExit('Script principale non trovato')
+          Path('/tmp/casa-site.js').write_text(match.group(1))
+          PY
+          node --check /tmp/casa-site.js
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
