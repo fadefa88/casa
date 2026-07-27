@@ -33,19 +33,41 @@ jobs:
           mkdir -p _site
           cat payload/final-affiancata-plain/part-* > _site/index.html
           cp .nojekyll _site/.nojekyll
-          test "$(wc -c < _site/index.html)" -gt 40000
-          grep -q 'Casa 5B — piani affiancati' _site/index.html
-          grep -q 'function floorOffset' _site/index.html
-          grep -q 'drawFloorLabels' _site/index.html
+
+          echo '237b1aeeea051b73cb8cbe45868451c3d6220fd4f8840e0636383a2c06168cac  _site/index.html' | sha256sum -c -
+
           python3 - <<'PY'
           import re
           from pathlib import Path
-          html = Path('_site/index.html').read_text()
+
+          path = Path('_site/index.html')
+          html = path.read_text()
+
+          replacements = {
+              "const cx=(it.cx-floor.imageWidth/2)*SCALE, cz=": "const cx=(it.cx-floor.imageWidth/2)*SCALE + floorOffset(floor.id), cz=",
+              "const cx=(x+((i+0.5)*(w/steps))-floor.imageWidth/2)*SCALE;": "const cx=(x+((i+0.5)*(w/steps))-floor.imageWidth/2)*SCALE + floorOffset(floor.id);",
+              "const cx=(x+w/2-floor.imageWidth/2)*SCALE;": "const cx=(x+w/2-floor.imageWidth/2)*SCALE + floorOffset(floor.id);",
+              "const wx=(px)=> (px-floor.imageWidth/2)*SCALE,": "const wx=(px)=> (px-floor.imageWidth/2)*SCALE + floorOffset(floor.id),",
+          }
+
+          for old, new in replacements.items():
+              if old not in html:
+                  raise SystemExit(f'Pattern not found: {old}')
+              html = html.replace(old, new)
+
+          path.write_text(html)
+
           match = re.search(r'<script>(.*)</script>', html, re.S)
           if not match:
               raise SystemExit('Script principale non trovato')
           Path('/tmp/casa-site.js').write_text(match.group(1))
           PY
+
+          test "$(wc -c < _site/index.html)" -gt 40000
+          grep -q 'Casa 5B — piani affiancati' _site/index.html
+          grep -q 'function floorOffset' _site/index.html
+          grep -q 'drawFloorLabels' _site/index.html
+          grep -q 'floorOffset(floor.id)' _site/index.html
           node --check /tmp/casa-site.js
 
       - name: Configure GitHub Pages
