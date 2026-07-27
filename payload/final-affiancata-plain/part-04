@@ -1,0 +1,57 @@
+4,w,h,0.08,frameColor,alpha,'#ffffff'); addBox(faces,cx,cy,cz+d/2-0.04,w,h,0.08,frameColor,alpha,'#ffffff'); if(d>0.8)addBox(faces,cx,cy,cz,w,h,0.06,frameColor,alpha,'#ffffff');}}
+function addOpenings(faces, floor, items, kind, baseY, alpha=1){
+  for(const it of items){
+    const cx=(it.cx-floor.imageWidth/2)*SCALE, cz=(it.cy-floor.imageHeight/2)*SCALE, horiz=it.w>=it.h, long=(horiz?it.w:it.h)*SCALE, t=0.08;
+    if(kind==='door') addBox(faces,cx,baseY,cz,horiz?long:t,2.12,horiz?t:long,'#c59362',alpha,'#8a5c36');
+    if(kind==='window') addFrameGlass(faces,cx,baseY+1.00,cz,horiz?long:t,1.18,horiz?t:long,'#f2f7fb','#9dd4ff',alpha*0.58);
+    if(kind==='french') addFrameGlass(faces,cx,baseY,cz,horiz?long:t,2.28,horiz?t:long,'#f2f7fb','#ccecff',alpha*0.52);
+  }
+}
+function addRoomFloors(faces, floorId, floor, alpha){
+  for(const room of floor.rooms){const style=roomStyle[room.type]||roomStyle.corridor; addPrismFromPolygon(faces,floor,{outer:room.poly},elev(floorId)-0.04,0.04,style.floor,shade(style.floor,0.88),alpha,'#c6b8a1');}
+}
+function addTerraces(faces, floorId, floor, alpha){for(const poly of floor.terracePolygons||[]){addPrismFromPolygon(faces,floor,poly,elev(floorId)-0.05,0.05,'#ccb79d','#b39d84',alpha,'#9f8c74');}}
+function addWalls(faces, floorId, floor, alpha){for(const poly of floor.wallPolygons||[]){addPrismFromPolygon(faces,floor,poly,elev(floorId),floor.wallHeight,'#efe7d7','#e5dbc8',alpha,'#d2c7b4');}}
+function addStairs(faces, floorId, floor, alpha){for(const st of floor.stairs||[]){const [x,y,w,h]=st.bbox, steps=10, base=elev(floorId), rise=(floorId==='secondo'?1.8:1.1)/steps; if(w>=h){const run=w*SCALE/steps, depth=(h-10)*SCALE; for(let i=0;i<steps;i++){const cx=(x+((i+0.5)*(w/steps))-floor.imageWidth/2)*SCALE; const cz=(y+h/2-floor.imageHeight/2)*SCALE; addBox(faces,cx,base,cz,run,0.06+rise*(i+1),depth,'#d9b38c',alpha,'#8f6a46');}} else {const run=h*SCALE/steps, width=(w-10)*SCALE; for(let i=0;i<steps;i++){const cx=(x+w/2-floor.imageWidth/2)*SCALE; const cz=(y+((i+0.5)*(h/steps))-floor.imageHeight/2)*SCALE; addBox(faces,cx,base,cz,width,0.06+rise*(i+1),run,'#d9b38c',alpha,'#8f6a46');}}}}
+function addFurniture(faces, floorId, floor, alpha){
+  for(const room of floor.rooms){const b=polyBounds(room.poly), base=elev(floorId), style=roomStyle[room.type]||roomStyle.corridor;
+    const cx=(b.minx+b.maxx)/2, cy=(b.miny+b.maxy)/2, w=(b.maxx-b.minx), h=(b.maxy-b.miny);
+    const wx=(px)=> (px-floor.imageWidth/2)*SCALE, wz=(py)=> (py-floor.imageHeight/2)*SCALE;
+    if(room.type==='bedroom'){
+      addBox(faces, wx(b.minx+w*0.38), base+0.02, wz(b.miny+h*0.62), w*SCALE*0.42, 0.22, h*SCALE*0.32, '#d9d1c7', alpha, '#9f8b7e');
+      addBox(faces, wx(b.minx+w*0.18), base+0.02, wz(b.miny+h*0.20), w*SCALE*0.16, 1.65, h*SCALE*0.08, '#7e6551', alpha, '#5f4939');
+      addBox(faces, wx(b.minx+w*0.56), base+0.24, wz(b.miny+h*0.62), w*SCALE*0.34, 0.08, h*SCALE*0.24, '#f5f5f5', alpha, '#ccc');
+    }
+    if(room.type==='office'){
+      addBox(faces, wx(b.minx+w*0.62), base+0.02, wz(b.miny+h*0.78), w*SCALE*0.28, 0.75, h*SCALE*0.12, '#8c6a51', alpha, '#5d4738');
+      addBox(faces, wx(b.minx+w*0.27), base+0.02, wz(b.miny+h*0.18), w*SCALE*0.18, 1.85, h*SCALE*0.08, '#6f7a83', alpha, '#515b62');
+    }
+    if(room.type==='bathroom'){
+      addBox(faces, wx(b.minx+w*0.22), base+0.02, wz(b.miny+h*0.22), w*SCALE*0.22, 0.9, h*SCALE*0.16, '#ffffff', alpha, '#b7c6d0');
+      addBox(faces, wx(b.minx+w*0.72), base+0.02, wz(b.miny+h*0.25), w*SCALE*0.18, 0.42, h*SCALE*0.14, '#f9fbfd', alpha, '#b7c6d0');
+      addBox(faces, wx(b.minx+w*0.75), base+0.02, wz(b.miny+h*0.70), w*SCALE*0.22, 1.2, h*SCALE*0.12, '#d9eef8', alpha*0.65, '#ffffff');
+    }
+    if(room.type==='living_kitchen'){
+      addBox(faces, wx(b.minx+w*0.78), base+0.02, wz(b.miny+h*0.25), w*SCALE*0.26, 0.92, h*SCALE*0.12, '#d7d3cf', alpha, '#a9a29d');
+      addBox(faces, wx(b.minx+w*0.55), base+0.02, wz(b.miny+h*0.70), w*SCALE*0.22, 0.42, h*SCALE*0.12, '#d9c5b1', alpha, '#98785c');
+      addBox(faces, wx(b.minx+w*0.35), base+0.02, wz(b.miny+h*0.72), w*SCALE*0.26, 0.46, h*SCALE*0.12, '#d0a188', alpha, '#91573f');
+      addBox(faces, wx(b.minx+w*0.18), base+0.02, wz(b.miny+h*0.25), w*SCALE*0.16, 1.4, h*SCALE*0.08, '#6e6256', alpha, '#4f463d');
+    }
+    if(room.type==='living'){
+      addBox(faces, wx(b.minx+w*0.34), base+0.02, wz(b.miny+h*0.68), w*SCALE*0.30, 0.45, h*SCALE*0.13, '#d0a188', alpha, '#91573f');
+      addBox(faces, wx(b.minx+w*0.62), base+0.02, wz(b.miny+h*0.72), w*SCALE*0.16, 0.26, h*SCALE*0.10, '#d9c5b1', alpha, '#98785c');
+    }
+    if(room.type==='utility'){
+      addBox(faces, wx(b.minx+w*0.30), base+0.02, wz(b.miny+h*0.18), w*SCALE*0.18, 1.8, h*SCALE*0.08, '#a0a7ae', alpha, '#6b7280');
+      addBox(faces, wx(b.minx+w*0.70), base+0.02, wz(b.miny+h*0.18), w*SCALE*0.18, 1.8, h*SCALE*0.08, '#a0a7ae', alpha, '#6b7280');
+    }
+    if(room.type==='terrace'){
+      addBox(faces, wx(b.minx+w*0.60), base+0.01, wz(b.miny+h*0.45), w*SCALE*0.10, 0.28, h*SCALE*0.10, '#7f8b73', alpha, '#5f6a52');
+      addBox(faces, wx(b.minx+w*0.78), base+0.01, wz(b.miny+h*0.62), w*SCALE*0.08, 0.60, h*SCALE*0.08, '#8da17c', alpha, '#5f6a52');
+    }
+  }
+}
+function drawFaces(faces,w,h){faces.sort((a,b)=>b.depth-a.depth); ctx.lineJoin='round'; for(const face of faces){ctx.globalAlpha=face.alpha; ctx.beginPath(); if(face.kind==='poly'){const prings=face.rings.map(r=>r.map(p=>project(p,w,h))); for(const ring of prings){ctx.moveTo(ring[0].x,ring[0].y); for(let i=1;i<ring.length;i++)ctx.lineTo(ring[i].x,ring[i].y); ctx.closePath();} ctx.fillStyle=face.fill; ctx.fill('evenodd'); ctx.strokeStyle=rgba(face.stroke,0.7); ctx.lineWidth=0.85; ctx.stroke();} else {const pts=face.points.map(p=>project(p,w,h)); ctx.moveTo(pts[0].x,pts[0].y); for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y); ctx.closePath(); ctx.fillStyle=face.fill; ctx.fill(); ctx.strokeStyle=rgba(face.stroke,0.72); ctx.lineWidth=0.75; ctx.stroke();}} ctx.globalAlpha=1;}
+function roundedRectPath(x,y,w,h,r){const rr=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
+function drawFloorLabels(w,h){for(const [id,floor] of Object.entries(geometryData.floors)){const p=project(imageToWorld(floor,floor.imageWidth/2,28,elev(id)+3.05),w,h);const text=floorNames[id];ctx.font='700 13px Inter,system-ui,sans-serif';const tw=ctx.measureText(text).width;const bw=tw+24,bh=32,x=p.x-bw/2,y=p.y-bh/2;roundedRectPath(x,y,bw,bh,12);ctx.fillStyle='rgba(255,255,255,.93)';ctx.fill();ctx.strokeStyle=id==='secondo'?'rgba(37,99,235,.40)':'rgba(220,138,24,.48)';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#24324a';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,p.x,p.y+1);}}
+function render(){const {w,h}=resize(); const grad=ctx.createRadialGradient(w*0.45,h*0.32,40,w*0.5,h*0.58,Math.max(w,h)*0.78); grad.addColorStop(0,'#ffffff'); grad.addColorStop(1,'#dfe7f0'); ctx.fillStyle=
