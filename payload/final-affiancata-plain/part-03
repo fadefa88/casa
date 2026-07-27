@@ -1,0 +1,43 @@
+": "terrazzo_ovest_sottotetto", "name": "Terrazzo ovest", "type": "terrace", "center": [160, 85], "poly": [[42, 8], [446, 8], [446, 95], [42, 95]], "entities": ["light.terrazzo_ovest_sottotetto"]}, {"id": "terrazzo_est_sottotetto", "name": "Terrazzo est", "type": "terrace", "center": [1362, 269], "poly": [[1293, 55], [1465, 55], [1465, 523], [1293, 523]], "entities": ["light.terrazzo_est_sottotetto"]}], "stairs": [{"poly": [[941.0, 423.0], [941.0, 504.0], [1243.0, 504.0], [1243.0, 423.0]], "bbox": [941, 423, 303, 82]}]}}};
+const haMap={"rooms": {"studio_secondo": {"name": "Studio", "entities": ["light.studio", "cover.studio_portafinestra", "sensor.studio_temperature"]}, "bagno_nord_secondo": {"name": "Bagno nord", "entities": ["light.bagno_nord", "switch.bagno_nord_ventola"]}, "camera_francesco_secondo": {"name": "Camera Francesco", "entities": ["light.camera_francesco", "cover.camera_francesco_tapparella", "sensor.camera_francesco_temperature"]}, "camera_letto_secondo": {"name": "Camera da letto", "entities": ["light.camera_letto", "cover.camera_letto_tapparella", "sensor.camera_letto_temperature"]}, "corridoio_secondo": {"name": "Corridoio", "entities": ["light.corridoio", "binary_sensor.corridoio_motion"]}, "bagno_sud_secondo": {"name": "Bagno sud", "entities": ["light.bagno_sud", "switch.bagno_sud_ventola"]}, "salotto_cucina_secondo": {"name": "Salotto cucina", "entities": ["light.salotto_cucina", "cover.salotto_cucina_portefinestre", "sensor.salotto_cucina_temperature", "sensor.salotto_cucina_power"]}, "terrazzo_ovest_secondo": {"name": "Terrazzo ovest", "entities": ["light.terrazzo_ovest_sottotetto"]}, "terrazzo_est_secondo": {"name": "Terrazzo est", "entities": ["light.terrazzo_est_secondo"]}, "camera_letto_sottotetto": {"name": "Camera da letto", "entities": ["light.camera_letto_sottotetto", "cover.camera_letto_sottotetto_portafinestra"]}, "vano_tecnico_sottotetto": {"name": "Vano tecnico", "entities": ["switch.vano_tecnico", "sensor.vano_tecnico_temperature"]}, "salotto_sottotetto": {"name": "Salotto", "entities": ["light.salotto_sottotetto", "cover.salotto_sottotetto_portafinestra", "sensor.salotto_sottotetto_power"]}, "bagno_sottotetto": {"name": "Bagno", "entities": ["light.bagno_sottotetto", "switch.bagno_sottotetto_ventola"]}, "terrazzo_ovest_sottotetto": {"name": "Terrazzo ovest", "entities": ["light.terrazzo_ovest_sottotetto"]}, "terrazzo_est_sottotetto": {"name": "Terrazzo est", "entities": ["light.terrazzo_est_sottotetto"]}}};
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+const viewer=document.getElementById('viewer');
+const SCALE=0.0112;
+const floorNames={secondo:'Piano secondo',sottotetto:'Piano sottotetto'};
+const floorColors={secondo:{marker:'#2563eb'},sottotetto:{marker:'#dc8a18'}};
+const roomStyle={
+ bedroom:{floor:'#d7b790',accent:'#8f5d3c'},
+ office:{floor:'#d6c3a6',accent:'#736b61'},
+ bathroom:{floor:'#d8e3ea',accent:'#9cb8c9'},
+ corridor:{floor:'#d2c0a3',accent:'#866d55'},
+ living:{floor:'#d8b58a',accent:'#b26d53'},
+ living_kitchen:{floor:'#cdb28e',accent:'#b66b4b'},
+ utility:{floor:'#d6d6d6',accent:'#6b7280'},
+ terrace:{floor:'#cbb7a0',accent:'#7a6b5b'}
+};
+let yaw=-0.68, pitch=0.62, zoom=44, panX=0, panY=58, gap=1.5, upperOpacity=0.95, dragging=false, moved=false, shiftDrag=false, lastX=0, lastY=0, markerScreens=[];
+function resize(){const dpr=Math.min(window.devicePixelRatio||1,2);const r=canvas.getBoundingClientRect();const w=Math.max(1,Math.floor(r.width*dpr)),h=Math.max(1,Math.floor(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;ctx.setTransform(dpr,0,0,dpr,0,0)}return {w:r.width,h:r.height};}
+function shade(hex,f){const n=parseInt(hex.slice(1),16),r=Math.max(0,Math.min(255,((n>>16)&255)*f)),g=Math.max(0,Math.min(255,((n>>8)&255)*f)),b=Math.max(0,Math.min(255,(n&255)*f));return `rgb(${r|0},${g|0},${b|0})`;}
+function rgba(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;}
+function rotatePoint(p){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);const x1=cy*p.x-sy*p.z;const z1=sy*p.x+cy*p.z;const y1=cp*p.y-sp*z1;const z2=sp*p.y+cp*z1;return {x:x1,y:y1,z:z2};}
+function project(p,w,h){const t=rotatePoint(p), cam=32, f=cam/Math.max(8, cam+t.z);return {x:w/2+panX+t.x*zoom*f,y:h/2+panY-t.y*zoom*f,z:t.z,f};}
+function depthOf(points){return points.reduce((s,p)=>s+rotatePoint(p).z,0)/points.length;}
+function floorOffset(id){const width=geometryData.floors[id].imageWidth*SCALE; const spread=width+gap; return id==='secondo'?-spread/2:spread/2;}
+function imageToWorld(floor, px, py, y){return {x:(px-floor.imageWidth/2)*SCALE + floorOffset(floor.id), y, z:(py-floor.imageHeight/2)*SCALE};}
+function elev(id){return 0;}
+function polyBounds(poly){const xs=poly.map(p=>p[0]), ys=poly.map(p=>p[1]);return {minx:Math.min(...xs),miny:Math.min(...ys),maxx:Math.max(...xs),maxy:Math.max(...ys)};}
+function pushTopFace(faces, rings, fill, stroke, alpha){const pts=rings[0].map(p=>({...p}));faces.push({kind:'poly',rings,depth:depthOf(pts),fill,stroke,alpha});}
+function pushQuadFace(faces, points, fill, stroke, alpha){faces.push({kind:'quad',points,depth:depthOf(points),fill,stroke,alpha});}
+function addPrismFromPolygon(faces, floor, poly, baseY, height, topColor, sideColor, alpha=1, stroke='#333'){
+  const rings=[poly.outer||poly, ...(poly.holes||[])].map(r=>r.map(([x,y])=>imageToWorld(floor,x,y,baseY+height)));
+  pushTopFace(faces,rings,topColor,stroke,alpha);
+  const all=[poly.outer||poly, ...(poly.holes||[])];
+  for(const ring of all){for(let i=0;i<ring.length;i++){const a=ring[i], b=ring[(i+1)%ring.length]; const p0=imageToWorld(floor,a[0],a[1],baseY), p1=imageToWorld(floor,b[0],b[1],baseY), p2=imageToWorld(floor,b[0],b[1],baseY+height), p3=imageToWorld(floor,a[0],a[1],baseY+height); const dx=b[0]-a[0], dy=b[1]-a[1], sh=Math.abs(dx)>Math.abs(dy)?0.78:0.66; pushQuadFace(faces,[p0,p1,p2,p3],shade(sideColor,sh),stroke,alpha);}}
+}
+function addBox(faces,cx,cy,cz,w,h,d,color,alpha=1,edge='#666'){
+  const x0=cx-w/2,x1=cx+w/2,y0=cy,y1=cy+h,z0=cz-d/2,z1=cz+d/2;
+  const v=[{x:x0,y:y0,z:z0},{x:x1,y:y0,z:z0},{x:x1,y:y0,z:z1},{x:x0,y:y0,z:z1},{x:x0,y:y1,z:z0},{x:x1,y:y1,z:z0},{x:x1,y:y1,z:z1},{x:x0,y:y1,z:z1}];
+  const defs=[[[4,5,6,7],1.08],[[0,1,5,4],0.76],[[1,2,6,5],0.88],[[2,3,7,6],0.68],[[3,0,4,7],0.82]];
+  for(const [idx,sh] of defs){pushQuadFace(faces,idx.map(i=>v[i]),shade(color,sh),edge,alpha);}
+}
+function addFrameGlass(faces,cx,cy,cz,w,h,d,frameColor,glassColor,alpha){addBox(faces,cx,cy,cz,w,h,d,glassColor,alpha,'#ffffff'); addBox(faces,cx,cy,cz,w,0.08,d+0.01,frameColor,alpha,'#ffffff'); addBox(faces,cx,cy+h-0.08,cz,w,0.08,d+0.01,frameColor,alpha,'#ffffff'); if(w>=d){addBox(faces,cx-w/2+0.04,cy,cz,0.08,h,d+0.01,frameColor,alpha,'#ffffff'); addBox(faces,cx+w/2-0.04,cy,cz,0.08,h,d+0.01,frameColor,alpha,'#ffffff'); if(w>0.8)addBox(faces,cx,cy,cz,0.06,h,d+0.01,frameColor,alpha,'#ffffff');} else {addBox(faces,cx,cy,cz-d/2+0.0
