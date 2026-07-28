@@ -38,3 +38,9 @@ Pacchetto statico pronto per GitHub Pages.
 ## Fix v8
 - Rimosso il blocco `div#error` da `index.html`.
 - Rimossi i relativi riferimenti JavaScript e CSS.
+
+
+## Fix v9
+- Corretto il pannello Lista oggetti: il pulsante × e il pulsante ☰ ora lo chiudono davvero.
+- Dopo la selezione dalla lista, la lista si chiude automaticamente e resta visibile la scheda dell’oggetto.
+- Aggiunta chiusura con tasto Esc.
