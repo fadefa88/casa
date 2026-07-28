@@ -69,3 +69,9 @@ Pacchetto statico pronto per GitHub Pages.
 ## Fix v13
 - Finitura maniglie e nottolini aggiornata a inox satinato.
 - Le maniglie delle porte a battente restano presenti su entrambi i lati della porta.
+
+
+## Fix v15 (base v13)
+- Applicate solo modifiche materiali, visibilità e trasformazioni di oggetti richieste.
+- Nessuna modifica alle geometrie di finestre, aperture o muri.
+- Le maniglie procedurali sono state disattivate: le porte normali usano il proprio slot hardware in inox satinato; sulle scorrevoli lo slot hardware è nascosto.

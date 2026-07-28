@@ -25,6 +25,24 @@ function makeWhiteUniform(){ return new THREE.MeshPhysicalMaterial({color:0xffff
 function makeMetalGray(){ return new THREE.MeshPhysicalMaterial({color:0xb7bcc2, roughness:.42, metalness:.88, envMapIntensity:1.0, side:THREE.DoubleSide}); }
 function makeFabricGray(){ return new THREE.MeshPhysicalMaterial({color:0xc5c9cd, roughness:.95, metalness:0.0, map:makeFabricTexture('#c9cdd1','#a7adb3'), side:THREE.DoubleSide}); }
 
+function makeInteriorWallWhite(){ return new THREE.MeshPhysicalMaterial({color:0xf1efe9, roughness:.94, metalness:0.0, side:THREE.DoubleSide}); }
+function makeBlackFabric(){ return new THREE.MeshPhysicalMaterial({color:0x242529, roughness:.97, metalness:0.0, map:makeFabricTexture('#2d2f33','#17191c'), side:THREE.DoubleSide}); }
+function makeGrayMarble(){
+  const c=document.createElement('canvas'); c.width=256; c.height=256; const ctx=c.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,256,256); grad.addColorStop(0,'#d8d9da'); grad.addColorStop(.52,'#bfc1c3'); grad.addColorStop(1,'#a5a8ab');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,256,256);
+  for(let i=0;i<24;i++){
+    ctx.strokeStyle=`rgba(${Math.random()>.5?'255,255,255':'82,86,90'},${0.08+Math.random()*0.12})`;
+    ctx.lineWidth=.7+Math.random()*1.8; ctx.beginPath();
+    let x=Math.random()*256, y=Math.random()*256; ctx.moveTo(x,y);
+    for(let j=0;j<7;j++){ x+=(Math.random()-.5)*72; y+=(Math.random()-.5)*34; ctx.lineTo(x,y); }
+    ctx.stroke();
+  }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(2.2,2.2);
+  return new THREE.MeshPhysicalMaterial({color:0xffffff, roughness:.38, metalness:0.0, map:tex, side:THREE.DoubleSide});
+}
+function makeMirrorMaterial(){ return new THREE.MeshPhysicalMaterial({color:0xf5f7fa, roughness:.035, metalness:1.0, envMapIntensity:1.8, side:THREE.DoubleSide}); }
+
 function localMeshBounds(mesh){
   const pos=mesh.geometry?.attributes?.position;
   if(!pos) return null;
@@ -109,7 +127,7 @@ function addDoorHardware(){
     else if(title.includes('door_entry_single_swing_door')) addDoorHandleToMesh(target);
   });
 }
-function prepare(root){const items=[];root.traverse(o=>{if(!o.isMesh)return;items.push(o);o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})});for(const o of items){const n=o.name||o.parent?.name||"";(n.startsWith("first__")?first:second).attach(o)}allMeshes=items;applyCustomOverrides();addDoorHardware();buildObjectIndex()}
+function prepare(root){const items=[];root.traverse(o=>{if(!o.isMesh)return;items.push(o);o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})});for(const o of items){const n=o.name||o.parent?.name||"";(n.startsWith("first__")?first:second).attach(o)}allMeshes=items;applyCustomOverrides();buildObjectIndex()}
 function bounds(){world.updateMatrixWorld(true);const b=new THREE.Box3();b.makeEmpty();if(first.visible)b.union(new THREE.Box3().setFromObject(first));if(second.visible)b.union(new THREE.Box3().setFromObject(second));return b}
 function fit(top=false){const b=bounds();if(b.isEmpty())return;const size=b.getSize(new THREE.Vector3()),center=b.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.z,size.y*1.55),fov=THREE.MathUtils.degToRad(camera.fov),dist=(max*.66)/Math.tan(fov/2)*(top?1.05:1.17);camera.position.copy(top?new THREE.Vector3(center.x,center.y+dist,center.z+.001):center.clone().add(new THREE.Vector3(1,.72,1).normalize().multiplyScalar(dist)));controls.target.copy(center);controls.update()}
 function clear(){if(selected&&saved)selected.material=saved;selected=saved=null;$("#info").hidden=true}
@@ -120,11 +138,40 @@ function closeObjectList(){const panel=$("#object-list");panel.hidden=true;$("#l
 function focusObject(obj){const box=new THREE.Box3().setFromObject(obj);const center=box.getCenter(new THREE.Vector3());controls.target.copy(center);camera.position.copy(center.clone().add(new THREE.Vector3(1,.55,1).normalize().multiplyScalar(Math.max(1.4,box.getSize(new THREE.Vector3()).length()*1.8))));controls.update()}
 function selectObject(obj){clear();selected=obj;saved=selected.material;const arr=Array.isArray(saved)?saved:[saved];const hi=arr.map(m=>{const c=m.clone();if("emissive"in c){c.emissive.set(0x1f65d1);c.emissiveIntensity=.32}return c});selected.material=Array.isArray(saved)?hi:hi[0];const meta=parseParts(selected.name||"");$("#info-title").textContent=meta.title;$("#info-detail").textContent=`${meta.slot} · ${floorLabel(meta.floorCode)}`;$("#meta-floor").textContent=floorLabel(meta.floorCode);$("#meta-room").textContent=meta.roomCode||"-";$("#meta-instance").textContent=meta.instanceId||"-";$("#meta-slot").textContent=meta.slot||"-";$("#object-code").value=meta.raw;$("#info").hidden=false}
 function pick(e){const r=canvas.getBoundingClientRect();const pointer=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));const ray=new THREE.Raycaster();ray.setFromCamera(pointer,camera);const visible=allMeshes.filter(o=>o.visible&&o.parent?.visible!==false);const hits=ray.intersectObjects(visible,false);if(!hits.length){clear();return}selectObject(hits[0].object)}
-function buildObjectIndex(){const map=new Map();for(const mesh of allMeshes){const meta=parseParts(mesh.name||"");const key=meta.raw||mesh.uuid;if(!map.has(key)){map.set(key,{mesh,meta,text:`${meta.title} ${meta.slot} ${meta.roomCode} ${meta.instanceId} ${meta.raw}`.toLowerCase()})}}allEntries=[...map.values()].sort((a,b)=>a.meta.title.localeCompare(b.meta.title));applySearchFilter("")}
+function buildObjectIndex(){const map=new Map();for(const mesh of allMeshes){if(mesh.visible===false)continue;const meta=parseParts(mesh.name||"");const key=meta.raw||mesh.uuid;if(!map.has(key)){map.set(key,{mesh,meta,text:`${meta.title} ${meta.slot} ${meta.roomCode} ${meta.instanceId} ${meta.raw}`.toLowerCase()})}}allEntries=[...map.values()].sort((a,b)=>a.meta.title.localeCompare(b.meta.title));applySearchFilter("")}
 function applySearchFilter(term){const results=$("#object-results"); if(!results) return; const q=(term||"").trim().toLowerCase(); results.innerHTML=""; const filtered=allEntries.filter(entry=>{if(current==="first"&&entry.meta.floorCode!=="first")return false; if(current==="second"&&entry.meta.floorCode!=="second")return false; return !q || entry.text.includes(q)}); $("#object-count").textContent=`${filtered.length} oggetti`; filtered.slice(0,400).forEach(entry=>{const btn=document.createElement('button'); btn.className='object-item'; btn.innerHTML=`<strong>${entry.meta.title}</strong><small>${floorLabel(entry.meta.floorCode)} · ${entry.meta.roomCode || '-'} · ${entry.meta.slot}</small>`; btn.onclick=()=>{selectObject(entry.mesh);focusObject(entry.mesh);closeObjectList();$("#info").hidden=false}; results.appendChild(btn)}); if(filtered.length>400){const more=document.createElement('div'); more.className='object-count'; more.textContent='Mostrati solo i primi 400 risultati. Affina la ricerca.'; results.appendChild(more)}}
 function meshesByPredicate(pred){ return allMeshes.filter(m=>pred(m.name||"", m)); }
 function assignMaterial(meshes, materialFactory){ meshes.forEach((mesh, idx)=>{ const mat=materialFactory(mesh, idx); if(mat) mesh.material=mat; }); }
 function cloneMaterialPreservingTextures(sourceMesh){ const src=Array.isArray(sourceMesh.material)?sourceMesh.material[0]:sourceMesh.material; return src?.clone ? src.clone() : src; }
+
+function meshByName(name){ return allMeshes.find(m => m.name === name); }
+function hideMesh(name){ const m=meshByName(name); if(m) m.visible=false; }
+function setMaterial(name, materialFactory){ const m=meshByName(name); if(m) m.material=materialFactory(); }
+function shiftMeshesTowardBaseCenter(targetNames, baseName, fraction=.5){
+  const targets=targetNames.map(meshByName).filter(Boolean); const base=meshByName(baseName);
+  if(!targets.length || !base) return;
+  world.updateMatrixWorld(true);
+  const tb=new THREE.Box3(); targets.forEach(m=>tb.expandByObject(m));
+  const bb=new THREE.Box3().setFromObject(base);
+  const tc=tb.getCenter(new THREE.Vector3()), bc=bb.getCenter(new THREE.Vector3()), bs=bb.getSize(new THREE.Vector3());
+  const axis=bs.x>=bs.z?'x':'z';
+  const raw=(bc[axis]-tc[axis])*fraction;
+  const limit=Math.max(bs[axis]*.12,.04);
+  const delta=THREE.MathUtils.clamp(raw,-limit,limit);
+  targets.forEach(m=>{m.position[axis]+=delta;});
+}
+function scaleInstanceAroundCenter(instanceId, factor=.9){
+  const meshes=allMeshes.filter(m=>(m.name||'').includes(`__${instanceId}__`));
+  if(!meshes.length) return;
+  world.updateMatrixWorld(true);
+  const box=new THREE.Box3(); meshes.forEach(m=>box.expandByObject(m));
+  const centerWorld=box.getCenter(new THREE.Vector3());
+  const parent=meshes[0].parent || world;
+  const centerLocal=parent.worldToLocal(centerWorld.clone());
+  const holder=new THREE.Group(); holder.name=`scaled_instance_${instanceId}`; holder.position.copy(centerLocal); parent.add(holder); holder.updateMatrixWorld(true);
+  meshes.forEach(m=>holder.attach(m));
+  holder.scale.setScalar(factor);
+}
 function applyCustomOverrides(){
   // 1) shelf uses same texture/material as kitchen cabinet
   const sourceCabinet = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_001');
@@ -157,7 +204,46 @@ function applyCustomOverrides(){
     'first__LivingDiningRoom-116276__165792__media_unit_floor-based_media_unit__solid_016'
   ]);
   assignMaterial(meshesByPredicate(name => mediaTargets.has(name)), () => makeWhiteUniform());
+
+  // Internal walls: warm off-white, visually distinct from pure-white furniture.
+  assignMaterial(meshesByPredicate(name => name.includes('__WallInner__')), () => makeInteriorWallWhite());
+
+  // Living/dining room details.
+  setMaterial('first__LivingDiningRoom-116276__159314__storage_unit_armoire__solid_003', makeWhiteUniform);
+  setMaterial('first__LivingDiningRoom-116276__169004__cabinet_wall-attached_cabinet__solid_002', makeWhiteUniform);
+  shiftMeshesTowardBaseCenter([
+    'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_003',
+    'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_006'
+  ], 'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_001', .5);
+  setMaterial('first__LivingDiningRoom-116276__165832__chair_chair__solid_001', () => makePlasticMaterial('#2563eb'));
+  setMaterial('first__LivingDiningRoom-116276__165836__chair_chair__solid_001', () => makePlasticMaterial('#2563eb'));
+  setMaterial('first__LivingDiningRoom-116276__165822__chair_chair__solid_001', () => makePlasticMaterial('#7dd3fc'));
+
+  // Doors: keep leaves white; built-in normal-door hardware stainless; no hardware on pocket doors.
+  assignMaterial(meshesByPredicate(name => name.includes('__door_entry_single_swing_door__solid_002')), () => makeMetalGray());
+  meshesByPredicate(name => name.includes('__door_pocket_door__solid_002')).forEach(m => m.visible=false);
+
+  // Other room.
+  setMaterial('first__OtherRoom-109066__175671__bed_crib__glass_001', makeWhiteUniform);
+  setMaterial('first__OtherRoom-109066__159304__chair_armchair__solid_001', makeBlackFabric);
+
+  // Bathrooms and bedroom.
+  setMaterial('first__MasterBathroom-92592__Floor__925921785240859085_092592', makeGrayMarble);
+  setMaterial('first__MasterBathroom-92592__149503__shower_shower_screen__solid_002', makeMetalGray);
+  setMaterial('first__MasterBedroom-105249__156064__storage_unit_armoire__solid_001', makeMirrorMaterial);
+  hideMesh('first__Bathroom-109096__159307__shower_shower_screen__solid_002');
+  hideMesh('second__Bathroom-37895__59107__shower_shower_screen__solid_002');
+
+  // Equipment-room cabinet.
+  setMaterial('second__EquipmentRoom-36717__61164__cabinet_floor-based_cabinet__solid_002', makeWhiteUniform);
+  setMaterial('second__EquipmentRoom-36717__61164__cabinet_floor-based_cabinet__solid_003', makeWhiteUniform);
+
+  // Terrace: remove selected parts, then reduce the whole floor-based outdoor-furniture instance by 10%.
+  hideMesh('first__Terrace-101880__179008__outdoor_furniture_outdoor_furniture_-_floor-based__glass_001');
+  hideMesh('first__Terrace-101880__179008__outdoor_furniture_outdoor_furniture_-_floor-based__solid_005');
+  hideMesh('first__Terrace-101880__179008__outdoor_furniture_outdoor_furniture_-_floor-based__solid_006');
+  scaleInstanceAroundCenter('179008', .9);
 }
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=16",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+new GLTFLoader().load("./assets/casa_homestyler.glb?v=18",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();

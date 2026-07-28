@@ -1,0 +1,20 @@
+{
+  "base_version": "v13 rollback-safe",
+  "cache_buster": "v=18",
+  "changes": [
+    "interior WallInner surfaces warm off-white",
+    "specific living-room cabinet/chair colors",
+    "kitchen solid_003 and solid_006 shifted together halfway toward base center, clamped",
+    "no procedural door hardware; swing solid_002 stainless; pocket solid_002 hidden",
+    "crib white, armchair black fabric, master-bath floor gray marble",
+    "master-bath shower frame stainless, master-bedroom armoire mirror",
+    "two shower frames hidden for walk-in effect",
+    "equipment-room cabinet parts white",
+    "terrace selected parts hidden and instance 179008 scaled to 90% around common center"
+  ],
+  "not_changed": [
+    "window/opening geometry",
+    "wall geometry",
+    "GLB source geometry"
+  ]
+}
