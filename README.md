@@ -53,3 +53,19 @@ Pacchetto statico pronto per GitHub Pages.
 - Sedia `165822` in plastica azzurra per gli slot `solid_002` e `solid_003`.
 - Divano `165791` slot `solid_002` con resa stoffa grigia.
 - Mobile TV `165792` slot `solid_015` e `solid_016` bianchi uniformi.
+
+
+## Fix v11
+- Nascosto `first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_004`.
+- `first__LivingDiningRoom-116276__169004__cabinet_wall-attached_cabinet__solid_003` reso tutto bianco.
+- `first__LivingDiningRoom-116276__165791__sofa_type_L_sofa__solid_002` schiarito a grigio chiaro.
+
+
+## Fix v12
+- Aggiunte maniglie metalliche grigie a tutte le porte a battente.
+- Aggiunto nottolino/chiusura metallica grigia alle porte scorrevoli.
+
+
+## Fix v13
+- Finitura maniglie e nottolini aggiornata a inox satinato.
+- Le maniglie delle porte a battente restano presenti su entrambi i lati della porta.

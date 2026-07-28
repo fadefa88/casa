@@ -22,8 +22,94 @@ function makeFabricTexture(base="#8b8f94", dark="#73777c"){
 }
 function makePlasticMaterial(color){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color), roughness:.62, metalness:0.0, clearcoat:.18, clearcoatRoughness:.55, side:THREE.DoubleSide}); }
 function makeWhiteUniform(){ return new THREE.MeshPhysicalMaterial({color:0xffffff, roughness:.62, metalness:0.0, side:THREE.DoubleSide}); }
-function makeFabricGray(){ return new THREE.MeshPhysicalMaterial({color:0xa0a4a8, roughness:.95, metalness:0.0, map:makeFabricTexture('#989da2','#7b7f84'), side:THREE.DoubleSide}); }
-function prepare(root){const items=[];root.traverse(o=>{if(!o.isMesh)return;items.push(o);o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})});for(const o of items){const n=o.name||o.parent?.name||"";(n.startsWith("first__")?first:second).attach(o)}allMeshes=items;applyCustomOverrides();buildObjectIndex()}
+function makeMetalGray(){ return new THREE.MeshPhysicalMaterial({color:0xb7bcc2, roughness:.42, metalness:.88, envMapIntensity:1.0, side:THREE.DoubleSide}); }
+function makeFabricGray(){ return new THREE.MeshPhysicalMaterial({color:0xc5c9cd, roughness:.95, metalness:0.0, map:makeFabricTexture('#c9cdd1','#a7adb3'), side:THREE.DoubleSide}); }
+
+function localMeshBounds(mesh){
+  const pos=mesh.geometry?.attributes?.position;
+  if(!pos) return null;
+  mesh.geometry.computeBoundingBox();
+  return mesh.geometry.boundingBox ? mesh.geometry.boundingBox.clone() : null;
+}
+function addDoorHandleToMesh(mesh){
+  const bb=localMeshBounds(mesh); if(!bb) return;
+  const size=new THREE.Vector3(); bb.getSize(size);
+  const center=new THREE.Vector3(); bb.getCenter(center);
+  const dims=[{axis:'x',v:size.x},{axis:'y',v:size.y},{axis:'z',v:size.z}].sort((a,b)=>b.v-a.v);
+  const vertical='y';
+  const widthAxis = dims.find(d=>d.axis!=='y')?.axis || 'x';
+  const depthAxis = ['x','y','z'].find(a=>a!==vertical && a!==widthAxis) || 'z';
+  const getMin=a=>bb.min[a], getMax=a=>bb.max[a], set=(obj,a,val)=>{obj[a]=val};
+  const mat=makeMetalGray();
+  const group=new THREE.Group(); group.name='door_handle';
+  const barLen=Math.max(size.y*0.14,0.10); const barRadius=Math.max(Math.min(size.x,size.z,size.y)*0.015,0.010);
+  const barGeom=new THREE.CylinderGeometry(barRadius,barRadius,barLen,18);
+  const mountGeom=new THREE.CylinderGeometry(barRadius*0.65,barRadius*0.65,Math.max(size[depthAxis]*0.7,0.018),14);
+  const sideOffset=Math.max(size[depthAxis]*0.55,0.018);
+  const widthInset=Math.max(size[widthAxis]*0.08,0.055);
+  const yPos=center.y;
+  const widthPos=getMax(widthAxis)-widthInset;
+  const faceFront=getMax(depthAxis)+sideOffset*0.5;
+  const faceBack=getMin(depthAxis)-sideOffset*0.5;
+  const makeSide=(face,sign)=>{
+    const bar=new THREE.Mesh(barGeom,mat.clone());
+    if(widthAxis==='x') bar.rotation.z=Math.PI/2;
+    else if(widthAxis==='z') bar.rotation.x=Math.PI/2;
+    const p=new THREE.Vector3(center.x,yPos,center.z); set(p,widthAxis,widthPos); set(p,depthAxis,face); bar.position.copy(p); group.add(bar);
+    [-barLen*0.28,barLen*0.28].forEach(off=>{
+      const mount=new THREE.Mesh(mountGeom,mat.clone());
+      if(depthAxis==='x') mount.rotation.z=Math.PI/2; else if(depthAxis==='z') mount.rotation.x=Math.PI/2;
+      const mp=p.clone(); mp.y+=off; set(mp,depthAxis, face - sign*sideOffset*0.30); mount.position.copy(mp); group.add(mount);
+    });
+  };
+  makeSide(faceFront,1); makeSide(faceBack,-1);
+  mesh.add(group);
+}
+function addThumbturnToMesh(mesh){
+  const bb=localMeshBounds(mesh); if(!bb) return;
+  const size=new THREE.Vector3(); bb.getSize(size);
+  const center=new THREE.Vector3(); bb.getCenter(center);
+  const dims=[{axis:'x',v:size.x},{axis:'y',v:size.y},{axis:'z',v:size.z}].sort((a,b)=>b.v-a.v);
+  const widthAxis = dims.find(d=>d.axis!=='y')?.axis || 'x';
+  const depthAxis = ['x','y','z'].find(a=>a!=='y' && a!==widthAxis) || 'z';
+  const set=(obj,a,val)=>{obj[a]=val};
+  const faceFront=bb.max[depthAxis]+Math.max(size[depthAxis]*0.5,0.015);
+  const faceBack=bb.min[depthAxis]-Math.max(size[depthAxis]*0.5,0.015);
+  const widthPos=bb.getCenter(new THREE.Vector3())[widthAxis];
+  const yPos=center.y;
+  const discR=Math.max(Math.min(size.x,size.z,size.y)*0.035,0.018);
+  const discGeom=new THREE.CylinderGeometry(discR,discR,Math.max(size[depthAxis]*0.4,0.012),20);
+  const slotGeom=new THREE.BoxGeometry(discR*1.25, discR*0.18, Math.max(size[depthAxis]*0.55,0.006));
+  const group=new THREE.Group(); group.name='door_thumbturn';
+  const addSide=(face)=>{
+    const disc=new THREE.Mesh(discGeom,makeMetalGray());
+    if(depthAxis==='x') disc.rotation.z=Math.PI/2; else if(depthAxis==='z') disc.rotation.x=Math.PI/2;
+    const p=new THREE.Vector3(center.x,yPos,center.z); set(p,widthAxis,widthPos); set(p,depthAxis,face); disc.position.copy(p); group.add(disc);
+    const slot=new THREE.Mesh(slotGeom,makeMetalGray());
+    const sp=p.clone(); sp.y+=discR*0.03; slot.position.copy(sp); group.add(slot);
+  };
+  addSide(faceFront); addSide(faceBack); mesh.add(group);
+}
+function addDoorHardware(){
+  const byInstance=new Map();
+  allMeshes.forEach(mesh=>{
+    const name=mesh.name||'';
+    if(!name.includes('__door_')) return;
+    const parts=name.split('__'); const instanceId=parts[2]||mesh.uuid;
+    const title=parts[3]||'';
+    if(!byInstance.has(instanceId)) byInstance.set(instanceId,{title,meshes:[]});
+    byInstance.get(instanceId).meshes.push(mesh);
+  });
+  byInstance.forEach(({title,meshes})=>{
+    const candidates=meshes.filter(m=>(m.geometry?.attributes?.position?.count||0)>0);
+    if(!candidates.length) return;
+    let target=candidates[0], best=-1;
+    candidates.forEach(m=>{ const bb=localMeshBounds(m); if(!bb) return; const s=new THREE.Vector3(); bb.getSize(s); const vol=Math.abs(s.x*s.y*s.z); if(vol>best){best=vol; target=m;} });
+    if(title.includes('door_pocket_door')) addThumbturnToMesh(target);
+    else if(title.includes('door_entry_single_swing_door')) addDoorHandleToMesh(target);
+  });
+}
+function prepare(root){const items=[];root.traverse(o=>{if(!o.isMesh)return;items.push(o);o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})});for(const o of items){const n=o.name||o.parent?.name||"";(n.startsWith("first__")?first:second).attach(o)}allMeshes=items;applyCustomOverrides();addDoorHardware();buildObjectIndex()}
 function bounds(){world.updateMatrixWorld(true);const b=new THREE.Box3();b.makeEmpty();if(first.visible)b.union(new THREE.Box3().setFromObject(first));if(second.visible)b.union(new THREE.Box3().setFromObject(second));return b}
 function fit(top=false){const b=bounds();if(b.isEmpty())return;const size=b.getSize(new THREE.Vector3()),center=b.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.z,size.y*1.55),fov=THREE.MathUtils.degToRad(camera.fov),dist=(max*.66)/Math.tan(fov/2)*(top?1.05:1.17);camera.position.copy(top?new THREE.Vector3(center.x,center.y+dist,center.z+.001):center.clone().add(new THREE.Vector3(1,.72,1).normalize().multiplyScalar(dist)));controls.target.copy(center);controls.update()}
 function clear(){if(selected&&saved)selected.material=saved;selected=saved=null;$("#info").hidden=true}
@@ -44,6 +130,12 @@ function applyCustomOverrides(){
   const sourceCabinet = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_001');
   const targetShelf = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__172324__shelf_decorative_shelf__solid_001');
   if(sourceCabinet && targetShelf){ const mat = cloneMaterialPreservingTextures(sourceCabinet); if(mat) targetShelf.material = mat; }
+
+  // 1b) hide unwanted cabinet slot and force wall cabinet slot white
+  const hiddenCabinetPart = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_004');
+  if(hiddenCabinetPart) hiddenCabinetPart.visible = false;
+  const wallCabinetWhite = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__169004__cabinet_wall-attached_cabinet__solid_003');
+  if(wallCabinetWhite) wallCabinetWhite.material = makeWhiteUniform();
 
   // 2) white plastic chairs incl. legs
   const whiteChairInstances = ['175690','175676','172338','172345','172348','172351','172354','172357'];
@@ -67,5 +159,5 @@ function applyCustomOverrides(){
   assignMaterial(meshesByPredicate(name => mediaTargets.has(name)), () => makeWhiteUniform());
 }
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=13",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+new GLTFLoader().load("./assets/casa_homestyler.glb?v=16",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
