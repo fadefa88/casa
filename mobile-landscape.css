@@ -1,107 +1,15 @@
-/* Mobile landscape: all dashboard areas remain visible on phone screens. */
+/* Layout compatto per smartphone in orizzontale. */
 @media (orientation: landscape) and (max-height: 600px) {
-  :root { --mobile-rail: clamp(168px, 22vw, 215px); }
-  .tablet-top {
-    top: max(4px, env(safe-area-inset-top));
-    left: max(5px, env(safe-area-inset-left));
-    right: max(5px, env(safe-area-inset-right));
-    min-height: 44px;
-    grid-template-columns: minmax(118px,.8fr) minmax(260px,1.5fr) minmax(82px,.55fr);
-    gap: 6px;
-    padding: 5px 9px;
-    border-radius: 11px;
-  }
-  .brand-block small { font-size: 7px; letter-spacing: .12em; }
-  .brand-block h1 { margin-top: 0; font-size: 14px; line-height: 1.05; white-space: nowrap; }
-  .status-pills { flex-wrap: nowrap; gap: 4px; overflow: hidden; }
-  .pill { min-height: 21px; padding: 0 7px; font-size: 8px; white-space: nowrap; }
-  .clock-block #clock { font-size: 19px; }
-  .clock-block #date { margin-top: 1px; font-size: 8px; white-space: nowrap; }
-
-  .rail {
-    top: 53px;
-    bottom: 4px;
-    width: var(--mobile-rail);
-    display: grid;
-    grid-template-rows: repeat(3,minmax(0,1fr));
-    gap: 4px;
-  }
-  .left-rail { left: max(4px, env(safe-area-inset-left)); }
-  .right-rail { right: max(4px, env(safe-area-inset-right)); }
-  .card, .card.big {
-    min-height: 0;
-    overflow: hidden;
-    padding: 5px 6px;
-    border-radius: 10px;
-  }
-  .card-head { gap: 5px; margin-bottom: 4px; }
-  .card-head span { font-size: 7px; letter-spacing: .07em; white-space: nowrap; }
-  .card-head strong { font-size: 13px; white-space: nowrap; }
-  .metric-grid, .metric-grid.compact { gap: 3px; }
-  .metric-grid div { min-width: 0; padding: 3px 4px; border-radius: 7px; }
-  .metric-grid small { margin-bottom: 1px; font-size: 6.5px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .metric-grid strong { display: block; font-size: 10px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .tablet-floor-nav {
-    top: 54px;
-    bottom: auto;
-    padding: 3px;
-    gap: 2px;
-    border-radius: 9px;
-  }
-  .tablet-floor-nav button, .tablet-tools button, .hotspot {
-    min-height: 26px;
-    padding: 0 8px;
-    border-radius: 7px;
-    font-size: 8px;
-  }
-  .tablet-tools {
-    top: 54px;
-    right: calc(var(--mobile-rail) + 8px);
-    bottom: auto;
-    padding: 3px;
-    gap: 2px;
-    border-radius: 9px;
-  }
-  .tablet-tools button { width: 29px; padding: 0; font-size: 14px; }
-
-  .scene-labels {
-    left: calc(var(--mobile-rail) + 10px);
-    right: calc(var(--mobile-rail) + 10px);
-    bottom: 69px;
-    width: auto;
-    transform: none;
-    gap: 3px;
-    flex-wrap: nowrap;
-  }
-  .hotspot { flex: 1 1 0; min-width: 0; padding: 0 3px; background: rgba(15,23,42,.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .detail-panel {
-    left: calc(var(--mobile-rail) + 8px);
-    right: calc(var(--mobile-rail) + 8px);
-    bottom: 4px;
-    min-height: 60px;
-    padding: 5px 7px;
-    border-radius: 10px;
-  }
-  .detail-head { margin-bottom: 3px; }
-  .detail-head small { font-size: 6px; }
-  .detail-head strong { font-size: 12px; }
-  .detail-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 3px; }
-  .detail-grid .detail-cell { min-width: 0; padding: 3px 4px; border-radius: 7px; }
-  .detail-grid small { margin-bottom: 1px; font-size: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .detail-grid strong { display: block; font-size: 9px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .detail-note { display: none; }
-  .overlay-frame { background: radial-gradient(circle at center, transparent 8%, rgba(15,23,42,.06) 55%, rgba(15,23,42,.28) 100%); }
+  :root { --mobile-rail: clamp(174px, 22.5vw, 218px); }
+  .tablet-top{top:max(4px,env(safe-area-inset-top));left:max(5px,env(safe-area-inset-left));right:max(5px,env(safe-area-inset-right));min-height:43px;grid-template-columns:minmax(120px,.75fr) minmax(260px,1.5fr) minmax(78px,.5fr);gap:5px;padding:4px 8px;border-radius:11px}
+  .brand-icon{width:29px;height:29px;border-radius:9px;font-size:12px}.brand-block{gap:6px}.brand-block small{font-size:6px}.brand-block h1{font-size:13px;line-height:1;white-space:nowrap}.status-pills{flex-wrap:nowrap;gap:3px;overflow:hidden}.pill{min-height:21px;padding:0 6px;font-size:7px;gap:4px;white-space:nowrap}.clock-block #clock{font-size:18px}.clock-block #date{font-size:7px;margin-top:1px;white-space:nowrap}
+  .rail{top:51px;bottom:4px;width:var(--mobile-rail);gap:4px}.left-rail{left:max(4px,env(safe-area-inset-left));grid-template-rows:1.18fr .91fr .91fr}.right-rail{right:max(4px,env(safe-area-inset-right))}.card{padding:5px 6px;border-radius:10px}.card-head{gap:4px;margin-bottom:4px}.card-head .title{gap:4px;font-size:6.5px;letter-spacing:.055em;white-space:nowrap}.card-head strong{font-size:12px}.metric-grid,.metric-grid.compact{gap:3px}.metric-grid>div{padding:3px 4px;border-radius:7px}.metric-grid small{font-size:6px;letter-spacing:.035em;margin-bottom:1px}.metric-grid strong{font-size:9px;line-height:1.05}
+  .energy-flow{gap:3px;margin:1px 0 4px}.flow-node{padding:3px;border-radius:7px;column-gap:3px}.flow-node>i{font-size:10px}.flow-node small{font-size:5px}.flow-node strong{font-size:7px}.flow-arrow{font-size:6px}.solar-metrics{gap:3px}
+  .tablet-floor-nav{top:52px;bottom:auto;padding:3px;gap:2px;border-radius:9px}.tablet-floor-nav button,.tablet-tools button,.hotspot{min-height:25px;border-radius:7px;font-size:8px}.tablet-floor-nav button{padding:0 7px;gap:4px}.tablet-floor-nav button span{display:none}.tablet-tools{top:52px;right:calc(var(--mobile-rail) + 8px);bottom:auto;padding:3px;gap:2px;border-radius:9px}.tablet-tools button{width:28px;padding:0;font-size:12px}
+  .scene-labels{left:calc(var(--mobile-rail) + 8px);right:calc(var(--mobile-rail) + 8px);bottom:65px;width:auto;transform:none;gap:3px}.hotspot{flex:1 1 0;padding:0 3px;gap:3px;font-size:8px;white-space:nowrap;overflow:hidden}.hotspot-label{display:none}.hotspot-short{display:inline}.hotspot i{font-size:8px}
+  .detail-panel{left:calc(var(--mobile-rail) + 7px);right:calc(var(--mobile-rail) + 7px);bottom:4px;min-height:57px;padding:4px 6px;border-radius:10px}.detail-head{margin-bottom:3px}.detail-head small{font-size:5px}.detail-head strong{font-size:11px}.detail-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}.detail-grid .detail-cell{padding:3px 4px;border-radius:7px}.detail-grid small{font-size:5.5px;margin-bottom:1px}.detail-grid strong{font-size:8px}.detail-note{display:none}.overlay-frame{background:radial-gradient(circle at center,transparent 5%,rgba(8,18,31,.04) 54%,rgba(8,18,31,.28) 100%)}
 }
-
 @media (orientation: landscape) and (max-height: 360px) {
-  :root { --mobile-rail: clamp(155px, 21vw, 190px); }
-  .tablet-top { min-height: 39px; grid-template-columns: 112px 1fr 75px; }
-  .rail { top: 48px; }
-  .tablet-floor-nav, .tablet-tools { top: 48px; }
-  .scene-labels { bottom: 62px; }
-  .detail-panel { min-height: 54px; }
-  .metric-grid small { font-size: 6px; }
-  .metric-grid strong { font-size: 9px; }
+  :root { --mobile-rail: clamp(160px, 21.5vw, 195px); }
+  .tablet-top{min-height:38px;grid-template-columns:110px 1fr 72px}.brand-icon{display:none}.rail{top:46px}.tablet-floor-nav,.tablet-tools{top:46px}.scene-labels{bottom:59px}.detail-panel{min-height:52px}.flow-node small{display:none}.metric-grid small{font-size:5.5px}.metric-grid strong{font-size:8px}
 }
