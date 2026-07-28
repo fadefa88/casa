@@ -69,10 +69,3 @@ Pacchetto statico pronto per GitHub Pages.
 ## Fix v13
 - Finitura maniglie e nottolini aggiornata a inox satinato.
 - Le maniglie delle porte a battente restano presenti su entrambi i lati della porta.
-
-
-## Fix v14
-- Nuove personalizzazioni su cucina, sedie, terrazzo, docce, armadio, poltrona e pavimento bagno.
-- Rimosse tutte le porte scorrevoli (`door pocket door`).
-- Tutte le porte a battente rese in acciaio inox satinato.
-- Correzioni extra su alcune finestre/aperture per larghezza/spessore nel muro.
