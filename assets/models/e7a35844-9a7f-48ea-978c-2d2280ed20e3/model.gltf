@@ -1,0 +1,167 @@
+{
+  "accessors": [
+    {
+      "name": "solid_001_1_0_positions",
+      "componentType": 5126,
+      "count": 592,
+      "min": [
+        -44.997108459472656,
+        0.007000000216066837,
+        -9
+      ],
+      "max": [
+        44.997108459472656,
+        1.7961150407791138,
+        9
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_001_1_0_normals",
+      "componentType": 5126,
+      "count": 592,
+      "min": [
+        -0.9910950660705566,
+        -1,
+        -1
+      ],
+      "max": [
+        0.991580069065094,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_001_1_0_texcoords",
+      "componentType": 5126,
+      "count": 592,
+      "min": [
+        0.21821700036525726,
+        -0.000699999975040555
+      ],
+      "max": [
+        0.7819719910621643,
+        0.9987999796867371
+      ],
+      "type": "VEC2",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_001_1_0_indices",
+      "componentType": 5123,
+      "count": 864,
+      "min": [
+        0
+      ],
+      "max": [
+        591
+      ],
+      "type": "SCALAR",
+      "bufferView": 3,
+      "byteOffset": 0
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "model-r",
+      "byteLength": 20672,
+      "uri": "model-r.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 7104,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 7104,
+      "byteOffset": 7104,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 4736,
+      "byteOffset": 14208,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_3",
+      "buffer": 0,
+      "byteLength": 1728,
+      "byteOffset": 18944,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Default_material",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.752941,
+          0.752941,
+          0.752941,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.4
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    }
+  ],
+  "meshes": [
+    {
+      "name": "solid_001_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "solid_001",
+      "mesh": 0
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

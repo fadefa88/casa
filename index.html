@@ -1,89 +1,17 @@
 <!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <meta name="description" content="Modello 3D interattivo della Casa 5B">
-  <title>Casa 5B · Modello 3D</title>
-
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
-    }
-  }
-  </script>
-</head>
-<body>
-  <main id="viewer" aria-label="Visualizzatore 3D Casa 5B">
-    <canvas id="scene"></canvas>
-
-    <header class="topbar glass">
-      <div>
-        <p class="eyebrow">CASA 5B</p>
-        <h1>Modello 3D reale</h1>
-      </div>
-      <div class="status">
-        <span class="status-dot"></span>
-        <span id="status-text">Caricamento modello…</span>
-      </div>
-    </header>
-
-    <section class="view-switcher glass" aria-label="Selezione vista">
-      <button class="view-button active" data-mode="side">Affiancati</button>
-      <button class="view-button" data-mode="stacked">Completa</button>
-      <button class="view-button" data-mode="lower">Piano inferiore</button>
-      <button class="view-button" data-mode="upper">Piano superiore</button>
-    </section>
-
-    <section class="camera-tools glass" aria-label="Controlli camera">
-      <button class="icon-button" id="view-iso" title="Vista isometrica" aria-label="Vista isometrica">
-        <span>◇</span>
-      </button>
-      <button class="icon-button" id="view-top" title="Vista dall’alto" aria-label="Vista dall’alto">
-        <span>⌂</span>
-      </button>
-      <button class="icon-button" id="auto-rotate" title="Rotazione automatica" aria-label="Rotazione automatica">
-        <span>↻</span>
-      </button>
-      <button class="icon-button" id="fullscreen" title="Schermo intero" aria-label="Schermo intero">
-        <span>⛶</span>
-      </button>
-      <button class="icon-button" id="reset" title="Reimposta vista" aria-label="Reimposta vista">
-        <span>↺</span>
-      </button>
-    </section>
-
-    <aside class="info-card glass" id="info-card" hidden>
-      <button class="close-info" id="close-info" aria-label="Chiudi dettagli">×</button>
-      <p class="eyebrow">ELEMENTO SELEZIONATO</p>
-      <h2 id="info-room">Locale</h2>
-      <p id="info-type">Elemento architettonico</p>
-      <small id="info-floor"></small>
-    </aside>
-
-    <div class="hint glass" id="hint">
-      Trascina per ruotare · rotella o pinch per zoom · tasto destro o due dita per spostare
-    </div>
-
-    <div class="loading" id="loading">
-      <div class="loader-ring"></div>
-      <strong>Caricamento della casa</strong>
-      <span id="loading-progress">Preparazione modello…</span>
-    </div>
-
-    <div class="fatal-error" id="fatal-error" hidden>
-      <h2>Il modello non è stato caricato</h2>
-      <p id="fatal-error-message"></p>
-      <button onclick="location.reload()">Riprova</button>
-    </div>
-  </main>
-
-  <script type="module" src="./app.js"></script>
-</body>
-</html>
+<html lang="it"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><title>Casa 5B · Homestyler 3D</title>
+<link rel="stylesheet" href="./styles.css"><link rel="icon" href="./icon.svg" type="image/svg+xml">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"}}</script>
+</head><body><main id="viewer"><canvas id="scene"></canvas>
+<header class="top glass"><div><small>CASA 5B</small><h1>Homestyler · arredata e texturizzata</h1></div><div class="status"><i></i><span id="status">Caricamento…</span></div></header>
+<nav class="floors glass" aria-label="Selezione piano">
+<button data-floor="both" class="active">Entrambi</button><button data-floor="first">Primo piano</button><button data-floor="second">Secondo piano</button>
+</nav>
+<nav class="tools glass"><button id="iso" title="Vista isometrica">◇</button><button id="topview" title="Vista dall’alto">⌂</button><button id="rotate" title="Rotazione automatica">↻</button><button id="full" title="Schermo intero">⛶</button><button id="reset" title="Reimposta">↺</button></nav>
+<aside id="info" class="info glass" hidden><button id="close">×</button><small>ELEMENTO SELEZIONATO</small><h2 id="info-title"></h2><p id="info-detail"></p></aside>
+<div class="help glass">Trascina per ruotare · rotella/pinch per zoom · tasto destro/due dita per spostare</div>
+<div id="loading" class="loading"><div class="ring"></div><strong>Ricostruzione casa Homestyler</strong><span id="progress">Caricamento struttura…</span></div>
+<div id="error" class="error" hidden><h2>Errore di caricamento</h2><p id="error-msg"></p><button onclick="location.reload()">Riprova</button></div>
+</main><script type="module" src="./app.js"></script></body></html>

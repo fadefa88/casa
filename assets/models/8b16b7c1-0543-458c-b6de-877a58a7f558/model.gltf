@@ -1,0 +1,253 @@
+{
+  "accessors": [
+    {
+      "name": "glass_002_1_0_positions",
+      "componentType": 5126,
+      "count": 4910,
+      "min": [
+        -8.144220352172852,
+        4.704999923706055,
+        -7.769320011138916
+      ],
+      "max": [
+        8.603919982910156,
+        35.74020004272461,
+        8.68511962890625
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_002_1_0_normals",
+      "componentType": 5126,
+      "count": 4910,
+      "min": [
+        -0.9998307228088379,
+        -0.9993898272514343,
+        -0.998925507068634
+      ],
+      "max": [
+        0.9992650151252747,
+        0.999688446521759,
+        0.9991235733032227
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_002_1_0_texcoords",
+      "componentType": 5126,
+      "count": 4910,
+      "min": [
+        0.0030352799221873283,
+        0.0050940001383423805
+      ],
+      "max": [
+        0.9821180105209351,
+        0.9744775295257568
+      ],
+      "type": "VEC2",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_002_1_0_indices",
+      "componentType": 5123,
+      "count": 9312,
+      "min": [
+        0
+      ],
+      "max": [
+        4909
+      ],
+      "type": "SCALAR",
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_001_1_0_positions",
+      "componentType": 5126,
+      "count": 299,
+      "min": [
+        -3.2667698860168457,
+        0,
+        -0.5867300033569336
+      ],
+      "max": [
+        5.140520095825195,
+        17.228700637817383,
+        7.8203301429748535
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 58920
+    },
+    {
+      "name": "glass_001_1_0_normals",
+      "componentType": 5126,
+      "count": 299,
+      "min": [
+        -0.991513729095459,
+        -0.9999991059303284,
+        -0.9968224167823792
+      ],
+      "max": [
+        0.991513729095459,
+        1,
+        0.9968224167823792
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 58920
+    },
+    {
+      "name": "glass_001_1_0_texcoords",
+      "componentType": 5126,
+      "count": 299,
+      "min": [
+        0.44999998807907104,
+        0.4501990079879761
+      ],
+      "max": [
+        0.550000011920929,
+        0.550000011920929
+      ],
+      "type": "VEC2",
+      "bufferView": 2,
+      "byteOffset": 39280
+    },
+    {
+      "name": "glass_001_1_0_indices",
+      "componentType": 5123,
+      "count": 1056,
+      "min": [
+        0
+      ],
+      "max": [
+        298
+      ],
+      "type": "SCALAR",
+      "bufferView": 3,
+      "byteOffset": 18624
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "model-r",
+      "byteLength": 187424,
+      "uri": "model-r.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 62508,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 62508,
+      "byteOffset": 62508,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 41672,
+      "byteOffset": 125016,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_3",
+      "buffer": 0,
+      "byteLength": 20736,
+      "byteOffset": 166688,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "default",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.5,
+          0.5,
+          0.5,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 1
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    }
+  ],
+  "meshes": [
+    {
+      "name": "glass_002_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "glass_001_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "glass_002",
+      "mesh": 0
+    },
+    {
+      "name": "glass_001",
+      "mesh": 1
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ]
+}

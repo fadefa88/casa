@@ -1,31 +1,25 @@
-# Casa 5B — modello 3D reale
+# Casa Homestyler arredata e texturizzata
 
-Pacchetto statico pronto per GitHub Pages.
+Pacchetto statico pronto per GitHub Pages o Cloudflare Pages.
 
 ## Pubblicazione
 
 1. Estrai lo ZIP.
-2. Apri il repository GitHub `casa`.
-3. Sostituisci i file presenti nella root del repository con il contenuto estratto.
-4. Mantieni esattamente la cartella `assets` e il file `assets/casa_web.glb`.
-5. Esegui il commit sul branch `main`.
+2. Sostituisci **tutto** il contenuto della root del repository `casa` con i file estratti.
+3. Carica anche l’intera cartella `assets` senza rinominare nulla.
+4. Fai commit sul branch `main`.
+5. Dopo il deploy apri la pagina con `?v=2` oppure esegui `Ctrl+F5` per evitare la cache.
 
-Non è necessario eseguire `npm install` e non esiste una fase di build.
+Non servono Node.js, npm o build.
 
-## Controlli
+## Funzionamento
 
-- Trascinamento: rotazione
-- Rotella o pinch: zoom
-- Tasto destro o due dita: spostamento
-- Affiancati: due piani sullo stesso livello
-- Completa: piani nella posizione verticale reale
-- Piano inferiore / superiore: visualizzazione separata
-- Click su un elemento: identificazione del locale e del tipo architettonico
+- **Entrambi**: mostra i due piani sovrapposti nella posizione verticale corretta.
+- **Primo piano**: nasconde il secondo.
+- **Secondo piano**: nasconde il primo.
+- Il modello usa gli arredi originali della scena Homestyler e le texture effettivamente presenti nel file HAR.
+- I soffitti sono esclusi per permettere di vedere gli interni dall’alto.
 
-## File principali
+## Limite tecnico
 
-- `index.html`: pagina principale
-- `styles.css`: interfaccia responsive
-- `app.js`: visualizzatore Three.js
-- `assets/casa_web.glb`: modello reale recuperato da Homestyler
-- `.nojekyll`: pubblicazione statica senza elaborazione Jekyll
+Il file HAR conteneva le texture richieste dal viewer in quella sessione. Alcuni piccoli oggetti non avevano una texture scaricata e usano quindi un materiale neutro; struttura, disposizione e arredi restano quelli originali.

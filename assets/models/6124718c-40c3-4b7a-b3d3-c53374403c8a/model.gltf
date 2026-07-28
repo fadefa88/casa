@@ -1,0 +1,253 @@
+{
+  "accessors": [
+    {
+      "name": "solid_002_1_0_positions",
+      "componentType": 5126,
+      "count": 1209,
+      "min": [
+        24.362300872802734,
+        91.58061981201172,
+        -5.417961120605469
+      ],
+      "max": [
+        38.29399871826172,
+        98.90540313720703,
+        5.417962074279785
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_002_1_0_normals",
+      "componentType": 5126,
+      "count": 1209,
+      "min": [
+        -1,
+        -0.9999309778213501,
+        -1
+      ],
+      "max": [
+        0.9992586970329285,
+        0.9999387860298157,
+        0.999997615814209
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_002_1_0_texcoords",
+      "componentType": 5126,
+      "count": 1209,
+      "min": [
+        0.11710000038146973,
+        0.35350000858306885
+      ],
+      "max": [
+        0.8828999996185303,
+        0.5778409838676453
+      ],
+      "type": "VEC2",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_002_1_0_indices",
+      "componentType": 5123,
+      "count": 3009,
+      "min": [
+        0
+      ],
+      "max": [
+        1208
+      ],
+      "type": "SCALAR",
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "solid_001_1_0_positions",
+      "componentType": 5126,
+      "count": 1292,
+      "min": [
+        -45.68489074707031,
+        0,
+        -2.441761016845703
+      ],
+      "max": [
+        45.710201263427734,
+        215.92233276367188,
+        2.6944611072540283
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 14508
+    },
+    {
+      "name": "solid_001_1_0_normals",
+      "componentType": 5126,
+      "count": 1292,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 14508
+    },
+    {
+      "name": "solid_001_1_0_texcoords",
+      "componentType": 5126,
+      "count": 1292,
+      "min": [
+        0.0005000000237487257,
+        0.0005000000237487257
+      ],
+      "max": [
+        0.9992570281028748,
+        0.9994999766349792
+      ],
+      "type": "VEC2",
+      "bufferView": 2,
+      "byteOffset": 9672
+    },
+    {
+      "name": "solid_001_1_0_indices",
+      "componentType": 5123,
+      "count": 2166,
+      "min": [
+        0
+      ],
+      "max": [
+        1291
+      ],
+      "type": "SCALAR",
+      "bufferView": 3,
+      "byteOffset": 6020
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "model-r",
+      "byteLength": 90384,
+      "uri": "model-r.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 30012,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 30012,
+      "byteOffset": 30012,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 20008,
+      "byteOffset": 60024,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_3",
+      "buffer": 0,
+      "byteLength": 10352,
+      "byteOffset": 80032,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Default_material",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.752941,
+          0.752941,
+          0.752941,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.4
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    }
+  ],
+  "meshes": [
+    {
+      "name": "solid_002_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "solid_001_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "solid_002",
+      "mesh": 0
+    },
+    {
+      "name": "solid_001",
+      "mesh": 1
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ]
+}

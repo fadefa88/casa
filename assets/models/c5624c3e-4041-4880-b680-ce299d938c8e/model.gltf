@@ -1,0 +1,167 @@
+{
+  "accessors": [
+    {
+      "name": "glass_001_1_0_positions",
+      "componentType": 5126,
+      "count": 1570,
+      "min": [
+        -66.21202850341797,
+        0.10500500351190567,
+        -43.59500503540039
+      ],
+      "max": [
+        66.23150634765625,
+        135.0683135986328,
+        43.60429382324219
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_001_1_0_normals",
+      "componentType": 5126,
+      "count": 1570,
+      "min": [
+        -1,
+        -0.9960981011390686,
+        -0.999679446220398
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_001_1_0_texcoords",
+      "componentType": 5126,
+      "count": 1570,
+      "min": [
+        -3.2924180030822754,
+        -1.2629790306091309
+      ],
+      "max": [
+        4.292367935180664,
+        4.293903827667236
+      ],
+      "type": "VEC2",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "glass_001_1_0_indices",
+      "componentType": 5123,
+      "count": 2571,
+      "min": [
+        0
+      ],
+      "max": [
+        1569
+      ],
+      "type": "SCALAR",
+      "bufferView": 3,
+      "byteOffset": 0
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "model-r",
+      "byteLength": 55384,
+      "uri": "model-r.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 18840,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 18840,
+      "byteOffset": 18840,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 12560,
+      "byteOffset": 37680,
+      "byteStride": 8,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_3",
+      "buffer": 0,
+      "byteLength": 5144,
+      "byteOffset": 50240,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Default_material",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.752941,
+          0.752941,
+          0.752941,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.4
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": false
+    }
+  ],
+  "meshes": [
+    {
+      "name": "glass_001_1",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "glass_001",
+      "mesh": 0
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
