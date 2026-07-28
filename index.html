@@ -2,12 +2,12 @@
 <html lang="it"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827"><title>Casa 5B · Homestyler 3D</title>
-<link rel="stylesheet" href="./styles.css?v=8">
+<link rel="stylesheet" href="./styles.css?v=11">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"}}</script>
 </head><body><main id="viewer"><canvas id="scene"></canvas>
 <header class="top glass"><div><small>CASA 5B</small><h1>Casa virtuale</h1></div><div id="status">Caricamento…</div></header>
 <nav class="floors glass"><button data-floor="both" class="active">Entrambi</button><button data-floor="first">Primo piano</button><button data-floor="second">Secondo piano</button></nav>
-<nav class="tools glass"><button id="iso" title="Isometrica">◇</button><button id="topview" title="Dall’alto">⌂</button><button id="rotate" title="Rotazione automatica">↻</button><button id="full" title="Schermo intero">⛶</button><button id="reset" title="Reset">↺</button></nav>
+<nav class="tools glass"><button id="iso" title="Isometrica">◇</button><button id="topview" title="Dall’alto">⌂</button><button id="rotate" title="Rotazione automatica">↻</button><button id="list-toggle" title="Lista oggetti">☰</button><button id="full" title="Schermo intero">⛶</button><button id="reset" title="Reset">↺</button></nav>
 <aside id="info" class="info glass" hidden>
   <button id="close">×</button>
   <small>OGGETTO SELEZIONATO</small>
@@ -21,10 +21,14 @@
   </dl>
   <label class="field-label" for="object-code">Codice oggetto</label>
   <textarea id="object-code" readonly></textarea>
-  <div class="actions">
-    <button id="copy-code" class="primary">Copia codice</button>
-  </div>
+  <div class="actions"><button id="copy-code" class="primary">Copia codice</button></div>
 </aside>
-<div id="hint" class="hint glass">Ora sono cliccabili tutti i singoli oggetti visibili. Cliccane uno e mandami il codice oggetto per le correzioni.</div>
+<aside id="object-list" class="object-list glass" hidden>
+  <div class="object-list-head"><strong>Lista oggetti</strong><button id="close-list">×</button></div>
+  <input id="object-search" type="search" placeholder="Cerca oggetto, stanza o codice...">
+  <div id="object-count" class="object-count"></div>
+  <div id="object-results" class="object-results"></div>
+</aside>
+<div id="hint" class="hint glass">Se un oggetto è difficile da cliccare usa il pulsante ☰: puoi cercarlo e selezionarlo dall’elenco completo.</div>
 <div id="loading" class="loading"><div class="spinner"></div><strong>Caricamento casa Homestyler</strong><span id="progress">Download del modello…</span></div>
-</main><script type="module" src="./app.js?v=8"></script></body></html>
+</main><script type="module" src="./app.js?v=11"></script></body></html>

@@ -22,3 +22,19 @@ Pacchetto statico pronto per GitHub Pages.
 ## Novità v5
 - Tutti i singoli mesh/oggetti visibili sono cliccabili.
 - Nel pannello compare il codice oggetto completo da copiare e incollare in chat.
+
+
+## Fix v6
+- Corretta la scala dei 3 `attachment/countertop` (JID `b337125c-a2cb-4855-b1d0-2d56f790a847`).
+- I countertop risultavano 10x troppo piccoli rispetto al progetto originale.
+
+
+## Fix v7
+- Corretta anche la scrivania/tavolo piccolo del primo piano (JID `2ca92782-818c-4812-81de-cdb2c2b6cba3`).
+- Resa colori leggermente più neutra per evitare dominanti bluastre del viewer.
+- Aggiunta lista completa oggetti con ricerca (`☰`) nel caso alcuni oggetti siano difficili da cliccare direttamente.
+
+
+## Fix v8
+- Rimosso il blocco `div#error` da `index.html`.
+- Rimossi i relativi riferimenti JavaScript e CSS.

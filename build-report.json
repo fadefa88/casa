@@ -1,39 +1,21 @@
 {
-  "forced_arch_white": [
-    "43352ParametricOpening-43352_413_413_143352"
-  ],
-  "forced_white_door_jids": [
-    "6124718c-40c3-4b7a-b3d3-c53374403c8a",
-    "a3958e42-77e6-460b-8471-f13c0c8fb090"
-  ],
-  "model_corrections": {
-    "a3958e42-77e6-460b-8471-f13c0c8fb090": [
+  "fixes": {
+    "first_floor_small_desk_jid": "2ca92782-818c-4812-81de-cdb2c2b6cba3",
+    "first_floor_small_desk_scaled_by": [
       10.0,
       10.0,
       10.0
     ],
-    "21469f17-b2d3-477f-a397-0b2f3e02b48c": [
-      1.3,
-      1.3,
-      1.3
+    "countertops_jid": "b337125c-a2cb-4855-b1d0-2d56f790a847",
+    "white_doors_jids": [
+      "6124718c-40c3-4b7a-b3d3-c53374403c8a",
+      "a3958e42-77e6-460b-8471-f13c0c8fb090"
     ]
   },
-  "architecture_meshes": 176,
-  "furniture_instances": 79,
-  "furniture_meshes": 446,
-  "glb_bytes": 31926524,
-  "zip_bytes": 22910577,
-  "validated_geometries": 622,
-  "bounds": [
-    [
-      -8.53180980682373,
-      -3.0,
-      -4.805560111999512
-    ],
-    [
-      10.373391005859375,
-      2.799999952316284,
-      5.862850189208984
-    ]
-  ]
+  "ui": {
+    "searchable_object_list": true,
+    "all_visible_meshes_clickable": true,
+    "cache_buster": "v=10"
+  },
+  "note": "Some material differences may still remain where Homestyler did not expose all shader data in the HAR, but this build keeps original textures/materials whenever available and uses a more neutral viewer lighting."
 }

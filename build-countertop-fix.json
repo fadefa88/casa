@@ -1,0 +1,9 @@
+{
+  "fixed_jid": "b337125c-a2cb-4855-b1d0-2d56f790a847",
+  "instances": [
+    "second__Bathroom-37895__59109__attachment_countertop__solid_001",
+    "first__Bathroom-109096__159306__attachment_countertop__solid_001",
+    "first__MasterBathroom-92592__149502__attachment_countertop__solid_001"
+  ],
+  "notes": "Countertop model scale corrected by 10x relative to previous build."
+}
