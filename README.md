@@ -103,3 +103,8 @@ Pacchetto statico pronto per GitHub Pages.
 - Il profilo mansardato, già corretto come forma, è ora applicato anche a tutti gli elementi strutturali prima esclusi: `CustomizedStructure`, `Front`, `Back`, `Door`, `Pocket`, facce delle finestre e pareti delle terrazze.
 - I pavimenti non vengono deformati.
 - La sezione resta invariata: 86 cm → 310 cm sopra la scala → 205 cm sul lato opposto.
+
+
+## Fix v23
+- Rifinita la selezione degli elementi del mansardato: ora il profilo si applica a tutti i mesh architettonici del secondo piano (categoria non numerica), non solo a una whitelist parziale.
+- Questo copre anche elementi rimasti esclusi come `Other` e eventuali `Component`/strutture aggiuntive.

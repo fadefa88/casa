@@ -205,10 +205,15 @@ function secondFloorRoofHeightAtZ(z){
 }
 function isSecondFloorMansardMesh(name=''){
   if(!name.startsWith('second__')) return false;
-  // Applica il medesimo profilo a tutti i componenti dell'involucro e della struttura,
-  // comprese le facce esterne e le pareti delle terrazze. I pavimenti restano invariati.
-  if(name.includes('__Floor__')) return false;
-  return /(CustomizedStructure|WallOuter|WallInner|WallTop|WallBottom|Front|Back|SlabTop|SlabSide|OrdinaryWindow|Floor-basedWindow|ParametricOpening|Component__43352ParametricOpening|__Door__|__Pocket__)/.test(name);
+  // Regola robusta: sul secondo piano deformiamo tutti i mesh architettonici/strutturali,
+  // cioè quelli il cui terzo segmento NON è un instance id numerico di un arredo.
+  // In questo modo il profilo mansardato copre anche Other, Component generici,
+  // strutture personalizzate, front/back e tutte le pareti delle terrazze.
+  const parts = name.split('__');
+  if(parts.length < 4) return false;
+  const category = parts[2] || '';
+  if(category === 'Floor') return false;
+  return !/^\d+$/.test(category);
 }
 function deformMeshForSecondFloorMansard(mesh){
   if(!mesh || !mesh.geometry?.attributes?.position) return;
@@ -309,5 +314,5 @@ function applyCustomOverrides(){
   scaleInstanceAroundCenter('179008', .765);
 }
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=25",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+new GLTFLoader().load("./assets/casa_homestyler.glb?v=26",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
