@@ -1,25 +1,25 @@
-# Casa Homestyler arredata e texturizzata
+# Casa 5B — Homestyler fedele
 
-Pacchetto statico pronto per GitHub Pages o Cloudflare Pages.
+Pacchetto statico pronto per GitHub Pages. Contiene un unico modello GLB con geometrie, arredi e texture incorporate.
 
 ## Pubblicazione
 
 1. Estrai lo ZIP.
-2. Sostituisci **tutto** il contenuto della root del repository `casa` con i file estratti.
-3. Carica anche l’intera cartella `assets` senza rinominare nulla.
-4. Fai commit sul branch `main`.
-5. Dopo il deploy apri la pagina con `?v=2` oppure esegui `Ctrl+F5` per evitare la cache.
+2. Sostituisci completamente il contenuto della root del repository `casa`.
+3. Carica anche la cartella `assets`.
+4. Esegui il commit sul branch `main`.
+5. Apri il sito con `?v=5` o premi `Ctrl+F5`.
 
 Non servono Node.js, npm o build.
 
-## Funzionamento
+## Viste
 
-- **Entrambi**: mostra i due piani sovrapposti nella posizione verticale corretta.
-- **Primo piano**: nasconde il secondo.
-- **Secondo piano**: nasconde il primo.
-- Il modello usa gli arredi originali della scena Homestyler e le texture effettivamente presenti nel file HAR.
-- I soffitti sono esclusi per permettere di vedere gli interni dall’alto.
+- **Entrambi**: i due livelli restano uno sopra l'altro nella posizione originale.
+- **Primo piano**: nasconde il secondo piano.
+- **Secondo piano**: nasconde il primo piano.
 
-## Limite tecnico
+## Fedeltà materiali
 
-Il file HAR conteneva le texture richieste dal viewer in quella sessione. Alcuni piccoli oggetti non avevano una texture scaricata e usano quindi un materiale neutro; struttura, disposizione e arredi restano quelli originali.
+Il GLB incorpora le texture registrate dal viewer e ricostruisce 250 materiali V-Ray originali, oltre alle personalizzazioni applicate alle singole istanze. I materiali V-Ray sono convertiti in PBR/glTF; riflessi e illuminazione possono differire leggermente dal motore Homestyler, mentre colori di base e texture derivano dai dati originali della scena.
+
+Oggetti: 79 istanze di arredo. Mesh arredo: 446. Mesh architettura: 176.
