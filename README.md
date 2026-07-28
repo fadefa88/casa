@@ -75,3 +75,8 @@ Pacchetto statico pronto per GitHub Pages.
 - Applicate solo modifiche materiali, visibilità e trasformazioni di oggetti richieste.
 - Nessuna modifica alle geometrie di finestre, aperture o muri.
 - Le maniglie procedurali sono state disattivate: le porte normali usano il proprio slot hardware in inox satinato; sulle scorrevoli lo slot hardware è nascosto.
+
+
+## Fix v16
+- Arredo esterno `179008` ridotto di un ulteriore 15% rispetto alla v15 (76,5% della dimensione originale).
+- `169003__solid_003` e `169003__solid_006` ripristinati alla posizione precedente eliminando il riallineamento della v15.
