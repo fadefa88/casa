@@ -97,3 +97,9 @@ Pacchetto statico pronto per GitHub Pages.
 
 ## Fix v20
 - Corretto un bug: la deformazione del secondo piano mansardato era presente nel codice ma non veniva eseguita. Ora `applySecondFloorMansard()` viene applicata davvero al caricamento della scena.
+
+
+## Fix v21
+- Rimossi `second__Terrace-42789__WallInner__366281785234406370_036628`.
+- Rimossi `second__Terrace-40381__WallInner__366281785234406370_036628`.
+- Rimossa `second__Bathroom-37895__CustomizedStructure__362681785234406351_036268`.
