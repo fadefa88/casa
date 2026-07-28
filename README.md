@@ -93,3 +93,7 @@ Pacchetto statico pronto per GitHub Pages.
 
 ## Fix v19
 - `first__MasterBedroom-105249__156064__storage_unit_armoire__solid_001` corretto: abbassamento ridotto da 5% a 0,5%.
+
+
+## Fix v20
+- Corretto un bug: la deformazione del secondo piano mansardato era presente nel codice ma non veniva eseguita. Ora `applySecondFloorMansard()` viene applicata davvero al caricamento della scena.
