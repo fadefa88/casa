@@ -44,3 +44,12 @@ Pacchetto statico pronto per GitHub Pages.
 - Corretto il pannello Lista oggetti: il pulsante × e il pulsante ☰ ora lo chiudono davvero.
 - Dopo la selezione dalla lista, la lista si chiude automaticamente e resta visibile la scheda dell’oggetto.
 - Aggiunta chiusura con tasto Esc.
+
+
+## Fix v10
+- Mensola decorativa `172324` con la stessa texture del mobile cucina `169003`.
+- 8 sedie bianche in plastica (incluse le 6 attorno al tavolo della living room).
+- Sedie `165836` e `165832` in plastica blu per gli slot `solid_002` e `solid_003`.
+- Sedia `165822` in plastica azzurra per gli slot `solid_002` e `solid_003`.
+- Divano `165791` slot `solid_002` con resa stoffa grigia.
+- Mobile TV `165792` slot `solid_015` e `solid_016` bianchi uniformi.

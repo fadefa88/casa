@@ -12,7 +12,18 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x8b8b8b,1.5));const sun=new THREE.
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.ShadowMaterial({color:0x64748b,opacity:.11}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 const world=new THREE.Group(),first=new THREE.Group(),second=new THREE.Group();world.add(first,second);scene.add(world);
 let current="both",selected=null,saved=null,down=null,allMeshes=[],allEntries=[];
-function prepare(root){const items=[];root.traverse(o=>{if(!o.isMesh)return;items.push(o);o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})});for(const o of items){const n=o.name||o.parent?.name||"";(n.startsWith("first__")?first:second).attach(o)}allMeshes=items;buildObjectIndex()}
+function makeFabricTexture(base="#8b8f94", dark="#73777c"){
+  const c=document.createElement('canvas'); c.width=128; c.height=128; const ctx=c.getContext('2d');
+  ctx.fillStyle=base; ctx.fillRect(0,0,c.width,c.height);
+  for(let i=0;i<2400;i++){ const x=Math.random()*128, y=Math.random()*128; const a=Math.random()*0.18; ctx.fillStyle=`rgba(0,0,0,${a})`; ctx.fillRect(x,y,1,1); }
+  ctx.strokeStyle=dark; ctx.globalAlpha=.08;
+  for(let i=0;i<128;i+=4){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,128); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(128,i); ctx.stroke(); }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(2,2); return tex;
+}
+function makePlasticMaterial(color){ return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color), roughness:.62, metalness:0.0, clearcoat:.18, clearcoatRoughness:.55, side:THREE.DoubleSide}); }
+function makeWhiteUniform(){ return new THREE.MeshPhysicalMaterial({color:0xffffff, roughness:.62, metalness:0.0, side:THREE.DoubleSide}); }
+function makeFabricGray(){ return new THREE.MeshPhysicalMaterial({color:0xa0a4a8, roughness:.95, metalness:0.0, map:makeFabricTexture('#989da2','#7b7f84'), side:THREE.DoubleSide}); }
+function prepare(root){const items=[];root.traverse(o=>{if(!o.isMesh)return;items.push(o);o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.side=THREE.DoubleSide;m.needsUpdate=true})});for(const o of items){const n=o.name||o.parent?.name||"";(n.startsWith("first__")?first:second).attach(o)}allMeshes=items;applyCustomOverrides();buildObjectIndex()}
 function bounds(){world.updateMatrixWorld(true);const b=new THREE.Box3();b.makeEmpty();if(first.visible)b.union(new THREE.Box3().setFromObject(first));if(second.visible)b.union(new THREE.Box3().setFromObject(second));return b}
 function fit(top=false){const b=bounds();if(b.isEmpty())return;const size=b.getSize(new THREE.Vector3()),center=b.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.z,size.y*1.55),fov=THREE.MathUtils.degToRad(camera.fov),dist=(max*.66)/Math.tan(fov/2)*(top?1.05:1.17);camera.position.copy(top?new THREE.Vector3(center.x,center.y+dist,center.z+.001):center.clone().add(new THREE.Vector3(1,.72,1).normalize().multiplyScalar(dist)));controls.target.copy(center);controls.update()}
 function clear(){if(selected&&saved)selected.material=saved;selected=saved=null;$("#info").hidden=true}
@@ -25,6 +36,36 @@ function selectObject(obj){clear();selected=obj;saved=selected.material;const ar
 function pick(e){const r=canvas.getBoundingClientRect();const pointer=new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height*2-1));const ray=new THREE.Raycaster();ray.setFromCamera(pointer,camera);const visible=allMeshes.filter(o=>o.visible&&o.parent?.visible!==false);const hits=ray.intersectObjects(visible,false);if(!hits.length){clear();return}selectObject(hits[0].object)}
 function buildObjectIndex(){const map=new Map();for(const mesh of allMeshes){const meta=parseParts(mesh.name||"");const key=meta.raw||mesh.uuid;if(!map.has(key)){map.set(key,{mesh,meta,text:`${meta.title} ${meta.slot} ${meta.roomCode} ${meta.instanceId} ${meta.raw}`.toLowerCase()})}}allEntries=[...map.values()].sort((a,b)=>a.meta.title.localeCompare(b.meta.title));applySearchFilter("")}
 function applySearchFilter(term){const results=$("#object-results"); if(!results) return; const q=(term||"").trim().toLowerCase(); results.innerHTML=""; const filtered=allEntries.filter(entry=>{if(current==="first"&&entry.meta.floorCode!=="first")return false; if(current==="second"&&entry.meta.floorCode!=="second")return false; return !q || entry.text.includes(q)}); $("#object-count").textContent=`${filtered.length} oggetti`; filtered.slice(0,400).forEach(entry=>{const btn=document.createElement('button'); btn.className='object-item'; btn.innerHTML=`<strong>${entry.meta.title}</strong><small>${floorLabel(entry.meta.floorCode)} · ${entry.meta.roomCode || '-'} · ${entry.meta.slot}</small>`; btn.onclick=()=>{selectObject(entry.mesh);focusObject(entry.mesh);closeObjectList();$("#info").hidden=false}; results.appendChild(btn)}); if(filtered.length>400){const more=document.createElement('div'); more.className='object-count'; more.textContent='Mostrati solo i primi 400 risultati. Affina la ricerca.'; results.appendChild(more)}}
+function meshesByPredicate(pred){ return allMeshes.filter(m=>pred(m.name||"", m)); }
+function assignMaterial(meshes, materialFactory){ meshes.forEach((mesh, idx)=>{ const mat=materialFactory(mesh, idx); if(mat) mesh.material=mat; }); }
+function cloneMaterialPreservingTextures(sourceMesh){ const src=Array.isArray(sourceMesh.material)?sourceMesh.material[0]:sourceMesh.material; return src?.clone ? src.clone() : src; }
+function applyCustomOverrides(){
+  // 1) shelf uses same texture/material as kitchen cabinet
+  const sourceCabinet = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_001');
+  const targetShelf = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__172324__shelf_decorative_shelf__solid_001');
+  if(sourceCabinet && targetShelf){ const mat = cloneMaterialPreservingTextures(sourceCabinet); if(mat) targetShelf.material = mat; }
+
+  // 2) white plastic chairs incl. legs
+  const whiteChairInstances = ['175690','175676','172338','172345','172348','172351','172354','172357'];
+  assignMaterial(meshesByPredicate(name => whiteChairInstances.some(id => name.includes(`__${id}__chair_chair__`))), () => makeWhiteUniform());
+
+  // 3) blue plastic chair shells
+  const blueInstances = ['165836','165832'];
+  assignMaterial(meshesByPredicate(name => blueInstances.some(id => name.includes(`__${id}__chair_chair__`)) && (name.endsWith('__solid_002') || name.endsWith('__solid_003'))), () => makePlasticMaterial('#2563eb'));
+
+  // 4) light-blue plastic chair shells
+  assignMaterial(meshesByPredicate(name => name.includes('__165822__chair_chair__') && (name.endsWith('__solid_002') || name.endsWith('__solid_003'))), () => makePlasticMaterial('#7dd3fc'));
+
+  // 5) gray fabric sofa part
+  assignMaterial(meshesByPredicate(name => name === 'first__LivingDiningRoom-116276__165791__sofa_type_L_sofa__solid_002'), () => makeFabricGray());
+
+  // 6) media unit white uniform for selected slots
+  const mediaTargets = new Set([
+    'first__LivingDiningRoom-116276__165792__media_unit_floor-based_media_unit__solid_015',
+    'first__LivingDiningRoom-116276__165792__media_unit_floor-based_media_unit__solid_016'
+  ]);
+  assignMaterial(meshesByPredicate(name => mediaTargets.has(name)), () => makeWhiteUniform());
+}
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=12",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+new GLTFLoader().load("./assets/casa_homestyler.glb?v=13",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
