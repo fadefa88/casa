@@ -99,7 +99,7 @@ Pacchetto statico pronto per GitHub Pages.
 - Corretto un bug: la deformazione del secondo piano mansardato era presente nel codice ma non veniva eseguita. Ora `applySecondFloorMansard()` viene applicata davvero al caricamento della scena.
 
 
-## Fix v21
-- Rimossi `second__Terrace-42789__WallInner__366281785234406370_036628`.
-- Rimossi `second__Terrace-40381__WallInner__366281785234406370_036628`.
-- Rimossa `second__Bathroom-37895__CustomizedStructure__362681785234406351_036268`.
+## Fix v22
+- Il profilo mansardato, già corretto come forma, è ora applicato anche a tutti gli elementi strutturali prima esclusi: `CustomizedStructure`, `Front`, `Back`, `Door`, `Pocket`, facce delle finestre e pareti delle terrazze.
+- I pavimenti non vengono deformati.
+- La sezione resta invariata: 86 cm → 310 cm sopra la scala → 205 cm sul lato opposto.
