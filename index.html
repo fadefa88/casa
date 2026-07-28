@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
-  <title>Casa 5B · Dashboard energia</title>
-  <link rel="stylesheet" href="./styles.css?v=34">
-  <link rel="stylesheet" href="./mobile-landscape.css?v=34">
+  <meta name="theme-color" content="#08121f">
+  <title>Casa 5B · Energia e rete</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="./styles.css?v=35">
+  <link rel="stylesheet" href="./mobile-landscape.css?v=35">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -15,20 +16,43 @@
   <div class="overlay-frame"></div>
 
   <header class="tablet-top glass">
-    <div class="brand-block"><small>CASA 5B</small><h1>Energia casa</h1></div>
+    <div class="brand-block">
+      <div class="brand-icon"><i class="fa-solid fa-house-signal"></i></div>
+      <div><small>CASA 5B</small><h1>Energia e rete</h1></div>
+    </div>
     <div class="top-center">
       <div class="status-pills">
-        <span class="pill ok" id="internet-pill">FTTH online</span>
-        <span class="pill ok" id="ha-pill">Home Assistant demo</span>
-        <span class="pill warn" id="backup-pill">5G standby</span>
+        <span class="pill ok" id="internet-pill"><i class="fa-solid fa-globe"></i> FTTH online</span>
+        <span class="pill info" id="ha-pill"><i class="fa-solid fa-server"></i> Home Assistant demo</span>
+        <span class="pill warn" id="backup-pill"><i class="fa-solid fa-tower-cell"></i> 5G standby</span>
       </div>
     </div>
     <div class="clock-block"><div id="clock">--:--</div><div id="date">--</div></div>
   </header>
 
   <aside class="left-rail rail">
-    <section class="card big energy-card">
-      <div class="card-head"><span>Bilancio casa</span><strong id="house-power">0 W</strong></div>
+    <section class="card pv-card featured-card" data-accent="solar">
+      <div class="card-head">
+        <span class="title"><i class="fa-solid fa-solar-panel"></i> Fotovoltaico</span>
+        <strong id="pv-power">0 W</strong>
+      </div>
+      <div class="energy-flow">
+        <div class="flow-node solar"><i class="fa-solid fa-sun"></i><small>Produzione</small><strong id="pv-flow-production">0 W</strong></div>
+        <i class="fa-solid fa-arrow-right flow-arrow"></i>
+        <div class="flow-node home"><i class="fa-solid fa-house"></i><small>Casa da FV</small><strong id="pv-home-use">0 W</strong></div>
+        <i class="fa-solid fa-arrow-right-arrow-left flow-arrow"></i>
+        <div class="flow-node grid"><i class="fa-solid fa-bolt"></i><small>Rete</small><strong id="pv-grid-flow">0 W</strong></div>
+      </div>
+      <div class="metric-grid two solar-metrics">
+        <div><small>Produzione oggi</small><strong id="pv-today">0 kWh</strong></div>
+        <div><small>Autoconsumo</small><strong id="pv-self">0%</strong></div>
+        <div><small>Prelievo rete</small><strong id="grid-import">0 kWh</strong></div>
+        <div><small>Immissione rete</small><strong id="grid-export">0 kWh</strong></div>
+      </div>
+    </section>
+
+    <section class="card energy-card" data-accent="energy">
+      <div class="card-head"><span class="title"><i class="fa-solid fa-gauge-high"></i> Bilancio casa</span><strong id="house-power">0 W</strong></div>
       <div class="metric-grid two">
         <div><small>Consumo oggi</small><strong id="house-today">0 kWh</strong></div>
         <div><small>Costo stimato</small><strong id="house-cost">€0,00</strong></div>
@@ -37,18 +61,20 @@
       </div>
     </section>
 
-    <section class="card">
-      <div class="card-head"><span>Fotovoltaico</span><strong id="pv-power">0 W</strong></div>
-      <div class="metric-grid two">
-        <div><small>Produzione oggi</small><strong id="pv-today">0 kWh</strong></div>
-        <div><small>Autoconsumo</small><strong id="pv-self">0%</strong></div>
-        <div><small>Prelievo rete</small><strong id="grid-import">0 kWh</strong></div>
-        <div><small>Immissione rete</small><strong id="grid-export">0 kWh</strong></div>
+    <section class="card network-card" data-accent="network">
+      <div class="card-head"><span class="title"><i class="fa-solid fa-network-wired"></i> Rete domestica</span><strong id="network-state">Online</strong></div>
+      <div class="metric-grid two compact">
+        <div><small><i class="fa-solid fa-download"></i> Link download</small><strong id="network-down">0 Mbps</strong></div>
+        <div><small><i class="fa-solid fa-upload"></i> Link upload</small><strong id="network-up">0 Mbps</strong></div>
+        <div><small><i class="fa-solid fa-stopwatch"></i> Ping</small><strong id="network-ping">0 ms</strong></div>
+        <div><small><i class="fa-solid fa-users"></i> Dispositivi</small><strong id="network-clients">0</strong></div>
       </div>
     </section>
+  </aside>
 
-    <section class="card">
-      <div class="card-head"><span>Linee Shelly</span><strong id="shelly-total">0 W</strong></div>
+  <aside class="right-rail rail">
+    <section class="card shelly-card" data-accent="shelly">
+      <div class="card-head"><span class="title"><i class="fa-solid fa-bolt-lightning"></i> Linee Shelly</span><strong id="shelly-total">0 W</strong></div>
       <div class="metric-grid two compact">
         <div><small>Pompa di calore</small><strong id="hp-power">0 W</strong></div>
         <div><small>Modalità PDC</small><strong id="hp-mode">Standby</strong></div>
@@ -56,64 +82,53 @@
         <div><small>Consumo oggi</small><strong id="shelly-today">0 kWh</strong></div>
       </div>
     </section>
-  </aside>
 
-  <aside class="right-rail rail">
-    <section class="card">
-      <div class="card-head"><span>Elettrodomestici</span><strong id="appliances-total">0 W</strong></div>
+    <section class="card appliances-card" data-accent="appliances">
+      <div class="card-head"><span class="title"><i class="fa-solid fa-plug-circle-bolt"></i> Elettrodomestici</span><strong id="appliances-total">0 W</strong></div>
       <div class="metric-grid two">
-        <div><small>Lavatrice</small><strong id="washer-power">0 W</strong></div>
-        <div><small>Asciugatrice</small><strong id="dryer-power">0 W</strong></div>
-        <div><small>Forno</small><strong id="oven-power">0 W</strong></div>
-        <div><small>Frigorifero</small><strong id="fridge-power">0 W</strong></div>
+        <div><small><i class="fa-solid fa-shirt"></i> Lavatrice</small><strong id="washer-power">0 W</strong></div>
+        <div><small><i class="fa-solid fa-wind"></i> Asciugatrice</small><strong id="dryer-power">0 W</strong></div>
+        <div><small><i class="fa-solid fa-temperature-high"></i> Forno</small><strong id="oven-power">0 W</strong></div>
+        <div><small><i class="fa-solid fa-snowflake"></i> Frigorifero</small><strong id="fridge-power">0 W</strong></div>
       </div>
     </section>
 
-    <section class="card">
-      <div class="card-head"><span>Zona TV</span><strong id="tv-zone-total">0 W</strong></div>
+    <section class="card tech-card" data-accent="tech">
+      <div class="card-head"><span class="title"><i class="fa-solid fa-microchip"></i> Tecnologia</span><strong id="tech-total">0 W</strong></div>
       <div class="metric-grid two compact">
-        <div><small>TV</small><strong id="tv-power">0 W</strong></div>
-        <div><small>Nvidia Shield</small><strong id="shield-power">0 W</strong></div>
-        <div><small>Mini PC</small><strong id="media-pc-power">0 W</strong></div>
-        <div><small>HDD</small><strong id="hdd-power">0 W</strong></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head"><span>Studio e gaming</span><strong id="studio-total">0 W</strong></div>
-      <div class="metric-grid two compact">
-        <div><small>PC</small><strong id="pc-power">0 W</strong></div>
-        <div><small>Monitor</small><strong id="monitor-power">0 W</strong></div>
-        <div><small>PS5</small><strong id="ps5-power">0 W</strong></div>
-        <div><small>Dock / splitter</small><strong id="dock-power">0 W</strong></div>
+        <div><small><i class="fa-solid fa-tv"></i> Zona TV</small><strong id="tv-zone-total">0 W</strong></div>
+        <div><small><i class="fa-solid fa-gamepad"></i> Studio / gaming</small><strong id="studio-total">0 W</strong></div>
+        <div><small>Mini PC + HDD</small><strong id="media-lab-total">0 W</strong></div>
+        <div><small>PC + PS5</small><strong id="gaming-core-total">0 W</strong></div>
       </div>
     </section>
   </aside>
 
   <nav class="tablet-floor-nav glass">
-    <button data-floor="both" class="active">Entrambi</button>
-    <button data-floor="first">Primo piano</button>
-    <button data-floor="second">Secondo piano</button>
+    <button data-floor="both" class="active"><i class="fa-solid fa-layer-group"></i><span>Entrambi</span></button>
+    <button data-floor="first"><i class="fa-solid fa-1"></i><span>Primo piano</span></button>
+    <button data-floor="second"><i class="fa-solid fa-2"></i><span>Secondo piano</span></button>
   </nav>
 
   <div class="tablet-tools glass">
-    <button id="full" title="Schermo intero">⛶</button>
-    <button id="reset" title="Vista iniziale">↺</button>
+    <button id="full" title="Schermo intero"><i class="fa-solid fa-expand"></i></button>
+    <button id="reset" title="Vista iniziale"><i class="fa-solid fa-rotate-left"></i></button>
   </div>
 
   <section class="scene-labels">
-    <button class="hotspot" data-detail="pv">Fotovoltaico</button>
-    <button class="hotspot" data-detail="hp">PDC</button>
-    <button class="hotspot" data-detail="induction">Induzione</button>
-    <button class="hotspot" data-detail="appliances">Elettrodom.</button>
-    <button class="hotspot" data-detail="tv">Zona TV</button>
-    <button class="hotspot" data-detail="studio">Studio</button>
+    <button class="hotspot solar active" data-detail="pv"><i class="fa-solid fa-solar-panel"></i><span class="hotspot-label">Fotovoltaico</span><span class="hotspot-short">FV</span></button>
+    <button class="hotspot network" data-detail="network"><i class="fa-solid fa-wifi"></i><span class="hotspot-label">Rete</span><span class="hotspot-short">Rete</span></button>
+    <button class="hotspot" data-detail="hp"><i class="fa-solid fa-fan"></i><span class="hotspot-label">Pompa di calore</span><span class="hotspot-short">PDC</span></button>
+    <button class="hotspot" data-detail="induction"><i class="fa-solid fa-fire-flame-simple"></i><span class="hotspot-label">Induzione</span><span class="hotspot-short">Ind.</span></button>
+    <button class="hotspot" data-detail="appliances"><i class="fa-solid fa-plug"></i><span class="hotspot-label">Elettrodomestici</span><span class="hotspot-short">Casa</span></button>
+    <button class="hotspot" data-detail="tv"><i class="fa-solid fa-tv"></i><span class="hotspot-label">Zona TV</span><span class="hotspot-short">TV</span></button>
+    <button class="hotspot" data-detail="studio"><i class="fa-solid fa-gamepad"></i><span class="hotspot-label">Studio e gaming</span><span class="hotspot-short">Studio</span></button>
   </section>
 
-  <section class="detail-panel glass">
-    <div class="detail-head"><small>DETTAGLIO</small><strong id="detail-title">Fotovoltaico</strong></div>
+  <section class="detail-panel glass" id="detail-panel" data-detail="pv">
+    <div class="detail-head"><small>DETTAGLIO</small><strong id="detail-title"><i class="fa-solid fa-solar-panel"></i> Fotovoltaico</strong></div>
     <div class="detail-grid" id="detail-grid"></div>
-    <div class="detail-note" id="detail-note">Dati demo. Trascina la casa per navigare e configura gli entity ID in <code>config.js</code>.</div>
+    <div class="detail-note" id="detail-note">Dati demo. La rete è predisposta per FRITZ!Box/Home Assistant; velocità, ping e altri sensori vanno associati in <code>config.js</code>.</div>
   </section>
 
   <div id="loading" class="loading"><div class="spinner"></div><strong>Caricamento casa Homestyler</strong><span id="progress">Download del modello…</span></div>
@@ -125,9 +140,9 @@
   <aside id="object-list" class="object-list glass legacy" hidden><div class="object-list-head"><strong>Lista oggetti</strong><button id="close-list">×</button></div><input id="object-search" type="search" placeholder="Cerca oggetto, stanza o codice..."><div id="object-count" class="object-count"></div><div id="object-results" class="object-results"></div></aside>
   <div id="hint" class="hint glass legacy">.</div>
 </main>
-<script src="./config.js?v=34"></script>
-<script type="module" src="./patch-v27.js?v=34"></script>
-<script type="module" src="./tablet.js?v=34"></script>
-<script type="module" src="./navigation-v33.js?v=34"></script>
+<script src="./config.js?v=35"></script>
+<script type="module" src="./patch-v27.js?v=35"></script>
+<script type="module" src="./tablet.js?v=35"></script>
+<script type="module" src="./navigation-v33.js?v=35"></script>
 </body>
 </html>
