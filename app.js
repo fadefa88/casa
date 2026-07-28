@@ -43,6 +43,53 @@ function makeGrayMarble(){
 }
 function makeMirrorMaterial(){ return new THREE.MeshPhysicalMaterial({color:0xf5f7fa, roughness:.035, metalness:1.0, envMapIntensity:1.8, side:THREE.DoubleSide}); }
 
+function makeWoodTexture(base='#8d6f4f', dark='#6d5338', light='#b08d67'){
+  const c=document.createElement('canvas'); c.width=256; c.height=256; const ctx=c.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,256,0); grad.addColorStop(0,base); grad.addColorStop(.5,light); grad.addColorStop(1,base);
+  ctx.fillStyle=grad; ctx.fillRect(0,0,256,256);
+  for(let y=0;y<256;y+=6){ ctx.fillStyle=`rgba(255,255,255,${0.02+Math.random()*0.03})`; ctx.fillRect(0,y,256,1); }
+  for(let i=0;i<90;i++){
+    ctx.strokeStyle=`rgba(${Math.random()>.5?'255,255,255':'40,24,10'},${0.03+Math.random()*0.06})`;
+    ctx.lineWidth=.6+Math.random()*1.1; ctx.beginPath();
+    let x=Math.random()*256; ctx.moveTo(x,0); for(let y=0;y<=256;y+=24){ x += (Math.random()-.5)*14; ctx.lineTo(x,y); } ctx.stroke();
+  }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(1.4,1.4); return tex;
+}
+function makeWoodMaterial(base='#8d6f4f', dark='#6d5338', light='#b08d67'){
+  return new THREE.MeshPhysicalMaterial({color:0xffffff, roughness:.72, metalness:0.0, map:makeWoodTexture(base,dark,light), side:THREE.DoubleSide});
+}
+function makeLinenMaterial(base='#d8d1c8', dark='#bab1a6', repeat=2.2){
+  const mat=new THREE.MeshPhysicalMaterial({color:new THREE.Color(base), roughness:.96, metalness:0.0, map:makeFabricTexture(base,dark), side:THREE.DoubleSide});
+  if(mat.map) mat.map.repeat.set(repeat,repeat);
+  return mat;
+}
+function makeQuiltTexture(base='#ece8e2', line='#d6d1ca', accent='rgba(255,255,255,0.18)'){
+  const c=document.createElement('canvas'); c.width=256; c.height=256; const ctx=c.getContext('2d');
+  ctx.fillStyle=base; ctx.fillRect(0,0,256,256);
+  for(let i=0;i<1800;i++){ const x=Math.random()*256, y=Math.random()*256; ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.03})`; ctx.fillRect(x,y,1,1); }
+  ctx.strokeStyle=line; ctx.lineWidth=2;
+  for(let y=18;y<256;y+=36){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(256,y); ctx.stroke(); }
+  for(let x=18;x<256;x+=42){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,256); ctx.stroke(); }
+  ctx.strokeStyle=accent; ctx.lineWidth=1;
+  for(let y=0;y<256;y+=18){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(256,y); ctx.stroke(); }
+  const tex=new THREE.CanvasTexture(c); tex.colorSpace=THREE.SRGBColorSpace; tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.repeat.set(2,2); return tex;
+}
+function makeQuiltMaterial(base='#ece8e2', line='#d6d1ca'){
+  return new THREE.MeshPhysicalMaterial({color:0xffffff, roughness:.95, metalness:0.0, map:makeQuiltTexture(base,line), side:THREE.DoubleSide});
+}
+function makeBedMaterialMasterUpholstery(){ return makeLinenMaterial('#c8beb1','#a59787',2.1); }
+function makeBedMaterialMasterDuvet(){ return makeQuiltMaterial('#f1eee8','#d8d2c9'); }
+function makeBedMaterialMasterAccent(){ return makeLinenMaterial('#b5a08e','#8b7767',2.6); }
+function makeBedMaterialSecondHeadboard(){ return makeLinenMaterial('#6f7e8a','#55616b',2.0); }
+function makeBedMaterialSecondDuvet(){ return makeQuiltMaterial('#dfe6ea','#bcc8cf'); }
+function makeBedMaterialSecondPillows(){ return makeLinenMaterial('#f5f4f2','#d5d2cd',2.8); }
+function makeBedMaterialSecondAccent(){ return makeWoodMaterial('#7f654a','#5d4733','#9a7a59'); }
+function makeSofaRealisticLightGray(){
+  const mat=new THREE.MeshPhysicalMaterial({color:0xcfd3d6, roughness:.98, metalness:0.0, map:makeFabricTexture('#c9ced2','#aab0b5'), side:THREE.DoubleSide});
+  if(mat.map) mat.map.repeat.set(2.6,2.2);
+  return mat;
+}
+
 function localMeshBounds(mesh){
   const pos=mesh.geometry?.attributes?.position;
   if(!pos) return null;
@@ -270,6 +317,20 @@ function applyCustomOverrides(){
   // 5) gray fabric sofa part
   assignMaterial(meshesByPredicate(name => name === 'first__LivingDiningRoom-116276__165791__sofa_type_L_sofa__solid_002'), () => makeFabricGray());
 
+  // realistic beds - first floor master bedroom
+  ['first__MasterBedroom-105249__156058__bed_king-size_bed__solid_001','first__MasterBedroom-105249__156058__bed_king-size_bed__solid_004'].forEach(name=>setMaterial(name, makeBedMaterialMasterUpholstery));
+  setMaterial('first__MasterBedroom-105249__156058__bed_king-size_bed__solid_002', makeBedMaterialMasterDuvet);
+  setMaterial('first__MasterBedroom-105249__156058__bed_king-size_bed__solid_003', makeBedMaterialMasterAccent);
+
+  // realistic beds - second floor bedroom, visually different from first floor
+  ['second__Bedroom-35912__81315__bed_king-size_bed__solid_001','second__Bedroom-35912__81315__bed_king-size_bed__solid_005'].forEach(name=>setMaterial(name, makeBedMaterialSecondHeadboard));
+  setMaterial('second__Bedroom-35912__81315__bed_king-size_bed__solid_008', makeBedMaterialSecondAccent);
+  ['second__Bedroom-35912__81315__bed_king-size_bed__solid_002','second__Bedroom-35912__81315__bed_king-size_bed__solid_006'].forEach(name=>setMaterial(name, makeBedMaterialSecondDuvet));
+  ['second__Bedroom-35912__81315__bed_king-size_bed__solid_003','second__Bedroom-35912__81315__bed_king-size_bed__solid_004','second__Bedroom-35912__81315__bed_king-size_bed__solid_007'].forEach(name=>setMaterial(name, makeBedMaterialSecondPillows));
+
+  // more realistic light-gray fabric sofa on second floor
+  setMaterial('second__LivingRoom-39392__50216__sofa_multi_seat_sofa__solid_001', makeSofaRealisticLightGray);
+
   // 6) media unit white uniform for selected slots
   const mediaTargets = new Set([
     'first__LivingDiningRoom-116276__165792__media_unit_floor-based_media_unit__solid_015',
@@ -314,5 +375,5 @@ function applyCustomOverrides(){
   scaleInstanceAroundCenter('179008', .765);
 }
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=26",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+new GLTFLoader().load("./assets/casa_homestyler.glb?v=27",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();

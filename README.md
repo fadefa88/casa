@@ -108,3 +108,9 @@ Pacchetto statico pronto per GitHub Pages.
 ## Fix v23
 - Rifinita la selezione degli elementi del mansardato: ora il profilo si applica a tutti i mesh architettonici del secondo piano (categoria non numerica), non solo a una whitelist parziale.
 - Questo copre anche elementi rimasti esclusi come `Other` e eventuali `Component`/strutture aggiuntive.
+
+
+## Fix v24
+- Letto matrimoniale del primo piano (`156058`) con texture più realistica e distinta: testiera/struttura tessuto beige caldo, piumone chiaro trapuntato, dettaglio tessile taupe.
+- Letto matrimoniale del secondo piano (`81315`) con texture diversa e più realistica: testiera tessuto grigio-blu, piumone chiaro freddo, cuscini chiari e dettaglio in legno.
+- `second__LivingRoom-39392__50216__sofa_multi_seat_sofa__solid_001` aggiornato con una texture più realistica di divano in stoffa grigio chiaro.
