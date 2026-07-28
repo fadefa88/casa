@@ -189,6 +189,50 @@ function scaleMeshHeightFromBottom(name, factor=.95){
   geom.computeBoundingBox();
   mesh.geometry=geom;
 }
+function secondFloorRoofHeightAtZ(z){
+  const zLow = -4.80556011;
+  const zPeak = 2.03959;
+  const zHigh = 6.03425978;
+  const hLow = 0.86;
+  const hPeak = 3.10;
+  const hHigh = 2.05;
+  if(z <= zPeak){
+    const t = THREE.MathUtils.clamp((z - zLow) / Math.max(0.001, zPeak - zLow), 0, 1);
+    return THREE.MathUtils.lerp(hLow, hPeak, t);
+  }
+  const t = THREE.MathUtils.clamp((z - zPeak) / Math.max(0.001, zHigh - zPeak), 0, 1);
+  return THREE.MathUtils.lerp(hPeak, hHigh, t);
+}
+function isSecondFloorMansardMesh(name=''){
+  if(!name.startsWith('second__')) return false;
+  if(name.includes('__Terrace-40381__') || name.includes('__Terrace-42789__')) return false;
+  return /(WallOuter|WallInner|WallTop|WallBottom|SlabTop|SlabSide|OrdinaryWindow|Floor-basedWindow|ParametricOpening|Component__43352ParametricOpening)/.test(name);
+}
+function deformMeshForSecondFloorMansard(mesh){
+  if(!mesh || !mesh.geometry?.attributes?.position) return;
+  const geom = mesh.geometry.clone();
+  const pos = geom.attributes.position;
+  const world = mesh.matrixWorld.clone();
+  const inv = mesh.matrixWorld.clone().invert();
+  const p = new THREE.Vector3();
+  for(let i=0;i<pos.count;i++){
+    p.set(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(world);
+    if(p.y > 0.001){
+      const targetTop = secondFloorRoofHeightAtZ(p.z);
+      const factor = targetTop / 2.8;
+      p.y *= factor;
+    }
+    p.applyMatrix4(inv);
+    pos.setXYZ(i, p.x, p.y, p.z);
+  }
+  pos.needsUpdate = true;
+  geom.computeVertexNormals();
+  geom.computeBoundingBox();
+  mesh.geometry = geom;
+}
+function applySecondFloorMansard(){
+  allMeshes.filter(m => isSecondFloorMansardMesh(m.name || '')).forEach(deformMeshForSecondFloorMansard);
+}
 function applyCustomOverrides(){
   // 1) shelf uses same texture/material as kitchen cabinet
   const sourceCabinet = allMeshes.find(m => m.name === 'first__LivingDiningRoom-116276__169003__cabinet_floor-based_kitchen_cabinet__solid_001');
@@ -259,5 +303,5 @@ function applyCustomOverrides(){
   scaleInstanceAroundCenter('179008', .765);
 }
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=20",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+new GLTFLoader().load("./assets/casa_homestyler.glb?v=21",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
 function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();

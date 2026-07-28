@@ -84,3 +84,8 @@ Pacchetto statico pronto per GitHub Pages.
 
 ## Fix v17
 - `first__MasterBedroom-105249__156064__storage_unit_armoire__solid_001` abbassato in altezza del 5% mantenendo la base in appoggio.
+
+
+## Fix v18
+- Prima stima del secondo piano mansardato: lato lungo senza finestre impostato a 86 cm, picco a 310 cm in corrispondenza della scala, discesa fino a 205 cm sul lato opposto.
+- La sezione è stata calcolata in modo automatico sulla base dell’ingombro esistente del piano e della posizione della scala.
