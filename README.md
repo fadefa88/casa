@@ -80,3 +80,7 @@ Pacchetto statico pronto per GitHub Pages.
 ## Fix v16
 - Arredo esterno `179008` ridotto di un ulteriore 15% rispetto alla v15 (76,5% della dimensione originale).
 - `169003__solid_003` e `169003__solid_006` ripristinati alla posizione precedente eliminando il riallineamento della v15.
+
+
+## Fix v17
+- `first__MasterBedroom-105249__156064__storage_unit_armoire__solid_001` abbassato in altezza del 5% mantenendo la base in appoggio.
