@@ -1,0 +1,27 @@
+window.CASA_DASHBOARD_CONFIG={
+  mode:'demo',
+  refreshMs:5000,
+  homeAssistant:{url:'',token:''},
+  entities:{
+    housePower:'sensor.house_power',
+    houseToday:'sensor.house_today_energy',
+    houseCost:'sensor.house_today_cost',
+    pvPower:'sensor.fronius_power',
+    pvToday:'sensor.fronius_today',
+    gridImport:'sensor.grid_import_today',
+    gridExport:'sensor.grid_export_today',
+    tempIn:'sensor.house_temperature',
+    tempOut:'sensor.outdoor_temperature',
+    heatPumpPower:'sensor.heat_pump_power',
+    vmcPower:'sensor.vmc_power',
+    tvPower:'sensor.tv_zone_power',
+    studioPower:'sensor.studio_power',
+    inductionPower:'sensor.induction_power',
+    labPower:'sensor.lab_power',
+    routerLatency:'sensor.router_latency',
+    switchLoad:'sensor.switch_load',
+    alarmState:'alarm_control_panel.home',
+    lightsGround:'light.ground_floor',
+    lightsFirst:'light.first_floor'
+  }
+};
