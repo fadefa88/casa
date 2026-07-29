@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           rm -rf _site
           mkdir -p _site
-          cp index.html app.js app-v25.js app-v26.js patch-v27.js tablet.js navigation-v33.js rooms-3d-v36.js rooms-config.js dashboard-state-v36.js dashboard-views-v36.js dashboard-main-v36.js config.js styles.css mobile-landscape.css dashboard-v36.css .nojekyll _site/
+          cp index.html app.js app-v25.js app-v26.js patch-v27.js tablet.js navigation-v33.js rooms-3d-v36.js rooms-config.js dashboard-state-v36.js dashboard-views-v36.js dashboard-main-v36.js dashboard-state-v37.js dashboard-views-v37.js dashboard-main-v37.js config.js styles.css mobile-landscape.css dashboard-v36.css dashboard-fix-v37.css .nojekyll _site/
           cp -R assets _site/assets
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
