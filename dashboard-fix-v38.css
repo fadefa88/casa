@@ -1,0 +1,11 @@
+/* Robustezza dashboard v38 */
+.loading{pointer-events:none!important;z-index:7!important}
+.tablet-top,.view-nav,.tablet-floor-nav,.tablet-tools,.dashboard-rail,.context-panel{pointer-events:auto}
+.view-nav{z-index:40!important}
+.dashboard-rail{z-index:18!important}
+.clickable-card{cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}
+.clickable-card:hover,.clickable-card:focus-visible{border-color:rgba(96,165,250,.72);background-color:rgba(20,39,65,.94);outline:none}
+.clickable-card:active{transform:scale(.992)}
+.card-open{position:absolute;right:10px;bottom:8px;color:#93c5fd;font-size:10px}
+#ha-pill{border-color:rgba(56,189,248,.35)}
+@media(orientation:landscape) and (max-height:600px){.card-open{right:5px;bottom:4px;font-size:6px}.view-nav{z-index:40!important}}
