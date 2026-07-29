@@ -1,0 +1,7 @@
+/* v37: card navigabili e fallback demo visibile */
+.clickable-card{cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease}
+.clickable-card:hover,.clickable-card:focus-visible{border-color:rgba(96,165,250,.62);background:linear-gradient(145deg,rgba(17,36,61,.94),rgba(10,24,42,.86));outline:none}
+.clickable-card:active{transform:scale(.992)}
+.card-open{position:absolute;right:10px;bottom:8px;color:#7dd3fc;font-size:9px;opacity:.8}
+.pv-card.clickable-card:hover{border-color:rgba(134,239,172,.68);background:linear-gradient(145deg,rgba(16,72,52,.96),rgba(13,49,40,.88))}
+@media(orientation:landscape) and (max-height:600px){.card-open{right:5px;bottom:3px;font-size:6px}}
