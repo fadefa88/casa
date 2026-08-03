@@ -350,8 +350,13 @@
   }
 
   function networkView() {
-    left.innerHTML = card({ title: 'FRITZ!Box 7690', value: data.networkState, icon: 'fa-router', cls: 'network-card', body: metrics([['Link download', speed(data.networkLinkDown)], ['Link upload', speed(data.networkLinkUp)], ['Traffico download', speed(data.networkCurrentDown)], ['Traffico upload', speed(data.networkCurrentUp)]]) }) + card({ title: 'Qualità connessione', value: `${fmt.format(data.networkPing)} ms`, icon: 'fa-wave-square', body: metrics([['Ping', `${fmt.format(data.networkPing)} ms`], ['Jitter', `${fmt.format(data.networkJitter)} ms`], ['Perdita pacchetti', `${fmt.format(data.networkPacketLoss)}%`], ['Uptime', `${fmt.format(data.networkUptimeHours)} h`]]) });
-    right.innerHTML = card({ title: 'Dispositivi', value: data.networkClients, icon: 'fa-users', body: `<div class="network-health"><div class="score">92</div><div><strong>Rete stabile</strong><small>${data.networkWifiClients} Wi‑Fi · ${Math.max(0, data.networkClients - data.networkWifiClients)} cablati</small></div></div>${metrics([['Client Wi‑Fi', data.networkWifiClients], ['Client totali', data.networkClients], ['FTTH', data.networkState], ['Backup 5G', data.backup5gStatus]])}` }) + card({ title: 'Backup e diagnostica', value: 'Pronto', icon: 'fa-tower-cell', body: `<div class="status-line"><span>WAN principale</span><strong><span class="status-dot ok"></span>FTTH</strong></div><div class="status-line"><span>Failover</span><strong><span class="status-dot warn"></span>${data.backup5gStatus}</strong></div><div class="card-actions"><button data-action="network-test"><i class="fa-solid fa-gauge"></i> Aggiorna dati</button></div>` });
+    const nullMetrics = (items) => metrics(items.map((label) => [label, 'NULL']));
+    left.innerHTML =
+      card({ title: 'FRITZ!Box 7690', value: 'NULL', icon: 'fa-router', cls: 'network-card modern-network-card', body: nullMetrics(['Link download', 'Link upload', 'Traffico download', 'Traffico upload']) }) +
+      card({ title: 'Connessione WAN', value: 'NULL', icon: 'fa-globe', cls: 'network-card modern-network-card', body: nullMetrics(['IP esterno', 'Uptime connessione', 'Temperatura CPU', 'Uptime FRITZ!Box']) });
+    right.innerHTML =
+      card({ title: 'Dispositivi connessi', value: 'NULL', icon: 'fa-laptop-house', cls: 'network-card modern-network-card', body: nullMetrics(['Totale online', 'Dati ricevuti', 'Dati inviati', 'Stato WAN']) }) +
+      card({ title: 'Riepilogo linea', value: 'NULL', icon: 'fa-network-wired', cls: 'network-card modern-network-card', body: `${nullMetrics(['Download massimo', 'Upload massimo', 'Download attuale', 'Upload attuale'])}<div class="card-actions"><button data-action="network-test"><i class="fa-solid fa-rotate"></i> Aggiorna dati</button></div>` });
     context.hidden = true;
   }
 
@@ -435,7 +440,7 @@
   $('#close-intercom')?.addEventListener('click', () => $('#intercom-modal')?.close());
   const loading = $('#loading');
   if (loading) loading.style.pointerEvents = 'none';
-  window.CASA_DASHBOARD_READY = 'live-v39';
+  window.CASA_DASHBOARD_READY = 'live-v45';
   window.CASA_HA = { sync: syncHomeAssistant, service: callService, state: ui };
   render();
   syncHomeAssistant();
