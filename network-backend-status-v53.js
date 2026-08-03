@@ -3,7 +3,7 @@
 
   const config = window.CASA_DASHBOARD_CONFIG || {};
   const endpoint = config.networkMonitorUrl || '/api/network-status';
-  const UPDATE_MS = 30000;
+  const UPDATE_MS = 15000;
   const UI_GUARD_MS = 250;
   const STORAGE_KEY = 'casa-network-monitor-last-status';
   const PRIMARY_RATE = '2,5 Gbit/s';
@@ -65,8 +65,8 @@
   }
 
   function setText(node, value) {
-    if (!node || node.textContent === value) return;
-    node.textContent = value;
+    if (!node) return;
+    if (node.textContent !== value) node.textContent = value;
     node.classList.remove('ha-null-value');
     delete node.dataset.haNull;
   }
@@ -181,7 +181,7 @@
   }
 
   // MutationObserver viene eseguito prima del rendering del frame: nessun passaggio
-  // visibile da NULL ai valori corretti durante il refresh quinquennale della dashboard.
+  // visibile da NULL ai valori corretti durante il refresh ogni cinque secondi.
   const observer = new MutationObserver(() => {
     if (!applying) apply();
   });
