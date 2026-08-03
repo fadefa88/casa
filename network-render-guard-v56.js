@@ -143,7 +143,7 @@
 
   function setText(node, value) {
     if (!node || !validValue(value)) return;
-    node.textContent = value;
+    if (node.textContent !== value) node.textContent = value;
     node.classList.remove('ha-null-value');
   }
 
