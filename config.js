@@ -8,7 +8,7 @@ window.CASA_DASHBOARD_CONFIG = {
   // Token: Home Assistant -> Profilo utente -> Token di accesso a lunga durata.
   homeAssistant: {
     url: 'http://homeassistant.local:8123',
-    token: 'REPLACE_WITH_HOME_ASSISTANT_LONG_LIVED_TOKEN'
+    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjYzhlZmVmMDQ3MzM0ZTFmOTljMWFkYzY4YzU3ODFjNiIsImlhdCI6MTc4NTc1MTgwOSwiZXhwIjoyMTAxMTExODA5fQ.N91RgAoOU9Y5bqnAmj4onmnd0oCjM_FlugIiuBP9pR0'
   },
 
   videoIntercomUrl: '',
