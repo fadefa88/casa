@@ -10,9 +10,6 @@
   let lastResolve = 0;
   let timer = null;
   let frame = null;
-  let rendering = false;
-  let lastNetworkSignature = '';
-  let lastOverviewSignature = '';
 
   const normalize = (value) => String(value ?? '')
     .toLowerCase()
@@ -20,13 +17,6 @@
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-
-  const escapeHtml = (value) => String(value ?? NULL_TEXT)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
 
   const haState = () => window.CASA_HA?.state;
   const states = () => haState()?.states instanceof Map ? haState().states : new Map();
@@ -45,71 +35,19 @@
   ].filter(Boolean).join(' '));
 
   const SPECS = {
-    wan: {
-      exact: ['Stato della WAN'],
-      includes: ['stato della wan', 'wan status'],
-      excludes: ['non disponibile']
-    },
-    connection: {
-      exact: ['Connessione', 'Collegamento'],
-      includes: ['connessione', 'collegamento'],
-      excludes: ['tempo di attivita', 'uptime']
-    },
-    externalIp: {
-      exact: ['IP esterno'],
-      includes: ['ip esterno', 'external ip'],
-      excludes: ['ipv6']
-    },
-    maxDown: {
-      exact: ['Velocità massima di scaricamento'],
-      includes: ['velocita massima di scaricamento', 'maximum download', 'max downstream'],
-      excludes: ['pacchetti']
-    },
-    maxUp: {
-      exact: ['Velocità massima di caricamento'],
-      includes: ['velocita massima di caricamento', 'maximum upload', 'max upstream'],
-      excludes: ['pacchetti']
-    },
-    currentDown: {
-      exact: ['Velocità effettiva di scaricamento'],
-      includes: ['velocita effettiva di scaricamento', 'current download', 'download throughput'],
-      excludes: ['massima', 'pacchetti', 'totale']
-    },
-    currentUp: {
-      exact: ['Velocità effettiva di caricamento'],
-      includes: ['velocita effettiva di caricamento', 'current upload', 'upload throughput'],
-      excludes: ['massima', 'pacchetti', 'totale']
-    },
-    uptimeConnection: {
-      exact: ['Tempo di attività della connessione'],
-      includes: ['tempo di attivita della connessione', 'connection uptime'],
-      excludes: []
-    },
-    uptimeDevice: {
-      exact: ['Tempo di attività'],
-      includes: ['tempo di attivita', 'device uptime', 'system uptime'],
-      excludes: ['connessione']
-    },
-    cpuTemp: {
-      exact: ['Temperatura CPU'],
-      includes: ['temperatura cpu', 'cpu temperature'],
-      excludes: []
-    },
-    gbReceived: {
-      exact: ['GB ricevuti'],
-      includes: ['gb ricevuti', 'received gb', 'data received'],
-      excludes: ['velocita', 'pacchetti']
-    },
-    gbSent: {
-      exact: ['GB inviati'],
-      includes: ['gb inviati', 'sent gb', 'data sent'],
-      excludes: ['velocita', 'pacchetti']
-    },
-    devices: {
-      exact: ['Dispositivi connessi'],
-      includes: ['dispositivi connessi', 'connected devices', 'connected clients'],
-      excludes: ['wifi', 'wlan']
-    }
+    wan: { exact:['Stato della WAN'], includes:['stato della wan','wan status'], excludes:['non disponibile'] },
+    connection: { exact:['Connessione','Collegamento'], includes:['connessione','collegamento'], excludes:['tempo di attivita','uptime'] },
+    externalIp: { exact:['IP esterno'], includes:['ip esterno','external ip'], excludes:['ipv6'] },
+    maxDown: { exact:['Velocità massima di scaricamento'], includes:['velocita massima di scaricamento','maximum download','max downstream'], excludes:['pacchetti'] },
+    maxUp: { exact:['Velocità massima di caricamento'], includes:['velocita massima di caricamento','maximum upload','max upstream'], excludes:['pacchetti'] },
+    currentDown: { exact:['Velocità effettiva di scaricamento'], includes:['velocita effettiva di scaricamento','current download','download throughput'], excludes:['massima','pacchetti','totale'] },
+    currentUp: { exact:['Velocità effettiva di caricamento'], includes:['velocita effettiva di caricamento','current upload','upload throughput'], excludes:['massima','pacchetti','totale'] },
+    uptimeConnection: { exact:['Tempo di attività della connessione'], includes:['tempo di attivita della connessione','connection uptime'], excludes:[] },
+    uptimeDevice: { exact:['Tempo di attività'], includes:['tempo di attivita','device uptime','system uptime'], excludes:['connessione'] },
+    cpuTemp: { exact:['Temperatura CPU'], includes:['temperatura cpu','cpu temperature'], excludes:[] },
+    gbReceived: { exact:['GB ricevuti'], includes:['gb ricevuti','received gb','data received'], excludes:['velocita','pacchetti'] },
+    gbSent: { exact:['GB inviati'], includes:['gb inviati','sent gb','data sent'], excludes:['velocita','pacchetti'] },
+    devices: { exact:['Dispositivi connessi'], includes:['dispositivi connessi','connected devices','connected clients'], excludes:['wifi','wlan'] }
   };
 
   function scoreEntity(entity, spec) {
@@ -122,16 +60,16 @@
     if (spec.excludes.some((term) => text.includes(normalize(term)))) return -Infinity;
 
     let score = 0;
-    for (const exact of spec.exact) {
-      const candidate = normalize(exact);
-      if (friendly === candidate) score = Math.max(score, 120);
-      else if (friendly.startsWith(`${candidate} `)) score = Math.max(score, 95);
-    }
-    for (const part of spec.includes) {
-      const candidate = normalize(part);
-      if (friendly.includes(candidate)) score += 40;
-      else if (text.includes(candidate)) score += 20;
-    }
+    spec.exact.forEach((term) => {
+      const token = normalize(term);
+      if (friendly === token) score = Math.max(score, 120);
+      else if (friendly.startsWith(`${token} `)) score = Math.max(score, 95);
+    });
+    spec.includes.forEach((term) => {
+      const token = normalize(term);
+      if (friendly.includes(token)) score += 40;
+      else if (text.includes(token)) score += 20;
+    });
 
     if (text.includes('fritz')) score += 14;
     if (text.includes('7690')) score += 12;
@@ -144,18 +82,18 @@
     if (!force && now - lastResolve < SENSOR_CACHE_MS && Object.keys(sensorIds).length) return;
 
     const resolved = {};
-    for (const [key, spec] of Object.entries(SPECS)) {
+    Object.entries(SPECS).forEach(([key, spec]) => {
       let best = null;
       let bestScore = -Infinity;
-      for (const entity of states().values()) {
+      states().forEach((entity) => {
         const score = scoreEntity(entity, spec);
         if (score > bestScore) {
           bestScore = score;
           best = entity;
         }
-      }
+      });
       resolved[key] = bestScore >= 40 ? best?.entity_id || null : null;
-    }
+    });
 
     sensorIds = resolved;
     lastResolve = now;
@@ -165,38 +103,31 @@
 
   function countConnectedDevices() {
     const explicit = entity('devices');
-    const explicitValue = Number(explicit?.state);
-    if (valid(explicit) && Number.isFinite(explicitValue)) return Math.round(explicitValue);
+    const value = Number(explicit?.state);
+    if (valid(explicit) && Number.isFinite(value)) return Math.round(value);
 
     const unique = new Set();
-    for (const item of states().values()) {
-      if (!item.entity_id.startsWith('device_tracker.')) continue;
-      if (normalize(item.state) !== 'home') continue;
-      if (normalize(item.attributes?.source_type) !== 'router') continue;
-      const id = item.attributes?.mac
-        || item.attributes?.hostname
-        || item.attributes?.friendly_name
-        || item.entity_id;
-      unique.add(normalize(id));
-    }
+    states().forEach((item) => {
+      if (!item.entity_id.startsWith('device_tracker.')) return;
+      if (normalize(item.state) !== 'home') return;
+      if (normalize(item.attributes?.source_type) !== 'router') return;
+      unique.add(normalize(item.attributes?.mac || item.attributes?.hostname || item.attributes?.friendly_name || item.entity_id));
+    });
     return unique.size || null;
   }
 
   function statusValue(item) {
     if (!valid(item)) return NULL_TEXT;
     const value = normalize(item.state);
-    if (['on', 'connected', 'connesso', 'online', 'up', 'true', 'collegato'].includes(value)) return 'Connesso';
-    if (['off', 'disconnected', 'disconnesso', 'offline', 'down', 'false', 'scollegato'].includes(value)) return 'Disconnesso';
+    if (['on','connected','connesso','online','up','true','collegato'].includes(value)) return 'Connesso';
+    if (['off','disconnected','disconnesso','offline','down','false','scollegato'].includes(value)) return 'Disconnesso';
     return String(item.state);
   }
 
   function parseNumber(value) {
     const text = String(value ?? '').trim();
     if (!text) return null;
-    const normalized = text
-      .replace(/\.(?=\d{3}(?:\D|$))/g, '')
-      .replace(',', '.');
-    const parsed = Number(normalized);
+    const parsed = Number(text.replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.'));
     return Number.isFinite(parsed) ? parsed : null;
   }
 
@@ -210,16 +141,15 @@
 
     if (deviceClass === 'timestamp' || /^\d{4}-\d{2}-\d{2}[t ]/i.test(raw)) {
       const timestamp = Date.parse(raw);
-      if (Number.isFinite(timestamp)) return Math.max(0, (Date.now() - timestamp) / 1000);
+      return Number.isFinite(timestamp) ? Math.max(0, (Date.now() - timestamp) / 1000) : null;
     }
 
     if (numeric !== null) {
       if (unit.includes('millisecond') || unit === 'ms') return numeric / 1000;
-      if (unit.includes('second') || unit === 's' || unit === 'sec') return numeric;
+      if (unit.includes('second') || ['s','sec'].includes(unit)) return numeric;
       if (unit.includes('minute') || unit === 'min') return numeric * 60;
       if (unit.includes('hour') || unit.includes('ora') || unit === 'h') return numeric * 3600;
       if (unit.includes('day') || unit.includes('giorn') || unit === 'd') return numeric * 86400;
-
       if (numeric > 1_000_000_000_000) return Math.max(0, (Date.now() - numeric) / 1000);
       if (numeric > 1_000_000_000) return Math.max(0, Date.now() / 1000 - numeric);
       return numeric;
@@ -227,36 +157,32 @@
 
     const iso = raw.match(/^P(?:(\d+(?:[.,]\d+)?)D)?(?:T(?:(\d+(?:[.,]\d+)?)H)?(?:(\d+(?:[.,]\d+)?)M)?(?:(\d+(?:[.,]\d+)?)S)?)?$/i);
     if (iso) {
-      return parseNumber(iso[1]) * 86400
-        + parseNumber(iso[2]) * 3600
-        + parseNumber(iso[3]) * 60
-        + parseNumber(iso[4]);
+      return (parseNumber(iso[1]) || 0) * 86400
+        + (parseNumber(iso[2]) || 0) * 3600
+        + (parseNumber(iso[3]) || 0) * 60
+        + (parseNumber(iso[4]) || 0);
     }
 
     const dayClock = raw.match(/^(\d+)\s+(?:day|days|giorno|giorni),?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?$/i);
     if (dayClock) {
-      return Number(dayClock[1]) * 86400
-        + Number(dayClock[2]) * 3600
-        + Number(dayClock[3]) * 60
-        + Number(dayClock[4] || 0);
+      return Number(dayClock[1]) * 86400 + Number(dayClock[2]) * 3600 + Number(dayClock[3]) * 60 + Number(dayClock[4] || 0);
     }
 
     const clock = raw.match(/^(\d{1,4}):(\d{2})(?::(\d{2}))?$/);
     if (clock) return Number(clock[1]) * 3600 + Number(clock[2]) * 60 + Number(clock[3] || 0);
 
-    let seconds = 0;
     const text = normalize(raw);
-    const rules = [
+    let seconds = 0;
+    [
       [/([\d.,]+)\s*(?:giorno|giorni|day|days|d)\b/i, 86400],
       [/([\d.,]+)\s*(?:ora|ore|hour|hours|h)\b/i, 3600],
       [/([\d.,]+)\s*(?:minuto|minuti|minute|minutes|min)\b/i, 60],
       [/([\d.,]+)\s*(?:secondo|secondi|second|seconds|sec|s)\b/i, 1]
-    ];
-    for (const [pattern, multiplier] of rules) {
+    ].forEach(([pattern, multiplier]) => {
       const match = text.match(pattern);
       if (match) seconds += (parseNumber(match[1]) || 0) * multiplier;
-    }
-    return seconds > 0 ? seconds : null;
+    });
+    return seconds || null;
   }
 
   function durationValue(item) {
@@ -275,7 +201,7 @@
     return parts.join(' ');
   }
 
-  function rateValue(item, mode = 'traffic') {
+  function rateValue(item) {
     if (!valid(item)) return NULL_TEXT;
     const numeric = parseNumber(item.state);
     const rawUnit = String(item.attributes?.unit_of_measurement || '').trim();
@@ -300,10 +226,8 @@
 
   function genericValue(item, kind = 'generic') {
     if (!valid(item)) return NULL_TEXT;
-    if (kind === 'status') return statusValue(item);
     if (kind === 'duration') return durationValue(item);
-    if (kind === 'link') return rateValue(item, 'link');
-    if (kind === 'traffic') return rateValue(item, 'traffic');
+    if (kind === 'rate') return rateValue(item);
     if (kind === 'ip') return String(item.state);
 
     const numeric = parseNumber(item.state);
@@ -315,131 +239,95 @@
 
   function collectData() {
     resolveSensors();
-    const wanEntity = entity('wan') || entity('connection');
+    const devices = countConnectedDevices();
     return {
-      wan: statusValue(wanEntity),
+      wan: statusValue(entity('wan') || entity('connection')),
       externalIp: genericValue(entity('externalIp'), 'ip'),
-      maxDown: genericValue(entity('maxDown'), 'link'),
-      maxUp: genericValue(entity('maxUp'), 'link'),
-      currentDown: genericValue(entity('currentDown'), 'traffic'),
-      currentUp: genericValue(entity('currentUp'), 'traffic'),
+      maxDown: genericValue(entity('maxDown'), 'rate'),
+      maxUp: genericValue(entity('maxUp'), 'rate'),
+      currentDown: genericValue(entity('currentDown'), 'rate'),
+      currentUp: genericValue(entity('currentUp'), 'rate'),
       uptimeConnection: genericValue(entity('uptimeConnection'), 'duration'),
       uptimeDevice: genericValue(entity('uptimeDevice'), 'duration'),
       cpuTemp: genericValue(entity('cpuTemp'), 'temperature'),
       gbReceived: genericValue(entity('gbReceived')),
       gbSent: genericValue(entity('gbSent')),
-      devices: countConnectedDevices()
+      devices: Number.isFinite(devices) ? String(devices) : NULL_TEXT
     };
   }
 
-  function metric(label, value) {
-    const nullClass = value === NULL_TEXT ? ' ha-null-value' : '';
-    return `<div><small>${escapeHtml(label)}</small><strong class="${nullClass.trim()}">${escapeHtml(value)}</strong></div>`;
+  function findCard(title) {
+    const wanted = normalize(title);
+    return [...document.querySelectorAll('.card')].find((card) =>
+      normalize(card.querySelector('.card-head .title')?.textContent) === wanted
+    ) || null;
   }
 
-  function card(title, value, icon, rows, extra = '') {
-    const nullClass = value === NULL_TEXT ? ' ha-null-value' : '';
-    return `<section class="card network-card modern-network-card">
-      <div class="card-head"><span class="title"><i class="fa-solid ${icon}"></i> ${escapeHtml(title)}</span><strong class="${nullClass.trim()}">${escapeHtml(value)}</strong></div>
-      <div class="metric-grid two">${rows.map(([label, rowValue]) => metric(label, rowValue)).join('')}</div>
-      ${extra}
-    </section>`;
+  function setText(node, value) {
+    if (!node) return;
+    if (node.textContent !== value) node.textContent = value;
+    node.classList.toggle('ha-null-value', value === NULL_TEXT);
   }
 
-  function renderNetwork(data, force = false) {
-    if (currentView() !== 'rete') return;
-    const left = document.querySelector('#left-rail');
-    const right = document.querySelector('#right-rail');
-    if (!left || !right) return;
-
-    const signature = JSON.stringify(data);
-    const modernAlready = Boolean(left.querySelector('.modern-network-card') && right.querySelector('.modern-network-card'));
-    if (!force && modernAlready && signature === lastNetworkSignature) {
-      document.body.classList.remove('modern-network-pending');
-      return;
-    }
-
-    rendering = true;
-    left.innerHTML =
-      card('FRITZ!Box 7690', data.wan, 'fa-router', [
-        ['Link download', data.maxDown],
-        ['Link upload', data.maxUp],
-        ['Traffico download', data.currentDown],
-        ['Traffico upload', data.currentUp]
-      ]) +
-      card('Connessione WAN', data.wan, 'fa-globe', [
-        ['IP esterno', data.externalIp],
-        ['Uptime connessione', data.uptimeConnection],
-        ['Temperatura CPU', data.cpuTemp],
-        ['Uptime FRITZ!Box', data.uptimeDevice]
-      ]);
-
-    const devices = Number.isFinite(data.devices) ? String(data.devices) : NULL_TEXT;
-    right.innerHTML =
-      card('Dispositivi connessi', devices, 'fa-laptop-house', [
-        ['Totale online', devices],
-        ['Dati ricevuti', data.gbReceived],
-        ['Dati inviati', data.gbSent],
-        ['Stato WAN', data.wan]
-      ]) +
-      card('Riepilogo linea', data.maxDown, 'fa-network-wired', [
-        ['Download massimo', data.maxDown],
-        ['Upload massimo', data.maxUp],
-        ['Download attuale', data.currentDown],
-        ['Upload attuale', data.currentUp]
-      ], '<div class="card-actions"><button data-action="network-test"><i class="fa-solid fa-rotate"></i> Aggiorna dati</button></div>');
-
-    lastNetworkSignature = signature;
-    document.body.classList.remove('modern-network-pending');
-    requestAnimationFrame(() => { rendering = false; });
-  }
-
-  function renderOverview(data) {
-    if (currentView() !== 'panoramica') return;
-    const networkCard = [...document.querySelectorAll('.card')].find((node) =>
-      normalize(node.querySelector('.card-head .title')?.textContent) === 'rete'
+  function patchMetric(cardTitle, label, value) {
+    const card = findCard(cardTitle);
+    if (!card) return;
+    const wanted = normalize(label);
+    const row = [...card.querySelectorAll('.metric-grid > div')].find((item) =>
+      normalize(item.querySelector('small')?.textContent) === wanted
     );
-    if (!networkCard) return;
+    setText(row?.querySelector('strong'), value);
+  }
 
-    const devices = Number.isFinite(data.devices) ? String(data.devices) : NULL_TEXT;
-    const signature = JSON.stringify([data.wan, data.maxDown, data.maxUp, devices, data.uptimeConnection]);
-    if (signature === lastOverviewSignature) return;
+  function patchHeader(cardTitle, value) {
+    setText(findCard(cardTitle)?.querySelector('.card-head > strong'), value);
+  }
 
-    const header = networkCard.querySelector('.card-head > strong');
-    if (header) header.textContent = data.wan;
-    const rows = [
-      ['Download', data.maxDown],
-      ['Upload', data.maxUp],
-      ['Dispositivi', devices],
-      ['Uptime', data.uptimeConnection]
-    ];
-    [...networkCard.querySelectorAll('.metric-grid > div')].forEach((cell, index) => {
-      const row = rows[index];
-      if (!row) return;
-      const label = cell.querySelector('small');
-      const value = cell.querySelector('strong');
-      if (label) label.textContent = row[0];
-      if (value) {
-        value.textContent = row[1];
-        value.classList.toggle('ha-null-value', row[1] === NULL_TEXT);
-      }
-    });
-    lastOverviewSignature = signature;
+  function patchNetworkView(data) {
+    if (currentView() !== 'rete') return;
+
+    patchHeader('FRITZ!Box 7690', data.wan);
+    patchMetric('FRITZ!Box 7690', 'Link download', data.maxDown);
+    patchMetric('FRITZ!Box 7690', 'Link upload', data.maxUp);
+    patchMetric('FRITZ!Box 7690', 'Traffico download', data.currentDown);
+    patchMetric('FRITZ!Box 7690', 'Traffico upload', data.currentUp);
+
+    patchHeader('Connessione WAN', data.wan);
+    patchMetric('Connessione WAN', 'IP esterno', data.externalIp);
+    patchMetric('Connessione WAN', 'Uptime connessione', data.uptimeConnection);
+    patchMetric('Connessione WAN', 'Temperatura CPU', data.cpuTemp);
+    patchMetric('Connessione WAN', 'Uptime FRITZ!Box', data.uptimeDevice);
+
+    patchHeader('Dispositivi connessi', data.devices);
+    patchMetric('Dispositivi connessi', 'Totale online', data.devices);
+    patchMetric('Dispositivi connessi', 'Dati ricevuti', data.gbReceived);
+    patchMetric('Dispositivi connessi', 'Dati inviati', data.gbSent);
+    patchMetric('Dispositivi connessi', 'Stato WAN', data.wan);
+
+    patchHeader('Riepilogo linea', data.maxDown);
+    patchMetric('Riepilogo linea', 'Download massimo', data.maxDown);
+    patchMetric('Riepilogo linea', 'Upload massimo', data.maxUp);
+    patchMetric('Riepilogo linea', 'Download attuale', data.currentDown);
+    patchMetric('Riepilogo linea', 'Upload attuale', data.currentUp);
+  }
+
+  function patchOverview(data) {
+    if (currentView() !== 'panoramica') return;
+    patchHeader('Rete', data.wan);
+    patchMetric('Rete', 'Download', data.maxDown);
+    patchMetric('Rete', 'Upload', data.maxUp);
+    patchMetric('Rete', 'Dispositivi', data.devices);
+    patchMetric('Rete', 'Uptime', data.uptimeConnection);
   }
 
   function apply(force = false) {
-    if (document.hidden) return;
+    if (document.hidden || !connected()) return;
     const view = currentView();
     if (!['rete', 'panoramica'].includes(view)) return;
-    if (force) resolveSensors(true);
-    const data = connected() ? collectData() : {
-      wan: NULL_TEXT, externalIp: NULL_TEXT, maxDown: NULL_TEXT, maxUp: NULL_TEXT,
-      currentDown: NULL_TEXT, currentUp: NULL_TEXT, uptimeConnection: NULL_TEXT,
-      uptimeDevice: NULL_TEXT, cpuTemp: NULL_TEXT, gbReceived: NULL_TEXT,
-      gbSent: NULL_TEXT, devices: null
-    };
-    renderNetwork(data, force);
-    renderOverview(data);
+    resolveSensors(force);
+    const data = collectData();
+    patchNetworkView(data);
+    patchOverview(data);
     window.CASA_FRITZBOX = data;
   }
 
@@ -451,16 +339,11 @@
     });
   }
 
-  document.addEventListener('click', (event) => {
-    const viewButton = event.target.closest('[data-view]');
-    if (!viewButton) return;
-    if (viewButton.dataset.view === 'network') {
-      document.body.classList.add('modern-network-pending');
-      setTimeout(() => schedule(true), 0);
-    } else {
-      document.body.classList.remove('modern-network-pending');
-    }
-  }, true);
+  const observer = new MutationObserver(() => schedule(false));
+  const left = document.querySelector('#left-rail');
+  const right = document.querySelector('#right-rail');
+  if (left) observer.observe(left, { childList: true, subtree: false });
+  if (right) observer.observe(right, { childList: true, subtree: false });
 
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-action="network-test"]')) {
@@ -469,36 +352,6 @@
     }
   });
 
-  const railObserver = new MutationObserver(() => {
-    if (rendering) return;
-    const view = currentView();
-    if (view === 'rete') {
-      const left = document.querySelector('#left-rail');
-      const right = document.querySelector('#right-rail');
-      const modern = Boolean(left?.querySelector('.modern-network-card') && right?.querySelector('.modern-network-card'));
-      if (!modern) {
-        document.body.classList.add('modern-network-pending');
-        schedule(false);
-      }
-    } else if (view === 'panoramica') {
-      schedule(false);
-    }
-  });
-
-  const leftRail = document.querySelector('#left-rail');
-  const rightRail = document.querySelector('#right-rail');
-  if (leftRail) railObserver.observe(leftRail, { childList: true });
-  if (rightRail) railObserver.observe(rightRail, { childList: true });
-
-  const style = document.createElement('style');
-  style.textContent = `
-    body.modern-network-pending #left-rail > *,
-    body.modern-network-pending #right-rail > * {
-      visibility: hidden !important;
-    }
-  `;
-  document.head.appendChild(style);
-
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) schedule(true);
   });
@@ -506,7 +359,7 @@
   timer = setInterval(() => schedule(false), UPDATE_MS);
   window.addEventListener('beforeunload', () => {
     clearInterval(timer);
-    railObserver.disconnect();
+    observer.disconnect();
   });
 
   schedule(true);
