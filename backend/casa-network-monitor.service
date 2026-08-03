@@ -6,10 +6,10 @@ After=network-online.target
 [Service]
 Type=simple
 DynamicUser=yes
-WorkingDirectory=/opt/casa/backend
+WorkingDirectory=/opt/casa-repo/backend
 EnvironmentFile=-/etc/casa-network-monitor.env
 Environment=DATA_DIR=/var/lib/casa-network-monitor
-ExecStart=/usr/bin/python3 /opt/casa/backend/network_monitor.py
+ExecStart=/usr/bin/python3 /opt/casa-repo/backend/network_monitor.py
 Restart=always
 RestartSec=5
 StateDirectory=casa-network-monitor
