@@ -3,11 +3,25 @@
 
   const config = window.CASA_DASHBOARD_CONFIG || {};
   const endpoint = config.networkMonitorUrl || '/api/network-status';
-  const UPDATE_MS = 15000;
+  const UPDATE_MS = 5000;
   const UI_GUARD_MS = 250;
   const STORAGE_KEY = 'casa-network-monitor-last-status';
   const PRIMARY_RATE = '2,5 Gbit/s';
   const BACKUP_RATE = '1 Gbit/s';
+  const TIME_ZONE = 'Europe/Rome';
+
+  const timeFormatter = new Intl.DateTimeFormat('it-IT', {
+    timeZone: TIME_ZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const dateFormatter = new Intl.DateTimeFormat('it-IT', {
+    timeZone: TIME_ZONE,
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  });
 
   let cached = loadCachedStatus();
   let failures = 0;
@@ -49,10 +63,30 @@
     return `${hours} h${remaining ? ` ${remaining} min` : ''}`;
   }
 
+  function updateClock() {
+    const now = new Date();
+    const clock = document.querySelector('#clock');
+    const date = document.querySelector('#date');
+    const timeText = timeFormatter.format(now);
+    const dateText = dateFormatter.format(now).replace(/\./g, '');
+    if (clock && clock.textContent !== timeText) clock.textContent = timeText;
+    if (date && date.textContent !== dateText) date.textContent = dateText;
+  }
+
+  function removeHaPill() {
+    document.querySelector('#ha-pill')?.remove();
+  }
+
   function findCard(title) {
     const wanted = normalize(title);
     return [...document.querySelectorAll('.card')].find((card) =>
       normalize(card.querySelector('.card-head .title')?.textContent) === wanted
+    ) || null;
+  }
+
+  function findFritzCard() {
+    return [...document.querySelectorAll('.card')].find((card) =>
+      normalize(card.querySelector('.card-head .title')?.textContent).startsWith('fritz box 7690')
     ) || null;
   }
 
@@ -62,6 +96,16 @@
       normalize(item.querySelector('small')?.textContent) === wanted
     );
     return row?.querySelector('strong') || null;
+  }
+
+  function labeledValueNode(card, label) {
+    const wanted = normalize(label);
+    const labelNode = [...(card?.querySelectorAll('small, span') || [])].find((node) =>
+      normalize(node.textContent) === wanted
+    );
+    if (!labelNode) return null;
+    const parent = labelNode.parentElement;
+    return parent?.querySelector(':scope > strong') || parent?.querySelector('strong') || null;
   }
 
   function setText(node, value) {
@@ -75,8 +119,12 @@
     if (node && node.innerHTML !== value) node.innerHTML = value;
   }
 
+  function effectiveLink() {
+    return String(cached?.link || 'unknown').toLowerCase();
+  }
+
   function effectiveRate() {
-    const link = String(cached?.link || '').toLowerCase();
+    const link = effectiveLink();
     if (link === 'backup') return BACKUP_RATE;
     if (link === 'primary') return PRIMARY_RATE;
     return null;
@@ -92,7 +140,7 @@
     if (!pill || !cached) return;
 
     const healthy = cached.healthy === true;
-    const link = String(cached.link || 'unknown').toLowerCase();
+    const link = effectiveLink();
     let label = '5G stato sconosciuto';
     let cls = 'warn';
 
@@ -127,26 +175,46 @@
     const rate = effectiveRate();
     if (!rate) return;
 
-    // Panoramica: la card viene ricreata periodicamente dal renderer principale.
-    // La correzione avviene nella stessa microtask della mutazione, prima del paint.
     patchMetric('Internet', 'Download', rate);
     patchMetric('Internet', 'Upload', rate);
 
-    // Rete: mantiene stabili i due valori anche mentre FRITZ!Box aggiorna gli altri dati.
-    patchMetric('FRITZ!Box 7690 · FTTH', 'Link download', rate);
-    patchMetric('FRITZ!Box 7690 · FTTH', 'Link upload', rate);
+    const fritz = findFritzCard();
+    setText(metricNode(fritz, 'Link download'), rate);
+    setText(metricNode(fritz, 'Link upload'), rate);
 
     window.CASA_NETWORK_EFFECTIVE_RATE = rate;
-    document.documentElement.dataset.networkLink = String(cached?.link || 'unknown').toLowerCase();
+    document.documentElement.dataset.networkLink = effectiveLink();
+  }
+
+  function applyNetworkLabels() {
+    const link = effectiveLink();
+    if (!['primary', 'backup'].includes(link)) return;
+
+    const fritz = findFritzCard();
+    const fritzTitle = fritz?.querySelector('.card-head .title');
+    if (fritzTitle) {
+      const wanted = link === 'backup' ? 'FRITZ!Box 7690 · 5G' : 'FRITZ!Box 7690 · FTTH';
+      const icon = fritzTitle.querySelector('i')?.outerHTML || '<i class="fa-solid fa-router"></i>';
+      setHtml(fritzTitle, `${icon} ${wanted}`);
+    }
+
+    const devicesCard = findCard('Dispositivi connessi');
+    const wanValue = labeledValueNode(devicesCard, 'Stato WAN');
+    setText(wanValue, link === 'backup' ? 'Connesso (Failover 5G)' : 'Connesso');
   }
 
   function apply() {
-    if (applying || !cached) return;
+    if (applying) return;
     applying = true;
     try {
-      applyPill();
-      applyRates();
-      window.CASA_NETWORK_MONITOR = cached;
+      updateClock();
+      removeHaPill();
+      if (cached) {
+        applyPill();
+        applyRates();
+        applyNetworkLabels();
+        window.CASA_NETWORK_MONITOR = cached;
+      }
     } finally {
       applying = false;
     }
@@ -180,8 +248,6 @@
     }
   }
 
-  // MutationObserver viene eseguito prima del rendering del frame: nessun passaggio
-  // visibile da NULL ai valori corretti durante il refresh ogni cinque secondi.
   const observer = new MutationObserver(() => {
     if (!applying) apply();
   });
@@ -193,12 +259,17 @@
 
   const refreshTimer = setInterval(refresh, UPDATE_MS);
   const guardTimer = setInterval(apply, UI_GUARD_MS);
+  const clockTimer = setInterval(updateClock, 1000);
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) refresh();
+    if (!document.hidden) {
+      updateClock();
+      refresh();
+    }
   });
   window.addEventListener('beforeunload', () => {
     clearInterval(refreshTimer);
     clearInterval(guardTimer);
+    clearInterval(clockTimer);
     observer.disconnect();
   });
 
