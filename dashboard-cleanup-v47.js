@@ -2,6 +2,7 @@
   'use strict';
 
   const NULL_TEXT = 'NULL';
+  const EXPECTED_SHUTTERS = 10;
   let scheduled = false;
 
   const normalize = (value) => String(value ?? '')
@@ -53,16 +54,15 @@
     const card = findCard('Fotovoltaico casa');
     if (!card) return;
 
-    const view = currentView();
-    const items = view === 'energia'
+    // Usa la voce già presente nella griglia Fronius, senza creare una seconda card.
+    setText(metricNode(card, 'Potenza pannelli'), '3 kW');
+
+    const items = currentView() === 'energia'
       ? [
-          ['Potenza pannelli', '3 kW'],
           ['Costo energia', '0,287 €/kWh'],
           ['Fornitore', 'Alperia'],
         ]
-      : view === 'panoramica'
-        ? [['Potenza pannelli', '3 kW']]
-        : [];
+      : [];
 
     let strip = card.querySelector('.pv-system-strip');
     if (!items.length) {
@@ -86,45 +86,130 @@
     ).join('');
   }
 
-  function configuredCoverIds() {
-    const ids = new Set();
-    const add = (value) => {
-      if (Array.isArray(value)) value.forEach(add);
-      else if (typeof value === 'string' && value.startsWith('cover.')) ids.add(value);
-    };
-
-    (window.CASA_ROOMS || []).forEach((room) => {
-      add(room?.entities?.cover);
-      add(room?.candidates?.cover);
+  function compactUptimeDays() {
+    document.querySelectorAll('.card strong').forEach((node) => {
+      const value = node.textContent || '';
+      const compact = value.replace(/(\d+)\s+(?:giorno|giorni)\b/gi, '$1 gg');
+      if (compact !== value) node.textContent = compact;
     });
-
-    return [...ids].filter((entityId) => states().has(entityId));
   }
 
-  function liveCoverSnapshot() {
-    if (!connected()) return null;
-    const ids = configuredCoverIds();
-    if (ids.length !== 10) return null;
+  function validCover(entity) {
+    return Boolean(
+      entity
+      && entity.entity_id?.startsWith('cover.')
+      && !['unknown', 'unavailable', 'none', 'null', ''].includes(normalize(entity.state))
+    );
+  }
 
-    const positions = ids.map((entityId) => {
-      const entity = states().get(entityId);
-      const current = Number(entity?.attributes?.current_position);
-      if (Number.isFinite(current)) return Math.max(0, Math.min(100, current));
-      if (entity?.state === 'open') return 100;
-      if (entity?.state === 'closed') return 0;
-      return 50;
+  function coverText(entity) {
+    return normalize([
+      entity?.entity_id,
+      entity?.attributes?.friendly_name,
+      entity?.attributes?.device_class,
+    ].filter(Boolean).join(' '));
+  }
+
+  function excludedCover(entity) {
+    const text = coverText(entity);
+    return [
+      'tutte le tapparelle', 'tutte tapparelle', 'all shutters', 'all covers',
+      'gruppo tapparelle', 'cover group', 'garage', 'cancello', 'gate',
+      'porta', 'door', 'tenda', 'awning',
+    ].some((token) => text.includes(normalize(token)));
+  }
+
+  function configuredCandidates(room) {
+    const values = [];
+    const primary = room?.entities?.cover;
+    const candidates = room?.candidates?.cover;
+    if (Array.isArray(primary)) values.push(...primary); else if (primary) values.push(primary);
+    if (Array.isArray(candidates)) values.push(...candidates); else if (candidates) values.push(candidates);
+    return [...new Set(values.filter(Boolean))];
+  }
+
+  function roomTokens(room) {
+    return [room?.name, ...(room?.aliases || [])]
+      .map(normalize)
+      .filter((token) => token.length >= 4)
+      .sort((a, b) => b.length - a.length);
+  }
+
+  function fuzzyScore(entity, room) {
+    const text = coverText(entity);
+    const tokens = roomTokens(room);
+    let score = 0;
+
+    tokens.forEach((token, index) => {
+      if (!token || !text.includes(token)) return;
+      score = Math.max(score, 70 + token.split(' ').length * 15 + Math.max(0, 10 - index));
     });
 
-    return {
-      total: 10,
-      open: positions.filter((value) => value > 80).length,
-      closed: positions.filter((value) => value < 10).length,
-      average: positions.reduce((sum, value) => sum + value, 0) / positions.length,
-    };
+    if (text.includes('tapparella') || text.includes('shutter') || text.includes('blind')) score += 12;
+    return score;
+  }
+
+  function discoverCovers() {
+    if (!connected()) return [];
+
+    const map = states();
+    const available = [...map.values()].filter((entity) => validCover(entity) && !excludedCover(entity));
+    const used = new Set();
+    const resolved = [];
+    const rooms = (window.CASA_ROOMS || []).filter((room) => configuredCandidates(room).length);
+
+    rooms.forEach((room) => {
+      let match = configuredCandidates(room)
+        .map((entityId) => map.get(entityId))
+        .find((entity) => validCover(entity) && !used.has(entity.entity_id));
+
+      if (!match) {
+        match = available
+          .filter((entity) => !used.has(entity.entity_id))
+          .map((entity) => ({ entity, score: fuzzyScore(entity, room) }))
+          .sort((a, b) => b.score - a.score)
+          .find((item) => item.score >= 70)?.entity || null;
+      }
+
+      if (match) {
+        used.add(match.entity_id);
+        resolved.push(match);
+      }
+    });
+
+    // Completa con eventuali tapparelle reali non associate a una stanza per nome.
+    available.forEach((entity) => {
+      if (resolved.length >= EXPECTED_SHUTTERS || used.has(entity.entity_id)) return;
+      used.add(entity.entity_id);
+      resolved.push(entity);
+    });
+
+    return resolved.slice(0, EXPECTED_SHUTTERS);
+  }
+
+  function coverPosition(entity) {
+    const current = Number(entity?.attributes?.current_position);
+    if (Number.isFinite(current)) return Math.max(0, Math.min(100, current));
+    const state = normalize(entity?.state);
+    if (state === 'closed') return 0;
+    if (['open', 'opening', 'closing'].includes(state)) return 100;
+    return null;
   }
 
   function coverSnapshot() {
-    return liveCoverSnapshot() || { total: 10, open: 0, closed: 10, average: 0 };
+    const covers = discoverCovers();
+    if (!covers.length) return { total: EXPECTED_SHUTTERS, open: 0, closed: EXPECTED_SHUTTERS, average: 0 };
+
+    const positions = covers.map(coverPosition);
+    const knownPositions = positions.filter(Number.isFinite);
+    const open = positions.filter((value) => Number.isFinite(value) && value > 1).length;
+    const explicitlyClosed = positions.filter((value) => Number.isFinite(value) && value <= 1).length;
+    const unresolved = Math.max(0, EXPECTED_SHUTTERS - open - explicitlyClosed);
+    const closed = explicitlyClosed + unresolved;
+    const average = [...knownPositions, ...Array(unresolved).fill(0)]
+      .reduce((sum, value) => sum + value, 0) / EXPECTED_SHUTTERS;
+
+    return { total: EXPECTED_SHUTTERS, open, closed, average };
   }
 
   function patchShutters() {
@@ -178,6 +263,7 @@
     removeCard('Videocitofono');
     patchTechnology();
     patchSolarMetadata();
+    compactUptimeDays();
     patchShutters();
   }
 
