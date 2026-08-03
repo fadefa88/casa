@@ -309,7 +309,7 @@
     right.innerHTML = card({ title: 'Comfort e stanze', value: `${fmt.format(average('temperature'))} °C`, icon: 'fa-house', target: 'rooms', body: `<div class="overview-kpis">
       <div class="overview-kpi"><i class="fa-solid fa-temperature-half"></i><small>Media interna</small><strong>${fmt.format(average('temperature'))} °C</strong></div><div class="overview-kpi"><i class="fa-solid fa-droplet"></i><small>Umidità</small><strong>${Math.round(average('humidity'))}%</strong></div><div class="overview-kpi"><i class="fa-solid fa-lightbulb"></i><small>Luci accese</small><strong>${lightsOn()}</strong></div><div class="overview-kpi"><i class="fa-solid fa-window-maximize"></i><small>Tapparelle</small><strong>${Math.round(shuttersAverage())}%</strong></div></div>` }) +
       card({ title: 'Sicurezza', value: alarmLabel(), icon: 'fa-shield-halved', target: 'security', body: `<div class="status-line"><span>Allarme</span><strong>${alarmLabel()}</strong></div><div class="status-line"><span>Videocitofono</span><strong>${stateOf(globalEntity('doorbellCamera')) ? 'Online' : 'Da configurare'}</strong></div><div class="status-line"><span>Luci accese</span><strong>${lightsOn()}</strong></div>` }) +
-      card({ title: 'Rete', value: `${fmt.format(data.networkPing)} ms`, icon: 'fa-network-wired', cls: 'network-card', target: 'network', body: metrics([['Download', speed(data.networkLinkDown)], ['Upload', speed(data.networkLinkUp)], ['Dispositivi', data.networkClients], ['Backup 5G', data.backup5gStatus]]) });
+      card({ title: 'Internet', value: 'NULL', icon: 'fa-network-wired', cls: 'network-card', target: 'network', body: metrics([['Download', 'NULL'], ['Upload', 'NULL'], ['Dispositivi', 'NULL'], ['Uptime', 'NULL']]) });
     context.hidden = true;
   }
 
@@ -352,11 +352,11 @@
   function networkView() {
     const nullMetrics = (items) => metrics(items.map((label) => [label, 'NULL']));
     left.innerHTML =
-      card({ title: 'FRITZ!Box 7690', value: 'NULL', icon: 'fa-router', cls: 'network-card modern-network-card', body: nullMetrics(['Link download', 'Link upload', 'Traffico download', 'Traffico upload']) }) +
+      card({ title: 'FRITZ!Box 7690 · FTTH', value: 'NULL', icon: 'fa-router', cls: 'network-card modern-network-card', body: nullMetrics(['Link download', 'Link upload', 'Traffico download', 'Traffico upload']) }) +
       card({ title: 'Connessione WAN', value: 'NULL', icon: 'fa-globe', cls: 'network-card modern-network-card', body: nullMetrics(['IP esterno', 'Uptime connessione', 'Temperatura CPU', 'Uptime FRITZ!Box']) });
     right.innerHTML =
       card({ title: 'Dispositivi connessi', value: 'NULL', icon: 'fa-laptop-house', cls: 'network-card modern-network-card', body: nullMetrics(['Totale online', 'Dati ricevuti', 'Dati inviati', 'Stato WAN']) }) +
-      card({ title: 'Riepilogo linea', value: 'NULL', icon: 'fa-network-wired', cls: 'network-card modern-network-card', body: `${nullMetrics(['Download massimo', 'Upload massimo', 'Download attuale', 'Upload attuale'])}<div class="card-actions"><button data-action="network-test"><i class="fa-solid fa-rotate"></i> Aggiorna dati</button></div>` });
+      card({ title: 'Riepilogo linea', value: 'NULL', icon: 'fa-network-wired', cls: 'network-card modern-network-card', body: nullMetrics(['Download massimo', 'Upload massimo', 'Download attuale', 'Upload attuale']) });
     context.hidden = true;
   }
 
@@ -411,7 +411,6 @@
     else if (action === 'alarm-disarm') await callService('alarm_control_panel', 'alarm_disarm', globalEntity('alarm'), {}, button);
     else if (action === 'open-intercom') openIntercom();
     else if (action === 'open-gate') await callService('button', 'press', globalEntity('gateButton'), {}, button);
-    else if (action === 'network-test') { await syncHomeAssistant(); toast(ui.connected ? 'Dati aggiornati' : 'Modalità demo'); }
     render();
   }
 
@@ -440,7 +439,7 @@
   $('#close-intercom')?.addEventListener('click', () => $('#intercom-modal')?.close());
   const loading = $('#loading');
   if (loading) loading.style.pointerEvents = 'none';
-  window.CASA_DASHBOARD_READY = 'live-v45';
+  window.CASA_DASHBOARD_READY = 'live-v46';
   window.CASA_HA = { sync: syncHomeAssistant, service: callService, state: ui };
   render();
   syncHomeAssistant();
