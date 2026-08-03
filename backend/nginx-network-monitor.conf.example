@@ -1,0 +1,17 @@
+# Inserire questo blocco dentro il server {} che pubblica la dashboard.
+# Il browser interroga lo stesso origin; il controllo IP esterno resta nel backend.
+location = /api/network-status {
+    proxy_pass http://127.0.0.1:8787/api/network-status;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_cache_bypass 1;
+    add_header Cache-Control "no-store" always;
+}
+
+location = /api/network-health {
+    proxy_pass http://127.0.0.1:8787/healthz;
+    proxy_http_version 1.1;
+    proxy_cache_bypass 1;
+    add_header Cache-Control "no-store" always;
+}
