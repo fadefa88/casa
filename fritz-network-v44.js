@@ -286,11 +286,11 @@
   function patchNetworkView(data) {
     if (currentView() !== 'rete') return;
 
-    patchHeader('FRITZ!Box 7690', data.wan);
-    patchMetric('FRITZ!Box 7690', 'Link download', data.maxDown);
-    patchMetric('FRITZ!Box 7690', 'Link upload', data.maxUp);
-    patchMetric('FRITZ!Box 7690', 'Traffico download', data.currentDown);
-    patchMetric('FRITZ!Box 7690', 'Traffico upload', data.currentUp);
+    patchHeader('FRITZ!Box 7690 · FTTH', data.wan);
+    patchMetric('FRITZ!Box 7690 · FTTH', 'Link download', data.maxDown);
+    patchMetric('FRITZ!Box 7690 · FTTH', 'Link upload', data.maxUp);
+    patchMetric('FRITZ!Box 7690 · FTTH', 'Traffico download', data.currentDown);
+    patchMetric('FRITZ!Box 7690 · FTTH', 'Traffico upload', data.currentUp);
 
     patchHeader('Connessione WAN', data.wan);
     patchMetric('Connessione WAN', 'IP esterno', data.externalIp);
@@ -313,11 +313,11 @@
 
   function patchOverview(data) {
     if (currentView() !== 'panoramica') return;
-    patchHeader('Rete', data.wan);
-    patchMetric('Rete', 'Download', data.maxDown);
-    patchMetric('Rete', 'Upload', data.maxUp);
-    patchMetric('Rete', 'Dispositivi', data.devices);
-    patchMetric('Rete', 'Uptime', data.uptimeConnection);
+    patchHeader('Internet', data.wan);
+    patchMetric('Internet', 'Download', data.maxDown);
+    patchMetric('Internet', 'Upload', data.maxUp);
+    patchMetric('Internet', 'Dispositivi', data.devices);
+    patchMetric('Internet', 'Uptime', data.uptimeConnection);
   }
 
   function apply(force = false) {
@@ -344,13 +344,6 @@
   const right = document.querySelector('#right-rail');
   if (left) observer.observe(left, { childList: true, subtree: false });
   if (right) observer.observe(right, { childList: true, subtree: false });
-
-  document.addEventListener('click', (event) => {
-    if (event.target.closest('[data-action="network-test"]')) {
-      lastResolve = 0;
-      setTimeout(() => schedule(true), 50);
-    }
-  });
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) schedule(true);
