@@ -24,6 +24,16 @@
     return window.CASA_HA?.state?.connected === true;
   }
 
+  function setText(node, value) {
+    if (!node) return;
+    if (node.textContent !== value) node.textContent = value;
+    node.dataset.haNull = 'true';
+  }
+
+  function setHtml(node, value) {
+    if (node && node.innerHTML !== value) node.innerHTML = value;
+  }
+
   function applyNullState() {
     const offline = !isConnected();
     document.body.classList.toggle('ha-offline-null', offline);
@@ -31,21 +41,17 @@
     if (!offline) return;
 
     document.querySelectorAll(VALUE_SELECTORS.join(',')).forEach((node) => {
-      node.textContent = NULL_TEXT;
-      node.dataset.haNull = 'true';
+      setText(node, NULL_TEXT);
     });
 
-    const alarm = document.querySelector('#alarm-pill');
-    const internet = document.querySelector('#internet-pill');
-    const backup = document.querySelector('#backup-pill');
-    const ha = document.querySelector('#ha-pill');
+    setHtml(document.querySelector('#alarm-pill'), '<i class="fa-solid fa-shield-halved"></i> NULL');
+    setHtml(document.querySelector('#internet-pill'), '<i class="fa-solid fa-globe"></i> NULL');
+    setHtml(document.querySelector('#backup-pill'), '<i class="fa-solid fa-tower-cell"></i> NULL');
 
-    if (alarm) alarm.innerHTML = '<i class="fa-solid fa-shield-halved"></i> NULL';
-    if (internet) internet.innerHTML = '<i class="fa-solid fa-globe"></i> NULL';
-    if (backup) backup.innerHTML = '<i class="fa-solid fa-tower-cell"></i> NULL';
+    const ha = document.querySelector('#ha-pill');
     if (ha) {
       ha.className = 'pill bad';
-      ha.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> HA OFFLINE · NULL';
+      setHtml(ha, '<i class="fa-solid fa-triangle-exclamation"></i> HA OFFLINE · NULL');
     }
   }
 
