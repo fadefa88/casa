@@ -155,12 +155,20 @@
   function patchLightTile(tile, entity) {
     if (!tile || !entity) return;
     const status = normalize(entity.state);
-    tile.dataset.haDeviceToggle = entity.entity_id;
-    tile.removeAttribute('disabled');
-    tile.classList.remove('null', 'on', 'off');
-    tile.classList.add(status === 'on' ? 'on' : 'off');
+    const expectedClass = status === 'on' ? 'on' : 'off';
+    const expectedLabel = status === 'on' ? 'Accesa' : 'Spenta';
+
+    if (tile.dataset.haDeviceToggle !== entity.entity_id) {
+      tile.dataset.haDeviceToggle = entity.entity_id;
+    }
+    if (tile.hasAttribute('disabled')) tile.removeAttribute('disabled');
+    if (!tile.classList.contains(expectedClass) || tile.classList.contains('null')) {
+      tile.classList.remove('null', 'on', 'off');
+      tile.classList.add(expectedClass);
+    }
+
     const stateNode = tile.querySelector('.ha-device-copy small');
-    if (stateNode) stateNode.textContent = status === 'on' ? 'Accesa' : 'Spenta';
+    if (stateNode && stateNode.textContent !== expectedLabel) stateNode.textContent = expectedLabel;
   }
 
   function patchVanoTecnico() {
@@ -200,15 +208,17 @@
     if (!tile) return;
 
     tile.querySelectorAll('[data-ha-cover-action]').forEach((button) => {
-      button.dataset.entityId = entity.entity_id;
-      button.removeAttribute('disabled');
+      if (button.dataset.entityId !== entity.entity_id) button.dataset.entityId = entity.entity_id;
+      if (button.hasAttribute('disabled')) button.removeAttribute('disabled');
     });
 
     const status = coverStatus(entity);
-    tile.classList.remove('null', 'on', 'closed', 'moving');
-    tile.classList.add(status.cls);
+    if (!tile.classList.contains(status.cls) || tile.classList.contains('null')) {
+      tile.classList.remove('null', 'on', 'closed', 'moving');
+      tile.classList.add(status.cls);
+    }
     const stateNode = tile.querySelector('.ha-device-copy small');
-    if (stateNode) stateNode.textContent = status.label;
+    if (stateNode && stateNode.textContent !== status.label) stateNode.textContent = status.label;
   }
 
   function apply() {
@@ -223,10 +233,12 @@
     }
   }
 
+  // Osserva solo ricostruzioni del layout. Gli aggiornamenti testuali sono gestiti
+  // dal timer e non devono riattivare ricorsivamente il MutationObserver.
   const observer = new MutationObserver(() => {
-    if (!applying) apply();
+    if (!applying) requestAnimationFrame(apply);
   });
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  observer.observe(document.body, { childList: true, subtree: true });
 
   const timer = setInterval(apply, 500);
   window.addEventListener('beforeunload', () => {
