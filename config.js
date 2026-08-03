@@ -1,10 +1,11 @@
 window.CASA_DASHBOARD_CONFIG = {
   mode: 'auto',
-  demoFallback: true,
+  demoFallback: false,
+  showNullWhenOffline: true,
   refreshMs: 5000,
 
-  // Sostituire URL e token dopo il trasferimento sul server on-premise.
-  // Il token deve essere un Long-Lived Access Token di Home Assistant.
+  // QUI devi sostituire URL e token dopo il trasferimento sul server on-premise.
+  // Token: Home Assistant -> Profilo utente -> Token di accesso a lunga durata.
   homeAssistant: {
     url: 'http://homeassistant.local:8123',
     token: 'REPLACE_WITH_HOME_ASSISTANT_LONG_LIVED_TOKEN'
