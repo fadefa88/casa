@@ -1,0 +1,26 @@
+[Unit]
+Description=Casa public IP and failover monitor
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/opt/casa/backend
+EnvironmentFile=-/etc/casa-network-monitor.env
+Environment=DATA_DIR=/var/lib/casa-network-monitor
+ExecStart=/usr/bin/python3 /opt/casa/backend/network_monitor.py
+Restart=always
+RestartSec=5
+StateDirectory=casa-network-monitor
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
