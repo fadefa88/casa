@@ -50,11 +50,16 @@
     card.querySelectorAll('.metric-grid strong').forEach((node) => setText(node, NULL_TEXT));
   }
 
+  function patchShellyToday() {
+    const card = findCard('Linee Shelly');
+    if (!card) return;
+    setText(metricNode(card, 'Oggi'), NULL_TEXT);
+  }
+
   function patchSolarMetadata() {
     const card = findCard('Fotovoltaico casa');
     if (!card) return;
 
-    // Usa la voce già presente nella griglia Fronius, senza creare una seconda card.
     setText(metricNode(card, 'Potenza pannelli'), '3 kW');
 
     const items = currentView() === 'energia'
@@ -177,7 +182,6 @@
       }
     });
 
-    // Completa con eventuali tapparelle reali non associate a una stanza per nome.
     available.forEach((entity) => {
       if (resolved.length >= EXPECTED_SHUTTERS || used.has(entity.entity_id)) return;
       used.add(entity.entity_id);
@@ -190,23 +194,25 @@
   function coverPosition(entity) {
     const current = Number(entity?.attributes?.current_position);
     if (Number.isFinite(current)) return Math.max(0, Math.min(100, current));
+
     const state = normalize(entity?.state);
-    if (state === 'closed') return 0;
-    if (['open', 'opening', 'closing'].includes(state)) return 100;
+    // Nell'integrazione MyHOME: 0 = completamente aperta, 100 = completamente chiusa.
+    if (state === 'open') return 0;
+    if (state === 'closed') return 100;
     return null;
   }
 
   function coverSnapshot() {
     const covers = discoverCovers();
-    if (!covers.length) return { total: EXPECTED_SHUTTERS, open: 0, closed: EXPECTED_SHUTTERS, average: 0 };
+    if (!covers.length) return { total: EXPECTED_SHUTTERS, open: 0, closed: EXPECTED_SHUTTERS, average: 100 };
 
     const positions = covers.map(coverPosition);
     const knownPositions = positions.filter(Number.isFinite);
-    const open = positions.filter((value) => Number.isFinite(value) && value > 1).length;
-    const explicitlyClosed = positions.filter((value) => Number.isFinite(value) && value <= 1).length;
+    const open = positions.filter((value) => Number.isFinite(value) && value < 99).length;
+    const explicitlyClosed = positions.filter((value) => Number.isFinite(value) && value >= 99).length;
     const unresolved = Math.max(0, EXPECTED_SHUTTERS - open - explicitlyClosed);
     const closed = explicitlyClosed + unresolved;
-    const average = [...knownPositions, ...Array(unresolved).fill(0)]
+    const average = [...knownPositions, ...Array(unresolved).fill(100)]
       .reduce((sum, value) => sum + value, 0) / EXPECTED_SHUTTERS;
 
     return { total: EXPECTED_SHUTTERS, open, closed, average };
@@ -262,6 +268,7 @@
     removeCard('Riepilogo linea');
     removeCard('Videocitofono');
     patchTechnology();
+    patchShellyToday();
     patchSolarMetadata();
     compactUptimeDays();
     patchShutters();
