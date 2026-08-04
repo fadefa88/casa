@@ -48,6 +48,9 @@ window.CASA_DASHBOARD_CONFIG = {
     fridgePower: ['sensor.fridge_power', 'sensor.frigorifero_potenza'],
     fridgeToday: ['sensor.fridge_today_energy', 'sensor.frigorifero_energia_oggi'],
     fridgeState: ['sensor.fridge_state', 'sensor.frigorifero_stato'],
+    dishwasherPower: ['sensor.dishwasher_power', 'sensor.lavastoviglie_potenza'],
+    dishwasherToday: ['sensor.dishwasher_today_energy', 'sensor.lavastoviglie_energia_oggi'],
+    dishwasherState: ['sensor.dishwasher_state', 'sensor.lavastoviglie_stato'],
 
     tvPower: ['sensor.tv_power', 'sensor.tv_potenza'],
     shieldPower: ['sensor.nvidia_shield_power', 'sensor.shield_potenza'],
@@ -60,7 +63,7 @@ window.CASA_DASHBOARD_CONFIG = {
 
     networkState: ['sensor.fritzbox_wan_status', 'sensor.fritz_box_connessione'],
     networkLinkDown: ['sensor.fritzbox_link_download_mbps', 'sensor.fritz_box_download_massimo'],
-    networkLinkUp: ['sensor.fritzbox_link_upload_mbps', 'sensor.fritz_box_upload_massimo'],
+    networkLinkUp: ['sensor.fritzbox_link_upload_mbps', 'sensor.fritz_box_upload_attuale'],
     networkCurrentDown: ['sensor.internet_download_mbps', 'sensor.fritz_box_download_attuale'],
     networkCurrentUp: ['sensor.internet_upload_mbps', 'sensor.fritz_box_upload_attuale'],
     networkPing: ['sensor.internet_ping_ms', 'sensor.ping'],
@@ -79,3 +82,12 @@ window.CASA_DASHBOARD_CONFIG = {
     gateButton: ['button.apri_cancello', 'button.cancello']
   }
 };
+
+(() => {
+  if (document.querySelector('script[data-energy-devices-v59]')) return;
+  const script = document.createElement('script');
+  script.src = './energy-devices-v59.js?v=59';
+  script.async = false;
+  script.dataset.energyDevicesV59 = 'true';
+  document.head.appendChild(script);
+})();
