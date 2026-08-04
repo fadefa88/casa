@@ -52,10 +52,42 @@ window.CASA_DASHBOARD_CONFIG = {
     dishwasherToday: ['sensor.dishwasher_today_energy', 'sensor.lavastoviglie_energia_oggi'],
     dishwasherState: ['sensor.dishwasher_state', 'sensor.lavastoviglie_stato'],
 
-    tvPower: ['sensor.tv_power', 'sensor.tv_potenza'],
-    shieldPower: ['sensor.nvidia_shield_power', 'sensor.shield_potenza'],
-    mediaPcPower: ['sensor.media_mini_pc_power', 'sensor.mini_pc_potenza'],
-    hddPower: ['sensor.media_hdd_power', 'sensor.hdd_potenza'],
+    // Tecnologia · Zona TV. Sono incluse le varianti tipiche create da Shelly/Home Assistant.
+    tvPower: [
+      'sensor.tv_power',
+      'sensor.tv_potenza',
+      'sensor.tv_switch_0_power',
+      'sensor.tv_channel_1_power',
+      'sensor.tv_consumo',
+      'sensor.televisore_power',
+      'sensor.televisore_potenza'
+    ],
+    shieldPower: [
+      'sensor.nvidia_shield_power',
+      'sensor.nvidia_shield_potenza',
+      'sensor.nvidia_shield_switch_0_power',
+      'sensor.nvidia_shield_channel_1_power',
+      'sensor.nvidia_shield_consumo',
+      'sensor.shield_power',
+      'sensor.shield_potenza'
+    ],
+    mediaPcPower: [
+      'sensor.mini_pc_power',
+      'sensor.mini_pc_potenza',
+      'sensor.mini_pc_switch_0_power',
+      'sensor.mini_pc_channel_1_power',
+      'sensor.mini_pc_consumo',
+      'sensor.media_mini_pc_power'
+    ],
+    hddPower: [
+      'sensor.hdd_power',
+      'sensor.hdd_potenza',
+      'sensor.hdd_switch_0_power',
+      'sensor.hdd_channel_1_power',
+      'sensor.hdd_consumo',
+      'sensor.media_hdd_power'
+    ],
+
     pcPower: ['sensor.pc_power', 'sensor.pc_potenza', 'sensor.office_pc_power', 'sensor.pc_studio_potenza'],
     monitorPower: ['sensor.office_monitor_power', 'sensor.monitor_potenza'],
     ps5Power: ['sensor.ps_5_power', 'sensor.ps_5_potenza', 'sensor.ps5_power', 'sensor.ps5_potenza'],
@@ -86,7 +118,7 @@ window.CASA_DASHBOARD_CONFIG = {
 (() => {
   if (document.querySelector('script[data-energy-devices-v60]')) return;
   const script = document.createElement('script');
-  script.src = './energy-devices-v60.js?v=60';
+  script.src = './energy-devices-v60.js?v=61';
   script.async = false;
   script.dataset.energyDevicesV60 = 'true';
   document.head.appendChild(script);
