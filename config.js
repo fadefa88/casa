@@ -56,9 +56,9 @@ window.CASA_DASHBOARD_CONFIG = {
     shieldPower: ['sensor.nvidia_shield_power', 'sensor.shield_potenza'],
     mediaPcPower: ['sensor.media_mini_pc_power', 'sensor.mini_pc_potenza'],
     hddPower: ['sensor.media_hdd_power', 'sensor.hdd_potenza'],
-    pcPower: ['sensor.office_pc_power', 'sensor.pc_studio_potenza'],
+    pcPower: ['sensor.pc_power', 'sensor.pc_potenza', 'sensor.office_pc_power', 'sensor.pc_studio_potenza'],
     monitorPower: ['sensor.office_monitor_power', 'sensor.monitor_potenza'],
-    ps5Power: ['sensor.ps5_power', 'sensor.ps5_potenza'],
+    ps5Power: ['sensor.ps_5_power', 'sensor.ps_5_potenza', 'sensor.ps5_power', 'sensor.ps5_potenza'],
     dockPower: ['sensor.office_dock_power', 'sensor.dock_potenza'],
 
     networkState: ['sensor.fritzbox_wan_status', 'sensor.fritz_box_connessione'],
@@ -84,10 +84,10 @@ window.CASA_DASHBOARD_CONFIG = {
 };
 
 (() => {
-  if (document.querySelector('script[data-energy-devices-v59]')) return;
+  if (document.querySelector('script[data-energy-devices-v60]')) return;
   const script = document.createElement('script');
-  script.src = './energy-devices-v59.js?v=59';
+  script.src = './energy-devices-v60.js?v=60';
   script.async = false;
-  script.dataset.energyDevicesV59 = 'true';
+  script.dataset.energyDevicesV60 = 'true';
   document.head.appendChild(script);
 })();
