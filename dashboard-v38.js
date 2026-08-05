@@ -1640,6 +1640,68 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     technology: ['tv', 'shield', 'mediaPc', 'hdd', 'pc', 'monitor', 'ps5', 'dock'],
   };
 
+  // Totali energetici deterministici per le card Casa 3D.
+  // Oggi = stato helper giornaliero; Ieri = last_period del giornaliero;
+  // Mese = stato helper mensile. Nessun riconoscimento automatico o fallback storico.
+  const GROUP_PERIOD_HELPERS = {
+    appliances: {
+      washer: {
+        daily: 'sensor.vano_tecnico_shelly_plug_lavatrice_lavatrice_energia_giornaliera',
+        monthly: 'sensor.vano_tecnico_shelly_plug_lavatrice_lavatrice_energia_mensile',
+      },
+      dishwasher: {
+        daily: 'sensor.cucina_shelly_plug_lavastoviglie_lavastoviglie_energia_giornaliera',
+        monthly: 'sensor.cucina_shelly_plug_lavastoviglie_lavastoviglie_energia_mensile',
+      },
+      fridge: {
+        daily: 'sensor.cucina_shelly_plug_frigo_frigo_energia_giornaliera',
+        monthly: 'sensor.cucina_shelly_plug_frigo_frigo_energia_mensile',
+      },
+      oven: {
+        daily: 'sensor.cucina_shelly_plug_forno_forno_energia_giornaliera',
+        monthly: 'sensor.cucina_shelly_plug_forno_forno_energia_mensile',
+      },
+      dryer: {
+        daily: 'sensor.vano_tecnico_shelly_plug_asciugatrice_asciugatrice_energia_giornaliera',
+        monthly: 'sensor.vano_tecnico_shelly_plug_asciugatrice_asciugatrice_energia_mensile',
+      },
+    },
+    technology: {
+      tv: {
+        daily: 'sensor.salotto_tv_energia_giornaliera',
+        monthly: 'sensor.salotto_tv_energia_mensile',
+      },
+      dock: {
+        daily: 'sensor.studio_splitter_energia_giornaliera',
+        monthly: 'sensor.studio_splitter_energia_mensile',
+      },
+      ps5: {
+        daily: 'sensor.studio_ps_5_ps5_energia_giornaliera',
+        monthly: 'sensor.studio_ps_5_ps5_energia_mensile',
+      },
+      pc: {
+        daily: 'sensor.studio_pc_energia_giornaliera',
+        monthly: 'sensor.studio_pc_energia_mensile',
+      },
+      shield: {
+        daily: 'sensor.salotto_nvidia_shield_shield_energia_giornaliera',
+        monthly: 'sensor.salotto_nvidia_shield_shield_energia_mensile',
+      },
+      monitor: {
+        daily: 'sensor.studio_monitor_energia_giornaliera',
+        monthly: 'sensor.studio_monitor_energia_mensile',
+      },
+      mediaPc: {
+        daily: 'sensor.salotto_mini_pc_energia_giornaliera',
+        monthly: 'sensor.salotto_mini_pc_energia_mensile',
+      },
+      hdd: {
+        daily: 'sensor.salotto_hdd_energia_giornaliera',
+        monthly: 'sensor.salotto_hdd_energia_mensile',
+      },
+    },
+  };
+
   const FRONIUS = {
     acPower: {
       type: 'power',
@@ -2049,7 +2111,27 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     node.classList.toggle('ha-null-value', value === NULL_TEXT);
   }
 
-  function groupPeriodTotal(deviceIds, period) {
+  function exactGroupPeriodTotal(groupId, period) {
+    const helpers = GROUP_PERIOD_HELPERS[groupId];
+    if (!helpers) return null;
+
+    let total = 0;
+    for (const helper of Object.values(helpers)) {
+      const entityId = period === 'month' ? helper.monthly : helper.daily;
+      const entity = states().get(entityId);
+      if (!isEnergySensor(entity)) return null;
+
+      const rawValue = period === 'yesterday' ? entity.attributes?.last_period : entity.state;
+      const value = energyKwh(entity, rawValue);
+      if (!Number.isFinite(value)) return null;
+      total += value;
+    }
+    return total;
+  }
+
+  function groupPeriodTotal(groupId, deviceIds, period) {
+    if (GROUP_PERIOD_HELPERS[groupId]) return exactGroupPeriodTotal(groupId, period);
+
     let total = 0;
     for (const id of deviceIds) {
       const { value } = periodValue(DEVICES[id], period);
@@ -2063,7 +2145,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const strip = card?.querySelector(`.energy-period-strip[data-energy-group="${groupId}"]`);
     if (!strip) return;
     ['today','yesterday','month'].forEach((period) => {
-      setValue(strip.querySelector(`[data-period="${period}"]`), formatEnergyKwh(groupPeriodTotal(deviceIds, period)));
+      setValue(strip.querySelector(`[data-period="${period}"]`), formatEnergyKwh(groupPeriodTotal(groupId, deviceIds, period)));
     });
   }
 
@@ -2100,7 +2182,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       setValue(card.querySelector('[data-tech-total="studio-gaming"]'), formatPower(subtotal(studioIds)));
     }
     patchPeriodStrip(card, groupId, deviceIds);
-    patchHistoricalStrip(groupId, deviceIds);
+    if (!GROUP_PERIOD_HELPERS[groupId]) patchHistoricalStrip(groupId, deviceIds);
     return resolved;
   }
 
