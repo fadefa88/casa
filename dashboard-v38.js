@@ -754,7 +754,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   const loading = $('#loading');
   if (loading) loading.style.pointerEvents = 'none';
   window.CASA_DASHBOARD_READY = 'live-v46';
-  window.CASA_HA = { sync: syncHomeAssistant, service: callService, state: ui };
+  window.CASA_HA = { sync: syncHomeAssistant, service: callService, fetch: haFetch, state: ui };
   render();
   syncHomeAssistant();
   refreshTimer = setInterval(() => syncHomeAssistant({ quiet: true }), Math.max(2000, number(config.refreshMs, 5000)));
@@ -1641,9 +1641,17 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   };
 
   const FRONIUS = {
-    acPower: { type: 'power', labels: ['potenza alternata', 'ac power', 'inverter ac power', 'potenza ac', 'fronius power'] },
-    pvPower: { type: 'power', labels: ['potenza fotovoltaica', 'photovoltaic power', 'pv power', 'potenza pannelli', 'dc power'] },
-    dayEnergy: { type: 'energy', labels: ['energia giornaliera', 'daily energy', 'energy day', 'day energy', 'produzione giornaliera', 'fronius today'] },
+    acPower: {
+      type: 'power',
+      labels: ['potenza alternata', 'potenza ca', 'ac power', 'inverter ac power', 'potenza inverter', 'inverter power', 'fronius power'],
+      exclude: ['carico', 'load', 'rete', 'grid', 'batteria', 'battery']
+    },
+    pvPower: {
+      type: 'power',
+      labels: ['potenza fotovoltaica', 'potenza fotovoltaico', 'power photovoltaics', 'photovoltaic power', 'pv power', 'solar power', 'produzione fotovoltaica', 'potenza pannelli', 'dc power'],
+      exclude: ['carico', 'load', 'rete', 'grid', 'batteria', 'battery']
+    },
+    dayEnergy: { type: 'energy', labels: ['energia giornaliera', 'daily energy', 'energy day', 'day energy', 'produzione giornaliera', 'energia oggi', 'fronius today'] },
     yearEnergy: { type: 'energy', labels: ['energia annuale', 'yearly energy', 'annual energy', 'energy year', 'produzione annuale'] },
     totalEnergy: { type: 'energy', labels: ['energia totale', 'total energy', 'lifetime energy', 'produzione totale'] },
   };
@@ -1756,6 +1764,31 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     return score;
   }
 
+  function utilityMeterPeriod(entity) {
+    const text = entityParts(entity).text;
+    const attrs = entity?.attributes || {};
+    const meter = normalize(attrs.meter_period || attrs.period || attrs.cycle || attrs.tariff);
+    const lastReset = Date.parse(attrs.last_reset || attrs.last_reset_time || '');
+    const reset = Number.isFinite(lastReset) ? new Date(lastReset) : null;
+    if (meter.includes('day') || meter.includes('giorn')) return 'today';
+    if (meter.includes('month') || meter.includes('mese')) return 'month';
+    if (reset) {
+      const now = new Date();
+      if (reset.getFullYear() === now.getFullYear() && reset.getMonth() === now.getMonth() && reset.getDate() === now.getDate()) return 'today';
+      if (reset.getFullYear() === now.getFullYear() && reset.getMonth() === now.getMonth() && reset.getDate() === 1) return 'month';
+    }
+    if (Number.isFinite(Number(attrs.last_period)) && ['utility meter','utility_meter'].some((word) => text.includes(normalize(word)))) return 'today';
+    return null;
+  }
+
+  function hasPeriodEvidence(entity, period) {
+    const text = entityParts(entity).text;
+    const words = PERIOD_WORDS[period] || [];
+    if (words.some((word) => text.includes(normalize(word)))) return true;
+    if (period === 'today' || period === 'month') return utilityMeterPeriod(entity) === period;
+    return false;
+  }
+
   function resolveEnergy(device, period) {
     const key = period === 'today' ? device.todayKey : period === 'yesterday' ? device.yesterdayKey : device.monthKey;
     const map = states();
@@ -1767,7 +1800,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     let best = null;
     let bestScore = 0;
     for (const entity of map.values()) {
-      if (!isEnergySensor(entity)) continue;
+      if (!isEnergySensor(entity) || !hasPeriodEvidence(entity, period)) continue;
       const score = deviceScore(entity, device) + periodScore(entity, period);
       if (score > bestScore) { bestScore = score; best = entity; }
     }
@@ -1795,11 +1828,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   function periodValue(device, period) {
     if (period === 'yesterday') {
       const direct = resolveEnergy(device, 'yesterday');
-      if (direct) {
-        const directValue = Number.isFinite(Number(direct.attributes?.last_period))
-          ? direct.attributes.last_period : direct.state;
-        return { entity: direct, value: energyKwh(direct, directValue) };
-      }
+      if (direct) return { entity: direct, value: energyKwh(direct, direct.state) };
       const daily = resolveEnergy(device, 'today');
       if (daily && Number.isFinite(Number(daily.attributes?.last_period))) {
         return { entity: daily, value: energyKwh(daily, daily.attributes.last_period) };
@@ -1808,6 +1837,184 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     }
     const entity = resolveEnergy(device, period);
     return { entity, value: energyKwh(entity) };
+  }
+
+  const historyCache = new Map();
+
+  function resolveCumulativeEnergy(device) {
+    let best = null;
+    let bestScore = 0;
+    for (const entity of states().values()) {
+      if (!isEnergySensor(entity)) continue;
+      const parts = entityParts(entity);
+      if (Object.values(PERIOD_WORDS).flat().some((word) => parts.text.includes(normalize(word)))) continue;
+      if (['anno','year','totale giornaliero','daily total'].some((word) => parts.text.includes(normalize(word)))) continue;
+      let score = deviceScore(entity, device);
+      const stateClass = normalize(entity.attributes?.state_class);
+      if (stateClass === 'total increasing' || stateClass === 'total_increasing') score += 24;
+      else if (stateClass === 'total') score += 12;
+      if (parts.text.includes('total energy') || parts.text.includes('energia totale') || parts.text.includes('consumo totale')) score += 8;
+      if (score > bestScore) { bestScore = score; best = entity; }
+    }
+    return bestScore >= 90 ? best : null;
+  }
+
+  function periodRange(period) {
+    const now = new Date();
+    const end = new Date(now);
+    const start = new Date(now);
+    if (period === 'today') start.setHours(0, 0, 0, 0);
+    else if (period === 'yesterday') {
+      end.setHours(0, 0, 0, 0);
+      start.setTime(end.getTime());
+      start.setDate(start.getDate() - 1);
+    } else if (period === 'month') {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+    }
+    return { start, end };
+  }
+
+  function historyTimestamp(item) {
+    const value = Date.parse(item?.last_updated || item?.last_changed || '');
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function rawHistoryValue(item) {
+    const value = Number(item?.state);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function rawToKwh(entity, value) {
+    if (!Number.isFinite(value)) return null;
+    const unit = normalize(entity?.attributes?.unit_of_measurement);
+    if (unit === 'wh') return value / 1000;
+    if (unit === 'mwh') return value * 1000;
+    return value;
+  }
+
+  async function historyEnergy(entity, period) {
+    if (!entity || typeof window.CASA_HA?.fetch !== 'function') return null;
+    const { start, end } = periodRange(period);
+    const movingBucket = Math.floor(end.getTime() / 300000);
+    const cacheKey = `${entity.entity_id}|${period}|${start.toISOString().slice(0, 10)}|${period === 'today' || period === 'month' ? movingBucket : 'closed'}`;
+    if (historyCache.has(cacheKey)) return historyCache.get(cacheKey);
+
+    const task = (async () => {
+      try {
+        const queryStart = new Date(start);
+        queryStart.setHours(queryStart.getHours() - 2);
+        const queryEnd = new Date(end);
+        const path = `/api/history/period/${encodeURIComponent(queryStart.toISOString())}?filter_entity_id=${encodeURIComponent(entity.entity_id)}&end_time=${encodeURIComponent(queryEnd.toISOString())}&minimal_response&no_attributes`;
+        const payload = await window.CASA_HA.fetch(path);
+        const rows = Array.isArray(payload?.[0]) ? payload[0] : [];
+        const points = rows.map((item) => ({ time: historyTimestamp(item), value: rawHistoryValue(item) }))
+          .filter((item) => Number.isFinite(item.time) && Number.isFinite(item.value))
+          .sort((a, b) => a.time - b.time);
+        if (!points.length) return null;
+
+        const startMs = start.getTime();
+        const endMs = end.getTime();
+        let baseline = [...points].reverse().find((point) => point.time <= startMs) || points.find((point) => point.time >= startMs);
+        if (!baseline) return null;
+        let previous = baseline.value;
+        let total = 0;
+        let samples = 0;
+
+        for (const point of points) {
+          if (point.time <= baseline.time || point.time < startMs) continue;
+          if (point.time > endMs) break;
+          const diff = point.value - previous;
+          total += diff >= 0 ? diff : Math.max(0, point.value);
+          previous = point.value;
+          samples += 1;
+        }
+
+        if (!samples) return 0;
+        return rawToKwh(entity, total);
+      } catch (error) {
+        console.warn(`[Casa 5B] Storico energia non disponibile per ${entity.entity_id}`, error);
+        return null;
+      }
+    })();
+    historyCache.set(cacheKey, task);
+    return task;
+  }
+
+  const statisticsCache = new Map();
+
+  function statisticsPayload(payload) {
+    return payload?.service_response?.statistics
+      || payload?.response?.statistics
+      || payload?.statistics
+      || null;
+  }
+
+  function statisticRowsValue(rows) {
+    if (!Array.isArray(rows) || !rows.length) return null;
+    const changes = rows.map((row) => Number(row?.change)).filter(Number.isFinite);
+    if (changes.length) return changes.reduce((total, value) => total + value, 0);
+    const sums = rows.map((row) => Number(row?.sum)).filter(Number.isFinite);
+    if (sums.length >= 2) return Math.max(0, sums.at(-1) - sums[0]);
+    return null;
+  }
+
+  async function recorderStatistics(entities, period) {
+    if (!entities.length || typeof window.CASA_HA?.fetch !== 'function') return new Map();
+    const { start, end } = periodRange(period);
+    const movingBucket = Math.floor(end.getTime() / 300000);
+    const ids = entities.map((entity) => entity.entity_id).sort();
+    const cacheKey = `${ids.join(',')}|${period}|${start.toISOString().slice(0, 10)}|${period === 'yesterday' ? 'closed' : movingBucket}`;
+    if (statisticsCache.has(cacheKey)) return statisticsCache.get(cacheKey);
+
+    const task = (async () => {
+      try {
+        const payload = await window.CASA_HA.fetch('/api/services/recorder/get_statistics?return_response', {
+          method: 'POST',
+          body: JSON.stringify({
+            statistic_ids: ids,
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
+            period: 'day',
+            types: ['change', 'sum'],
+            units: { energy: 'kWh' },
+          }),
+        });
+        const statistics = statisticsPayload(payload);
+        if (!statistics || typeof statistics !== 'object') return new Map();
+        return new Map(ids.map((id) => [id, statisticRowsValue(statistics[id])]));
+      } catch (error) {
+        console.info('[Casa 5B] recorder.get_statistics non disponibile; uso lo storico stati.', error);
+        return new Map();
+      }
+    })();
+    statisticsCache.set(cacheKey, task);
+    return task;
+  }
+
+  async function historicalGroupTotal(deviceIds, period) {
+    const entities = deviceIds.map((id) => resolveCumulativeEnergy(DEVICES[id]));
+    if (entities.some((entity) => !entity)) return null;
+
+    const statistics = await recorderStatistics(entities, period);
+    const values = await Promise.all(entities.map(async (entity) => {
+      const statisticValue = statistics.get(entity.entity_id);
+      if (Number.isFinite(statisticValue)) return statisticValue;
+      return historyEnergy(entity, period);
+    }));
+    if (values.some((value) => !Number.isFinite(value))) return null;
+    return values.reduce((total, value) => total + value, 0);
+  }
+
+  function patchHistoricalStrip(groupId, deviceIds) {
+    ['today', 'yesterday', 'month'].forEach(async (period) => {
+      const currentStrip = document.querySelector(`.energy-period-strip[data-energy-group="${groupId}"]`);
+      const currentNode = currentStrip?.querySelector(`[data-period="${period}"]`);
+      if (!currentNode || currentNode.textContent !== NULL_TEXT) return;
+      const value = await historicalGroupTotal(deviceIds, period);
+      const latestStrip = document.querySelector(`.energy-period-strip[data-energy-group="${groupId}"]`);
+      setValue(latestStrip?.querySelector(`[data-period="${period}"]`), formatEnergyKwh(value));
+    });
   }
 
   function formatPower(value) {
@@ -1893,6 +2100,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       setValue(card.querySelector('[data-tech-total="studio-gaming"]'), formatPower(subtotal(studioIds)));
     }
     patchPeriodStrip(card, groupId, deviceIds);
+    patchHistoricalStrip(groupId, deviceIds);
     return resolved;
   }
 
@@ -1914,31 +2122,41 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       const validType = rule.type === 'power' ? isPowerSensor(entity) : isEnergySensor(entity);
       if (!validType || !solarSignal(entity)) continue;
       const parts = entityParts(entity);
+      if ((rule.exclude || []).some((word) => parts.text.includes(normalize(word)))) continue;
       let score = 18;
       rule.labels.forEach((label) => {
         const normalized = normalize(label);
-        if (parts.friendly === normalized) score = Math.max(score, 70);
-        else if (parts.friendly.includes(normalized)) score = Math.max(score, 55);
-        else if (parts.text.includes(normalized)) score = Math.max(score, 42);
+        if (parts.friendly === normalized || parts.entityName === normalized) score = Math.max(score, 78);
+        else if (parts.friendly.includes(normalized) || parts.entityName.includes(normalized)) score = Math.max(score, 62);
+        else if (parts.text.includes(normalized)) score = Math.max(score, 46);
       });
+      if (parts.text.includes('fronius')) score += 8;
+      if (parts.text.includes('inverter')) score += 6;
       if (reference && compact(parts.entityName).includes(reference.slice(0, 6))) score += 5;
       if (score > bestScore) { bestScore = score; best = entity; }
     }
-    return bestScore >= 38 ? best : null;
+    return bestScore >= 34 ? best : null;
+  }
+
+  function resolveProductionPower() {
+    return configuredEntity('pvPower', isPowerSensor)
+      || resolveFronius(FRONIUS.pvPower)
+      || resolveFronius(FRONIUS.acPower);
   }
 
   function patchFronius() {
     const card = findCard('Fotovoltaico casa');
     if (!card || !connected()) return;
 
-    const productionEntity = configuredEntity('pvPower', isPowerSensor) || resolveFronius(FRONIUS.acPower);
-    const panelEntity = resolveFronius(FRONIUS.pvPower, productionEntity);
+    const productionEntity = resolveProductionPower();
+    const panelEntity = resolveFronius(FRONIUS.pvPower, productionEntity) || productionEntity;
     const dayEntity = configuredEntity('pvToday', isEnergySensor) || resolveFronius(FRONIUS.dayEnergy, productionEntity);
     const yearEntity = resolveFronius(FRONIUS.yearEnergy, productionEntity);
     const totalEntity = resolveFronius(FRONIUS.totalEnergy, productionEntity);
     const houseEntity = configuredEntity('housePower', isPowerSensor);
 
-    const production = watts(productionEntity);
+    const measuredProduction = watts(productionEntity);
+    const production = Number.isFinite(measuredProduction) ? Math.max(0, measuredProduction) : 0;
     const house = watts(houseEntity);
     const panelPower = watts(panelEntity);
     const dayKwh = energyKwh(dayEntity);
