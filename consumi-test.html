@@ -89,7 +89,7 @@
     <header class="topbar">
       <div class="topbar-main">
         <h1>Diagnostica consumi Home Assistant</h1>
-        <p>Stessa mappatura e stessa logica del sito Casa 3D, con sorgenti visibili.</p>
+        <p>Potenza attuale dal sito Casa 3D; consumi storici da helper Utility Meter espliciti.</p>
       </div>
       <div id="connection-status" class="status">Connessione…</div>
       <button id="refresh" class="action" type="button">Aggiorna</button>
@@ -111,7 +111,7 @@
     <div class="group"><h2>Studio / gaming</h2><small>PC, monitor, PS5 e splitter</small></div>
     <section id="studio-zone" class="grid"></section>
 
-    <p class="foot">I valori storici vengono ricalcolati ogni 5 minuti; la potenza attuale viene aggiornata ogni 5 secondi.</p>
+    <p class="foot">Oggi = stato dell’helper giornaliero · Ieri = attributo last_period del giornaliero · Mese = stato dell’helper mensile. Aggiornamento ogni 5 secondi.</p>
   </main>
 
 <script>
@@ -126,19 +126,71 @@
   const statisticsCache = new Map();
 
   const DEVICES = {
-    washer: { label:'Lavatrice', powerKey:'washerPower', todayKey:'washerToday', yesterdayKey:'washerYesterday', monthKey:'washerMonth', aliases:['lavatrice','washing machine','washer'] },
-    fridge: { label:'Frigorifero', powerKey:'fridgePower', todayKey:'fridgeToday', yesterdayKey:'fridgeYesterday', monthKey:'fridgeMonth', aliases:['frigorifero','frigo congelatore','frigo','congelatore','fridge freezer','fridge','freezer'] },
-    oven: { label:'Forno', powerKey:'ovenPower', todayKey:'ovenToday', yesterdayKey:'ovenYesterday', monthKey:'ovenMonth', aliases:['forno','oven'] },
-    dishwasher: { label:'Lavastoviglie', powerKey:'dishwasherPower', todayKey:'dishwasherToday', yesterdayKey:'dishwasherYesterday', monthKey:'dishwasherMonth', aliases:['lavastoviglie','lavapiatti','dishwasher'] },
-    dryer: { label:'Asciugatrice', powerKey:'dryerPower', todayKey:'dryerToday', yesterdayKey:'dryerYesterday', monthKey:'dryerMonth', aliases:['asciugatrice','tumble dryer','dryer'] },
-    tv: { label:'TV', powerKey:'tvPower', todayKey:'tvToday', yesterdayKey:'tvYesterday', monthKey:'tvMonth', aliases:['tv','televisore','smart tv','samsung tv'] },
-    shield: { label:'Nvidia Shield', powerKey:'shieldPower', todayKey:'shieldToday', yesterdayKey:'shieldYesterday', monthKey:'shieldMonth', aliases:['nvidia shield','shield tv','shield'] },
-    mediaPc: { label:'Mini PC', powerKey:'mediaPcPower', todayKey:'mediaPcToday', yesterdayKey:'mediaPcYesterday', monthKey:'mediaPcMonth', aliases:['mini pc','minipc','media mini pc'] },
-    hdd: { label:'HDD', powerKey:'hddPower', todayKey:'hddToday', yesterdayKey:'hddYesterday', monthKey:'hddMonth', aliases:['hdd','hard disk','disco esterno'] },
-    pc: { label:'PC', powerKey:'pcPower', todayKey:'pcToday', yesterdayKey:'pcYesterday', monthKey:'pcMonth', aliases:['pc','pc studio','computer studio','office pc','desktop pc'], exclude:['mini pc','minipc','media pc'] },
-    monitor: { label:'Monitor', powerKey:'monitorPower', todayKey:'monitorToday', yesterdayKey:'monitorYesterday', monthKey:'monitorMonth', aliases:['monitor','monitor studio','office monitor'] },
-    ps5: { label:'PS5', powerKey:'ps5Power', todayKey:'ps5Today', yesterdayKey:'ps5Yesterday', monthKey:'ps5Month', aliases:['ps 5','ps5','playstation 5','playstation5'] },
-    dock: { label:'Splitter', powerKey:'dockPower', todayKey:'dockToday', yesterdayKey:'dockYesterday', monthKey:'dockMonth', aliases:['splitter','dock studio','office dock','dock'] }
+    washer: {
+      label:'Lavatrice', powerKey:'washerPower', aliases:['lavatrice','washing machine','washer'],
+      dailyHelper:'sensor.vano_tecnico_shelly_plug_lavatrice_lavatrice_energia_giornaliera',
+      monthlyHelper:'sensor.vano_tecnico_shelly_plug_lavatrice_lavatrice_energia_mensile'
+    },
+    fridge: {
+      label:'Frigorifero', powerKey:'fridgePower', aliases:['frigorifero','frigo congelatore','frigo','congelatore','fridge freezer','fridge','freezer'],
+      dailyHelper:'sensor.cucina_shelly_plug_frigo_frigo_energia_giornaliera',
+      monthlyHelper:'sensor.cucina_shelly_plug_frigo_frigo_energia_mensile'
+    },
+    oven: {
+      label:'Forno', powerKey:'ovenPower', aliases:['forno','oven'],
+      dailyHelper:'sensor.cucina_shelly_plug_forno_forno_energia_giornaliera',
+      monthlyHelper:'sensor.cucina_shelly_plug_forno_forno_energia_mensile'
+    },
+    dishwasher: {
+      label:'Lavastoviglie', powerKey:'dishwasherPower', aliases:['lavastoviglie','lavapiatti','dishwasher'],
+      dailyHelper:'sensor.cucina_shelly_plug_lavastoviglie_lavastoviglie_energia_giornaliera',
+      monthlyHelper:'sensor.cucina_shelly_plug_lavastoviglie_lavastoviglie_energia_mensile'
+    },
+    dryer: {
+      label:'Asciugatrice', powerKey:'dryerPower', aliases:['asciugatrice','tumble dryer','dryer'],
+      dailyHelper:'sensor.vano_tecnico_shelly_plug_asciugatrice_asciugatrice_energia_giornaliera',
+      monthlyHelper:'sensor.vano_tecnico_shelly_plug_asciugatrice_asciugatrice_energia_mensile'
+    },
+    tv: {
+      label:'TV', powerKey:'tvPower', aliases:['tv','televisore','smart tv','samsung tv'],
+      dailyHelper:'sensor.salotto_tv_energia_giornaliera',
+      monthlyHelper:'sensor.salotto_tv_energia_mensile'
+    },
+    shield: {
+      label:'Nvidia Shield', powerKey:'shieldPower', aliases:['nvidia shield','shield tv','shield'],
+      dailyHelper:'sensor.salotto_nvidia_shield_shield_energia_giornaliera',
+      monthlyHelper:'sensor.salotto_nvidia_shield_shield_energia_mensile'
+    },
+    mediaPc: {
+      label:'Mini PC', powerKey:'mediaPcPower', aliases:['mini pc','minipc','media mini pc'],
+      dailyHelper:'sensor.salotto_mini_pc_energia_giornaliera',
+      monthlyHelper:'sensor.salotto_mini_pc_energia_mensile'
+    },
+    hdd: {
+      label:'HDD', powerKey:'hddPower', aliases:['hdd','hard disk','disco esterno'],
+      dailyHelper:'sensor.salotto_hdd_energia_giornaliera',
+      monthlyHelper:'sensor.salotto_hdd_energia_mensile'
+    },
+    pc: {
+      label:'PC', powerKey:'pcPower', aliases:['pc','pc studio','computer studio','office pc','desktop pc'], exclude:['mini pc','minipc','media pc'],
+      dailyHelper:'sensor.studio_pc_energia_giornaliera',
+      monthlyHelper:'sensor.studio_pc_energia_mensile'
+    },
+    monitor: {
+      label:'Monitor', powerKey:'monitorPower', aliases:['monitor','monitor studio','office monitor'],
+      dailyHelper:'sensor.studio_monitor_energia_giornaliera',
+      monthlyHelper:'sensor.studio_monitor_energia_mensile'
+    },
+    ps5: {
+      label:'PS5', powerKey:'ps5Power', aliases:['ps 5','ps5','playstation 5','playstation5'],
+      dailyHelper:'sensor.studio_ps_5_ps5_energia_giornaliera',
+      monthlyHelper:'sensor.studio_ps_5_ps5_energia_mensile'
+    },
+    dock: {
+      label:'Splitter', powerKey:'dockPower', aliases:['splitter','dock studio','office dock','dock'],
+      dailyHelper:'sensor.studio_splitter_energia_giornaliera',
+      monthlyHelper:'sensor.studio_splitter_energia_mensile'
+    }
   };
 
   const GROUPS = {
@@ -393,23 +445,37 @@
     return task;
   }
   async function metricForPeriod(device, period) {
-    if (period === 'yesterday') {
-      const direct = resolveEnergy(device,'yesterday');
-      if (direct.entity) return { value:energyKwh(direct.entity), entity:direct.entity, method:direct.method };
-      const daily = resolveEnergy(device,'today');
-      if (daily.entity && Number.isFinite(Number(daily.entity.attributes?.last_period))) {
-        return { value:energyKwh(daily.entity,daily.entity.attributes.last_period), entity:daily.entity, method:'last_period utility meter' };
-      }
-    } else {
-      const direct = resolveEnergy(device,period);
-      if (direct.entity) return { value:energyKwh(direct.entity), entity:direct.entity, method:direct.method };
+    const daily = state.states.get(device.dailyHelper) || null;
+    const monthly = state.states.get(device.monthlyHelper) || null;
+
+    if (period === 'today') {
+      return {
+        value: energyKwh(daily),
+        entity: daily,
+        rawValue: daily?.state,
+        sourceField: 'stato helper giornaliero',
+        method: daily ? 'helper giornaliero esplicito' : 'helper giornaliero non trovato'
+      };
     }
-    const cumulative = resolveCumulativeEnergy(device);
-    if (!cumulative) return { value:null, entity:null, method:'nessun sensore compatibile' };
-    const statistic = await recorderStatistic(cumulative,period);
-    if (Number.isFinite(statistic)) return { value:statistic, entity:cumulative, method:'Recorder statistiche' };
-    const history = await historyEnergy(cumulative,period);
-    return { value:history, entity:cumulative, method:Number.isFinite(history) ? 'differenza storico cumulativo' : 'storico non disponibile' };
+
+    if (period === 'yesterday') {
+      const lastPeriod = daily?.attributes?.last_period;
+      return {
+        value: energyKwh(daily, lastPeriod),
+        entity: daily,
+        rawValue: lastPeriod,
+        sourceField: 'attributo last_period',
+        method: Number.isFinite(Number(lastPeriod)) ? 'last_period helper giornaliero' : 'last_period non disponibile'
+      };
+    }
+
+    return {
+      value: energyKwh(monthly),
+      entity: monthly,
+      rawValue: monthly?.state,
+      sourceField: 'stato helper mensile',
+      method: monthly ? 'helper mensile esplicito' : 'helper mensile non trovato'
+    };
   }
 
   function formatPower(value) {
@@ -417,11 +483,11 @@
     return Math.abs(value) >= 1000 ? `${fmt.format(value/1000)} kW` : `${fmt.format(value)} W`;
   }
   function formatEnergy(value) { return Number.isFinite(value) ? `${fmt.format(value)} kWh` : 'NULL'; }
-  function sourceText(entity) {
+  function sourceText(entity, rawValue, sourceField = 'stato') {
     if (!entity) return 'Nessuna entità';
     const unit = entity.attributes?.unit_of_measurement || '';
-    const raw = entity.state ?? '';
-    return `${entity.entity_id} · raw ${raw}${unit ? ` ${unit}` : ''}`;
+    const raw = rawValue ?? entity.state ?? '';
+    return `${entity.entity_id} · ${sourceField}: ${raw}${unit ? ` ${unit}` : ''}`;
   }
   function metricHtml(label, kind) {
     return `<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong><span class="source">Ricerca entità…</span><span class="method">in attesa</span></div>`;
@@ -435,12 +501,12 @@
     document.querySelector('#tv-zone').innerHTML = GROUPS.tv.map(deviceHtml).join('');
     document.querySelector('#studio-zone').innerHTML = GROUPS.studio.map(deviceHtml).join('');
   }
-  function patchMetric(deviceId,kind,value,entity,method) {
+  function patchMetric(deviceId,kind,value,entity,method,rawValue,sourceField) {
     const node = document.querySelector(`[data-device="${deviceId}"] [data-kind="${kind}"]`);
     if (!node) return;
     const formatted = kind === 'power' ? formatPower(value) : formatEnergy(value);
     node.querySelector('strong').textContent = formatted;
-    node.querySelector('.source').textContent = sourceText(entity);
+    node.querySelector('.source').textContent = sourceText(entity,rawValue,sourceField);
     node.querySelector('.method').textContent = method;
     node.classList.toggle('missing',formatted === 'NULL');
     node.classList.remove('loading');
@@ -448,11 +514,11 @@
   async function updateDevice(id) {
     const device = DEVICES[id];
     const powerResult = resolvePower(device);
-    patchMetric(id,'power',watts(powerResult.entity),powerResult.entity,powerResult.method);
+    patchMetric(id,'power',watts(powerResult.entity),powerResult.entity,powerResult.method,powerResult.entity?.state,'stato potenza');
     const results = await Promise.all(['today','yesterday','month'].map((period) => metricForPeriod(device,period)));
     ['today','yesterday','month'].forEach((period,index) => {
       const result = results[index];
-      patchMetric(id,period,result.value,result.entity,result.method);
+      patchMetric(id,period,result.value,result.entity,result.method,result.rawValue,result.sourceField);
     });
   }
   function setStatus(text,type='') {
