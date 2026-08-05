@@ -288,7 +288,7 @@ body{
 }
 .room-climate-current strong{margin-top:0!important}
 
-/* Header indirizzo, Stanze uniformi e dispositivi da 250 px. */
+/* Header indirizzo, Stanze uniformi e dispositivi con larghezze dedicate. */
 .tablet-top .home-address{
   display:block;
   max-width:min(31vw,330px);
@@ -320,15 +320,22 @@ body{
   }
 
   .ha-device-row{
-    justify-content:safe center!important;
+    justify-content:flex-start!important;
   }
 
-  .ha-device-tile,
+  .ha-device-tile:not(.cover){
+    flex:0 0 220px!important;
+    width:220px!important;
+    min-width:220px!important;
+    max-width:220px!important;
+    box-sizing:border-box!important;
+  }
+
   .ha-device-tile.cover{
-    flex:0 0 250px!important;
-    width:250px!important;
-    min-width:250px!important;
-    max-width:250px!important;
+    flex:0 0 270px!important;
+    width:270px!important;
+    min-width:270px!important;
+    max-width:270px!important;
     box-sizing:border-box!important;
   }
 }

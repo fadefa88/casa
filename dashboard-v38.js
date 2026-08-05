@@ -3538,24 +3538,24 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     ],
     'first-bagno-matrimoniale': [
       { source: 'Luce Bagno Matrimoniale', label: 'Bagno Matrimoniale', kind: 'light' },
-      { source: 'Specchio Bagno Matrimoniale', label: 'Specchio Bagno Matrimoniale', kind: 'light' },
+      { source: 'Specchio Bagno Matrimoniale', label: 'Specchio', kind: 'light' },
     ],
     'first-bagno-ospiti': [
       { source: 'Luce Bagno Ospiti', label: 'Bagno Ospiti', kind: 'light' },
-      { source: 'Specchio Bagno Ospiti', label: 'Specchio Bagno Ospiti', kind: 'light' },
+      { source: 'Specchio Bagno Ospiti', label: 'Specchio', kind: 'light' },
     ],
     'second-vano-tecnico': [
       { source: 'Luce Vano Tecnico', label: 'Vano Tecnico', kind: 'light' },
     ],
     'second-bagno-mansarda': [
       { source: 'Luce Bagno Mansarda', label: 'Bagno Mansarda', kind: 'light' },
-      { source: 'Specchio Bagno Mansarda', label: 'Specchio Bagno Mansarda', kind: 'light' },
+      { source: 'Specchio Bagno Mansarda', label: 'Specchio', kind: 'light' },
       { source: 'Tapparella Bagno Mansarda', label: 'Bagno Mansarda', kind: 'cover' },
     ],
     'second-mansarda': [
-      { source: 'Led Mansarda DX', label: 'Led Mansarda DX', kind: 'light' },
-      { source: 'Led Mansarda SX', label: 'Led Mansarda SX', kind: 'light' },
-      { source: 'Led Mansarda Centrale', label: 'Led Mansarda Centrale', kind: 'light' },
+      { source: 'Led Mansarda DX', label: 'Led DX', kind: 'light' },
+      { source: 'Led Mansarda SX', label: 'Led SX', kind: 'light' },
+      { source: 'Led Mansarda Centrale', label: 'Led Centrale', kind: 'light' },
       { source: 'Luce Esterna Mansarda', label: 'Terrazza', kind: 'light' },
       { source: 'Corridoio Mansarda', label: 'Corridoio', kind: 'light' },
       { source: 'Portafinestra Mansarda', label: 'Portafinestra', kind: 'cover' },
