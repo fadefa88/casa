@@ -114,3 +114,13 @@ Pacchetto statico pronto per GitHub Pages.
 - Letto matrimoniale del primo piano (`156058`) con texture più realistica e distinta: testiera/struttura tessuto beige caldo, piumone chiaro trapuntato, dettaglio tessile taupe.
 - Letto matrimoniale del secondo piano (`81315`) con texture diversa e più realistica: testiera tessuto grigio-blu, piumone chiaro freddo, cuscini chiari e dettaglio in legno.
 - `second__LivingRoom-39392__50216__sofa_multi_seat_sofa__solid_001` aggiornato con una texture più realistica di divano in stoffa grigio chiaro.
+
+## Struttura JavaScript consolidata — 05/08/2026
+
+Il codice eseguito dal browser è stato accorpato senza aggiungere file di patch:
+
+- `config.js`: configurazione Home Assistant e mappatura delle entità.
+- `rooms-config.js`: configurazione delle stanze.
+- `dashboard-v38.js`: unico bundle applicativo; contiene viewer 3D, dashboard, energia, rete, sicurezza, stanze e tutte le correzioni precedentemente distribuite nei file `*-vXX.js`.
+
+`index.html` carica soltanto questi tre file. I vecchi script intermedi e i loader dinamici `app-v25.js` / `app-v26.js` sono stati rimossi.
