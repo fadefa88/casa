@@ -1,5 +1,5 @@
 /* Layout compatto per smartphone in orizzontale. */
-@media (orientation: landscape) and (max-height: 600px) {
+@media (orientation: landscape) and (max-width: 999px) and (max-height: 600px) {
   :root { --mobile-rail: clamp(174px, 22.5vw, 218px); }
   .tablet-top{top:max(4px,env(safe-area-inset-top));left:max(5px,env(safe-area-inset-left));right:max(5px,env(safe-area-inset-right));min-height:43px;grid-template-columns:minmax(120px,.75fr) minmax(260px,1.5fr) minmax(78px,.5fr);gap:5px;padding:4px 8px;border-radius:11px}
   .brand-icon{width:29px;height:29px;border-radius:9px;font-size:12px}.brand-block{gap:6px}.brand-block small{font-size:6px}.brand-block h1{font-size:13px;line-height:1;white-space:nowrap}.status-pills{flex-wrap:nowrap;gap:3px;overflow:hidden}.pill{min-height:21px;padding:0 6px;font-size:7px;gap:4px;white-space:nowrap}.clock-block #clock{font-size:18px}.clock-block #date{font-size:7px;margin-top:1px;white-space:nowrap}

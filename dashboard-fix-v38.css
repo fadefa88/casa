@@ -1,32 +1,238 @@
-/* Robustezza dashboard v38 */
+/* Dashboard tablet / app UI — ottimizzata per tablet 11" in orizzontale. */
+:root{
+  --app-edge:8px;
+  --app-gap:8px;
+  --app-radius:18px;
+  --app-radius-sm:13px;
+  --app-surface:rgba(11,22,37,.94);
+  --app-surface-soft:rgba(255,255,255,.055);
+  --app-border:rgba(255,255,255,.105);
+  --app-shadow:0 12px 32px rgba(0,0,0,.28);
+}
+
+body{
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overscroll-behavior:none;
+}
+
 .loading{pointer-events:none!important;z-index:7!important}
 .tablet-top,.view-nav,.tablet-floor-nav,.tablet-tools,.dashboard-rail,.context-panel{pointer-events:auto}
 .view-nav{z-index:40!important}
 .dashboard-rail{z-index:18!important}
-.clickable-card{cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease}
-.clickable-card:hover,.clickable-card:focus-visible{border-color:rgba(96,165,250,.72);background-color:rgba(20,39,65,.94);outline:none}
+#ha-pill{border-color:rgba(56,189,248,.35)}
+
+.glass{
+  background:rgba(8,18,31,.90);
+  border-color:var(--app-border);
+  box-shadow:var(--app-shadow);
+  backdrop-filter:blur(22px) saturate(125%);
+  -webkit-backdrop-filter:blur(22px) saturate(125%);
+}
+
+.card{
+  border-radius:var(--app-radius)!important;
+  background:linear-gradient(155deg,rgba(16,30,49,.97),rgba(9,19,33,.94))!important;
+  border-color:var(--app-border)!important;
+  box-shadow:0 8px 26px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.035);
+}
+.card::before{width:4px;border-radius:var(--app-radius) 0 0 var(--app-radius)}
+.pv-card{background:linear-gradient(155deg,rgba(18,63,49,.97),rgba(11,34,31,.94))!important}
+.network-card{background:linear-gradient(155deg,rgba(8,49,74,.97),rgba(8,27,47,.94))!important}
+
+.clickable-card{cursor:pointer;transition:border-color .15s ease,background .15s ease,transform .15s ease,box-shadow .15s ease}
+.clickable-card:hover,.clickable-card:focus-visible{border-color:rgba(96,165,250,.72)!important;outline:none;box-shadow:0 12px 34px rgba(0,0,0,.30),0 0 0 1px rgba(96,165,250,.16)}
 .clickable-card:active{transform:scale(.992)}
 .card-open{position:absolute;right:10px;bottom:8px;color:#93c5fd;font-size:10px}
-#ha-pill{border-color:rgba(56,189,248,.35)}
-@media(orientation:landscape) and (max-height:600px){.card-open{right:5px;bottom:4px;font-size:6px}.view-nav{z-index:40!important}}
 
-/* Layout compatto e card energia integrate */
-@media (min-height:601px){
-  .tablet-top{top:max(5px,env(safe-area-inset-top));left:50%!important;right:auto!important;width:min(860px,calc(100% - 24px));transform:translateX(-50%);grid-template-columns:minmax(150px,1fr) auto minmax(120px,1fr);min-height:48px;padding:5px 10px;border-radius:13px;gap:9px}
-  .brand-block{gap:7px;justify-self:start}.brand-icon{width:30px;height:30px;border-radius:9px;font-size:13px}.brand-block small{font-size:7px}.brand-block h1{font-size:16px;margin-top:0}
-  .top-center{justify-self:center}.status-pills{gap:4px;flex-wrap:nowrap}.pill{min-height:22px;padding:0 8px;font-size:8px}.clock-block{justify-self:end}.clock-block #clock{font-size:20px}.clock-block #date{font-size:8px;margin-top:1px}
-  .dashboard-rail{top:59px}.tablet-floor-nav,.tablet-tools{top:59px}.toast{top:56px}
-}
-.energy-period-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
-.energy-period-strip>div{min-width:0;padding:6px 7px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.045);text-align:center}
-.energy-period-strip small,.energy-period-strip strong{display:block}.energy-period-strip small{font-size:7px;color:#8fa4bd;text-transform:uppercase;letter-spacing:.05em}.energy-period-strip strong{margin-top:2px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Tre contatori periodo e gruppi Tecnologia. */
+.energy-period-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:9px}
+.energy-period-strip>div{min-width:0;padding:7px 8px;border-radius:12px;background:var(--app-surface-soft);border:1px solid rgba(255,255,255,.055);text-align:center}
+.energy-period-strip small,.energy-period-strip strong{display:block}
+.energy-period-strip small{font-size:8px;color:#9eb1c7;text-transform:uppercase;letter-spacing:.055em}
+.energy-period-strip strong{margin-top:3px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appliances-card .metric-grid.two>div:last-child:nth-child(odd){grid-column:1/-1}
-.tech-groups{display:grid;gap:6px}.tech-zone{border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(2,12,24,.28);overflow:hidden}.tech-zone>summary{display:flex;align-items:center;gap:7px;padding:7px 8px;cursor:pointer;list-style:none}.tech-zone>summary::-webkit-details-marker{display:none}.tech-zone>summary span{flex:1;font-size:10px;font-weight:850;letter-spacing:.04em}.tech-zone>summary strong{font-size:12px}.tech-zone>summary .tech-chevron{font-size:8px;color:#8fa4bd;transition:transform .15s ease}.tech-zone[open]>summary .tech-chevron{transform:rotate(180deg)}
-.tech-device-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:0 7px 7px}.tech-device{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 6px;border-radius:8px;background:rgba(255,255,255,.045)}.tech-device small{font-size:8px;color:#aebed1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tech-device strong{font-size:10px;white-space:nowrap}
-@media(orientation:landscape) and (max-height:600px){.energy-period-strip{gap:3px;margin-top:4px}.energy-period-strip>div{padding:3px 4px;border-radius:6px}.energy-period-strip small{font-size:5px}.energy-period-strip strong{font-size:7px}.tech-groups{gap:3px}.tech-zone>summary{padding:3px 4px}.tech-zone>summary span{font-size:5.5px}.tech-zone>summary strong{font-size:7px}.tech-device-grid{gap:2px;padding:0 3px 3px}.tech-device{padding:2px 3px}.tech-device small{font-size:5px}.tech-device strong{font-size:6px}}
+.tech-groups{display:grid;gap:7px}
+.tech-zone{border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(2,12,24,.34);overflow:hidden}
+.tech-zone>summary{display:flex;align-items:center;gap:8px;min-height:42px;padding:8px 10px;cursor:pointer;list-style:none}
+.tech-zone>summary::-webkit-details-marker{display:none}
+.tech-zone>summary span{flex:1;font-size:11px;font-weight:850;letter-spacing:.035em}
+.tech-zone>summary strong{font-size:13px}
+.tech-zone>summary .tech-chevron{font-size:9px;color:#8fa4bd;transition:transform .15s ease}
+.tech-zone[open]>summary .tech-chevron{transform:rotate(180deg)}
+.tech-device-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 8px 8px}
+.tech-device{display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:34px;padding:6px 8px;border-radius:9px;background:rgba(255,255,255,.05)}
+.tech-device small{font-size:9px;color:#b7c5d7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tech-device strong{font-size:11px;white-space:nowrap}
 
-@media(orientation:landscape) and (max-height:600px){
-  .tablet-top{left:50%!important;right:auto!important;width:min(720px,calc(100% - 10px));transform:translateX(-50%);grid-template-columns:minmax(105px,1fr) auto minmax(70px,1fr);min-height:34px;padding:3px 7px;gap:4px;border-radius:9px}
-  .brand-block{justify-self:start}.top-center{justify-self:center}.clock-block{justify-self:end}.status-pills{flex-wrap:nowrap}
+/* Honor 11" / tablet 16:10 in orizzontale. Le rail sfruttano tutta l'altezza. */
+@media (orientation:landscape) and (min-width:1000px) and (min-height:560px){
+  #dashboard{
+    --rail-w:clamp(268px,22.5vw,330px);
+    --top-h:54px;
+    --nav-h:58px;
+  }
+
+  .tablet-top{
+    top:max(var(--app-edge),env(safe-area-inset-top))!important;
+    left:calc(var(--rail-w) + var(--app-gap) + 10px)!important;
+    right:calc(var(--rail-w) + var(--app-gap) + 10px)!important;
+    width:auto!important;
+    min-height:52px!important;
+    padding:6px 11px!important;
+    transform:none!important;
+    grid-template-columns:minmax(120px,1fr) auto minmax(94px,1fr)!important;
+    gap:8px!important;
+    border-radius:15px!important;
+  }
+  .brand-block{gap:8px;justify-self:start;min-width:0}
+  .brand-icon{width:34px;height:34px;border-radius:10px;font-size:14px;flex:0 0 auto}
+  .brand-block small{font-size:7px;letter-spacing:.14em}
+  .brand-block h1{font-size:17px;line-height:1.05;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top-center{justify-self:center;min-width:0}
+  .status-pills{gap:4px;flex-wrap:nowrap;overflow:hidden}
+  .pill{min-height:24px;padding:0 8px;font-size:8px;gap:5px;white-space:nowrap}
+  .clock-block{justify-self:end;min-width:82px}
+  .clock-block #clock{font-size:21px}
+  .clock-block #date{font-size:8px;margin-top:2px;white-space:nowrap}
+
+  .dashboard-rail{
+    top:max(var(--app-edge),env(safe-area-inset-top))!important;
+    bottom:max(var(--app-edge),env(safe-area-inset-bottom))!important;
+    width:var(--rail-w)!important;
+    gap:var(--app-gap)!important;
+    padding:0!important;
+  }
+  .left-rail{left:max(var(--app-edge),env(safe-area-inset-left))!important}
+  .right-rail{right:max(var(--app-edge),env(safe-area-inset-right))!important}
+  .dashboard-rail .card{padding:clamp(10px,1vw,14px)!important}
+  .dashboard-rail .card-head{margin-bottom:8px}
+  .dashboard-rail .card-head .title{font-size:10px;letter-spacing:.075em}
+  .dashboard-rail .card-head strong{font-size:clamp(18px,1.55vw,23px)}
+  .dashboard-rail .metric-grid{gap:7px}
+  .dashboard-rail .metric-grid>div{padding:8px 9px;border-radius:12px}
+  .dashboard-rail .metric-grid small{font-size:8px}
+  .dashboard-rail .metric-grid strong{font-size:14px}
+  .dashboard-rail .status-line{min-height:37px;padding:8px 10px;border-radius:11px}
+  .dashboard-rail .status-line span{font-size:10px}
+  .dashboard-rail .status-line strong{font-size:12px}
+  .overview-kpi{padding:9px!important;border-radius:12px!important}
+  .overview-kpi small{font-size:8px!important}
+  .overview-kpi strong{font-size:15px!important}
+
+  .tablet-floor-nav{
+    top:calc(max(var(--app-edge),env(safe-area-inset-top)) + 61px)!important;
+    bottom:auto!important;
+    padding:5px!important;
+    gap:3px!important;
+    border-radius:14px!important;
+  }
+  .tablet-floor-nav button{min-height:38px;padding:0 12px;border-radius:10px;font-size:11px}
+  .tablet-tools{
+    top:calc(max(var(--app-edge),env(safe-area-inset-top)) + 61px)!important;
+    right:calc(var(--rail-w) + var(--app-gap) + 4px)!important;
+    bottom:auto!important;
+    padding:5px!important;
+    gap:3px!important;
+    border-radius:14px!important;
+  }
+  .tablet-tools button{width:38px;min-height:38px;border-radius:10px}
+
+  .view-nav{
+    bottom:max(var(--app-edge),env(safe-area-inset-bottom))!important;
+    min-height:54px;
+    padding:5px!important;
+    gap:3px!important;
+    border-radius:17px!important;
+  }
+  .view-nav button{min-height:44px;padding:0 14px;border-radius:12px;font-size:11px;gap:7px}
+  .view-nav button.active{background:linear-gradient(145deg,#2563eb,#0ea5e9);box-shadow:0 7px 18px rgba(37,99,235,.30)}
+
+  .context-panel{
+    left:calc(var(--rail-w) + var(--app-gap) + 8px)!important;
+    right:calc(var(--rail-w) + var(--app-gap) + 8px)!important;
+    bottom:74px!important;
+    border-radius:18px!important;
+  }
+  .toast{top:70px!important}
+
+  /* Elenco Stanze più leggibile e con target touch reali. */
+  .room-device-list{gap:7px!important;margin-top:7px!important}
+  .room-device-card{
+    grid-template-columns:40px minmax(0,1fr) auto!important;
+    gap:9px!important;
+    min-height:54px!important;
+    padding:7px 9px!important;
+    border-radius:13px!important;
+  }
+  .room-device-icon{width:38px!important;height:38px!important;border-radius:11px!important;font-size:14px!important}
+  .room-device-main strong{font-size:12px!important;line-height:1.15!important}
+  .room-device-main small{font-size:9px!important;margin-top:3px!important}
+  .room-device-side strong{font-size:13px!important}
+  .room-device-side small{font-size:8px!important;margin-top:3px!important}
+
+  /* Dispositivi della stanza: riempiono la riga e non restano miniaturizzati. */
+  .context-panel.rooms-device-context{min-height:190px!important;padding:10px 12px!important}
+  .room-device-context-layout{grid-template-columns:clamp(180px,16vw,230px) minmax(0,1fr)!important;gap:11px!important}
+  .room-device-context-head{padding:10px!important;border-radius:14px!important;gap:8px!important}
+  .room-device-context-summary{grid-template-columns:42px minmax(0,1fr)!important;gap:9px!important}
+  .room-device-context-icon{width:40px!important;height:40px!important;border-radius:12px!important;font-size:15px!important}
+  .room-device-context-summary strong{font-size:14px!important}
+  .room-device-context-summary small{font-size:9px!important;line-height:1.4!important}
+  .room-climate-control{padding:8px!important;border-radius:12px!important;gap:6px!important}
+  .room-climate-copy span{font-size:10px!important}.room-climate-copy small{font-size:8px!important}
+  .room-climate-current small{font-size:7px!important}.room-climate-current strong{font-size:12px!important}
+  .room-climate-actions{grid-template-columns:32px minmax(44px,1fr) 32px 36px!important;gap:4px!important}
+  .room-climate-actions>strong{font-size:13px!important}
+  .room-climate-actions button{height:32px!important;border-radius:9px!important;font-size:11px!important}
+  .ha-device-sections{gap:8px!important}
+  .ha-device-section{grid-template-columns:78px minmax(0,1fr)!important;gap:8px!important}
+  .ha-device-section-title{gap:5px!important}
+  .ha-device-section-title i{font-size:11px!important}
+  .ha-device-section-title span{font-size:9px!important;letter-spacing:.055em!important}
+  .ha-device-section-title small{min-width:20px!important;height:20px!important;font-size:8px!important}
+  .ha-device-row{gap:7px!important;align-items:stretch!important}
+  .ha-device-tile{
+    flex:1 1 150px!important;
+    width:auto!important;
+    max-width:none!important;
+    min-width:145px!important;
+    min-height:62px!important;
+    grid-template-columns:38px minmax(0,1fr) 30px!important;
+    gap:8px!important;
+    padding:8px!important;
+    border-radius:13px!important;
+  }
+  .ha-device-tile.cover{flex:1 1 190px!important;width:auto!important;max-width:none!important;min-width:185px!important;grid-template-columns:38px minmax(0,1fr) auto!important}
+  .ha-device-icon{width:36px!important;height:36px!important;border-radius:11px!important;font-size:13px!important}
+  .ha-device-copy strong{font-size:11px!important;line-height:1.15!important}
+  .ha-device-copy small{font-size:9px!important;margin-top:3px!important}
+  .ha-device-power{width:28px!important;height:28px!important;border-radius:9px!important;font-size:10px!important}
+  .ha-cover-actions{gap:4px!important}
+  .ha-cover-actions button{width:29px!important;height:29px!important;border-radius:8px!important;font-size:10px!important}
+  .rooms-empty{font-size:11px!important}
+}
+
+/* Tablet in verticale: due colonne e barra superiore completa. */
+@media (orientation:portrait) and (min-width:700px) and (min-height:900px){
+  #dashboard{--rail-w:calc(50% - 12px)}
+  .tablet-top{top:8px!important;left:8px!important;right:8px!important;width:auto!important;transform:none!important;min-height:56px!important}
+  .dashboard-rail{top:72px!important;bottom:76px!important;width:calc(50% - 12px)!important;gap:8px!important}
+  .left-rail{left:8px!important}.right-rail{right:8px!important}
+  .tablet-floor-nav,.tablet-tools{display:none!important}
+  .view-nav{bottom:8px!important}
+  .context-panel{left:12px!important;right:12px!important;bottom:76px!important}
+}
+
+/* Mantiene il layout smartphone esistente senza ereditarne la miniaturizzazione sul tablet. */
+@media (orientation:landscape) and (max-width:999px) and (max-height:600px){
+  .card-open{right:5px;bottom:4px;font-size:6px}
+  .view-nav{z-index:40!important}
+  .energy-period-strip{gap:3px;margin-top:4px}
+  .energy-period-strip>div{padding:3px 4px;border-radius:6px}
+  .energy-period-strip small{font-size:5px}.energy-period-strip strong{font-size:7px}
+  .tech-groups{gap:3px}.tech-zone>summary{min-height:0;padding:3px 4px}.tech-zone>summary span{font-size:5.5px}.tech-zone>summary strong{font-size:7px}
+  .tech-device-grid{gap:2px;padding:0 3px 3px}.tech-device{min-height:0;padding:2px 3px}.tech-device small{font-size:5px}.tech-device strong{font-size:6px}
+  .tablet-top{left:50%!important;right:auto!important;width:min(720px,calc(100% - 10px))!important;transform:translateX(-50%)!important;grid-template-columns:minmax(105px,1fr) auto minmax(70px,1fr)!important;min-height:34px!important;padding:3px 7px!important;gap:4px!important;border-radius:9px!important}
   .dashboard-rail{top:41px!important}.tablet-floor-nav,.tablet-tools{top:41px!important}.toast{top:39px!important}
 }
