@@ -184,39 +184,13 @@
   }
 
   function patchEnergyAndNetwork() {
-    patchHeader('Fotovoltaico casa', 'pvPower');
-    patchMetric('Fotovoltaico casa', 'Produzione oggi', 'pvToday');
-    patchMetric('Fotovoltaico casa', 'Autoconsumo', 'pvSelfConsumption');
-    patchMetric('Fotovoltaico casa', 'Prelievo', 'gridImport');
-    patchMetric('Fotovoltaico casa', 'Immissione', 'gridExport');
-
-    const pvCard = findCard('Fotovoltaico casa');
-    if (pvCard) {
-      const nodes = [...pvCard.querySelectorAll('.flow-node')];
-      const pvOk = Boolean(availableGlobal('pvPower'));
-      const houseOk = Boolean(availableGlobal('housePower'));
-      nodes.forEach((node) => {
-        const label = normalize(node.querySelector('small')?.textContent);
-        if (label === 'produzione' && !pvOk) setText(node.querySelector('strong'), null);
-        if ((label === 'casa' || label === 'rete') && !(pvOk && houseOk)) setText(node.querySelector('strong'), null);
-      });
-    }
-
+    // Fotovoltaico, linee Shelly, elettrodomestici e tecnologia sono gestiti
+    // dal resolver energetico, che distingue correttamente 0 da dato assente.
     patchHeader('Bilancio casa', 'housePower');
     patchMetric('Bilancio casa', 'Consumo oggi', 'houseToday');
     patchMetric('Bilancio casa', 'Costo stimato', 'houseCost');
     patchMetric('Bilancio casa', 'Picco', 'housePeak');
     patchMetric('Bilancio casa', 'Vs ieri', 'houseVsYesterday');
-
-    patchHeader('Linee Shelly', 'heatPumpPower');
-    patchMetric('Linee Shelly', 'Pompa di calore', 'heatPumpPower');
-    patchMetric('Linee Shelly', 'Modalità', 'heatPumpMode');
-    patchMetric('Linee Shelly', 'Induzione', 'inductionPower');
-
-    patchMetric('Elettrodomestici', 'Lavatrice', 'washerPower');
-    patchMetric('Elettrodomestici', 'Asciugatrice', 'dryerPower');
-    patchMetric('Elettrodomestici', 'Forno', 'ovenPower');
-    patchMetric('Elettrodomestici', 'Frigorifero', 'fridgePower');
 
     patchHeader('Rete', 'networkPing');
     patchMetric('Rete', 'Download', 'networkLinkDown');
@@ -242,6 +216,7 @@
     patchMetric('Dispositivi', 'FTTH', 'networkState');
     patchMetric('Dispositivi', 'Backup 5G', 'backup5gStatus');
   }
+
 
   function climateLabel(state) {
     const value = String(state || '').toLowerCase();

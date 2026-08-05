@@ -9,3 +9,18 @@
 .card-open{position:absolute;right:10px;bottom:8px;color:#93c5fd;font-size:10px}
 #ha-pill{border-color:rgba(56,189,248,.35)}
 @media(orientation:landscape) and (max-height:600px){.card-open{right:5px;bottom:4px;font-size:6px}.view-nav{z-index:40!important}}
+
+/* Layout compatto e card energia integrate */
+@media (min-height:601px){
+  .tablet-top{top:max(8px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));min-height:58px;padding:7px 12px;border-radius:15px;gap:12px}
+  .brand-block{gap:8px}.brand-icon{width:34px;height:34px;border-radius:10px;font-size:14px}.brand-block small{font-size:8px}.brand-block h1{font-size:18px;margin-top:1px}
+  .status-pills{gap:5px}.pill{min-height:25px;padding:0 9px;font-size:9px}.clock-block #clock{font-size:23px}.clock-block #date{font-size:9px;margin-top:2px}
+  .dashboard-rail{top:76px}.tablet-floor-nav,.tablet-tools{top:76px}.toast{top:70px}
+}
+.energy-period-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.energy-period-strip>div{min-width:0;padding:6px 7px;border-radius:10px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.045);text-align:center}
+.energy-period-strip small,.energy-period-strip strong{display:block}.energy-period-strip small{font-size:7px;color:#8fa4bd;text-transform:uppercase;letter-spacing:.05em}.energy-period-strip strong{margin-top:2px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appliances-card .metric-grid.two>div:last-child:nth-child(odd){grid-column:1/-1}
+.tech-groups{display:grid;gap:6px}.tech-zone{border:1px solid rgba(255,255,255,.09);border-radius:11px;background:rgba(2,12,24,.28);overflow:hidden}.tech-zone>summary{display:flex;align-items:center;gap:7px;padding:7px 8px;cursor:pointer;list-style:none}.tech-zone>summary::-webkit-details-marker{display:none}.tech-zone>summary span{flex:1;font-size:10px;font-weight:850;letter-spacing:.04em}.tech-zone>summary strong{font-size:12px}.tech-zone>summary .tech-chevron{font-size:8px;color:#8fa4bd;transition:transform .15s ease}.tech-zone[open]>summary .tech-chevron{transform:rotate(180deg)}
+.tech-device-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:0 7px 7px}.tech-device{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:5px 6px;border-radius:8px;background:rgba(255,255,255,.045)}.tech-device small{font-size:8px;color:#aebed1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tech-device strong{font-size:10px;white-space:nowrap}
+@media(orientation:landscape) and (max-height:600px){.energy-period-strip{gap:3px;margin-top:4px}.energy-period-strip>div{padding:3px 4px;border-radius:6px}.energy-period-strip small{font-size:5px}.energy-period-strip strong{font-size:7px}.tech-groups{gap:3px}.tech-zone>summary{padding:3px 4px}.tech-zone>summary span{font-size:5.5px}.tech-zone>summary strong{font-size:7px}.tech-device-grid{gap:2px;padding:0 3px 3px}.tech-device{padding:2px 3px}.tech-device small{font-size:5px}.tech-device strong{font-size:6px}}

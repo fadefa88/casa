@@ -9,6 +9,8 @@
   const money = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
   const power = (value) => Number(value) >= 1000 ? `${fmt.format(Number(value) / 1000)} kW` : `${Math.round(Number(value) || 0)} W`;
   const energy = (value) => `${fmt.format(Number(value) || 0)} kWh`;
+  const finiteValue = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+  const periodEnergy = (value) => finiteValue(value) ? `${fmt.format(Number(value))} kWh` : 'NULL';
   const speed = (value) => Number(value) >= 1000 ? `${fmt.format(Number(value) / 1000)} Gbps` : `${fmt.format(Number(value) || 0)} Mbps`;
   const sum = (...values) => values.reduce((total, value) => total + Number(value || 0), 0);
   const number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -17,12 +19,21 @@
   const data = {
     housePower: 3280, houseToday: 18.6, houseCost: 5.31, housePeak: 5.42, houseVs: -6,
     pvPower: 4180, pvToday: 19.8, pvSelf: 78, gridImport: 5.2, gridExport: 6.8,
-    heatPumpPower: 1420, heatPumpToday: 7.8, heatPumpMonth: 126.4, heatPumpMode: 'Raffrescamento',
-    inductionPower: 0, inductionToday: 1.1, inductionPeak: 3.6,
-    washerPower: 510, washerState: 'In funzione', dryerPower: 0, dryerState: 'Spenta',
-    ovenPower: 0, ovenState: 'Spento', fridgePower: 180, fridgeState: 'Compressore attivo',
-    tvPower: 112, shieldPower: 9, mediaPcPower: 48, hddPower: 17,
-    pcPower: 250, monitorPower: 38, ps5Power: 0, dockPower: 22,
+    heatPumpPower: 1420, heatPumpToday: null, heatPumpYesterday: null, heatPumpMonth: null, heatPumpMode: 'Raffrescamento',
+    inductionPower: 0, inductionToday: null, inductionYesterday: null, inductionMonth: null, inductionPeak: 3.6,
+    washerPower: 510, washerToday: null, washerYesterday: null, washerMonth: null, washerState: 'In funzione',
+    dryerPower: 0, dryerToday: null, dryerYesterday: null, dryerMonth: null, dryerState: 'Spenta',
+    ovenPower: 0, ovenToday: null, ovenYesterday: null, ovenMonth: null, ovenState: 'Spento',
+    fridgePower: 180, fridgeToday: null, fridgeYesterday: null, fridgeMonth: null, fridgeState: 'Compressore attivo',
+    dishwasherPower: 0, dishwasherToday: null, dishwasherYesterday: null, dishwasherMonth: null,
+    tvPower: 112, tvToday: null, tvYesterday: null, tvMonth: null,
+    shieldPower: 9, shieldToday: null, shieldYesterday: null, shieldMonth: null,
+    mediaPcPower: 48, mediaPcToday: null, mediaPcYesterday: null, mediaPcMonth: null,
+    hddPower: 17, hddToday: null, hddYesterday: null, hddMonth: null,
+    pcPower: 250, pcToday: null, pcYesterday: null, pcMonth: null,
+    monitorPower: 38, monitorToday: null, monitorYesterday: null, monitorMonth: null,
+    ps5Power: 0, ps5Today: null, ps5Yesterday: null, ps5Month: null,
+    dockPower: 22, dockToday: null, dockYesterday: null, dockMonth: null,
     networkState: 'Online', networkLinkDown: 2500, networkLinkUp: 1000,
     networkCurrentDown: 412, networkCurrentUp: 84, networkPing: 7, networkJitter: 1.4,
     networkPacketLoss: 0, networkUptimeHours: 326, networkClients: 31, networkWifiClients: 18,
@@ -52,6 +63,7 @@
   const toastNode = $('#toast');
   let toastTimer = null;
   let refreshTimer = null;
+  const techOpenGroups = new Set();
 
   injectLiveStyles();
 
@@ -67,6 +79,11 @@
       .room-hvac{display:inline-flex;align-items:center;gap:.25rem;color:#74c7ff}.room-hvac.off{color:#8ea2b7}.room-hvac.heating{color:#ff9b77}
       .card-actions button.busy,.context-actions button.busy{opacity:.5;pointer-events:none}
       .ha-error{color:#ff9d9d}.ha-ok{color:#76e0ad}
+      .energy-period-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.38rem;margin-top:.55rem}
+      .energy-period-strip>div{min-width:0;padding:.42rem .48rem;border:1px solid rgba(255,255,255,.08);border-radius:.68rem;background:rgba(2,12,24,.32);text-align:center}
+      .energy-period-strip small,.energy-period-strip strong{display:block}.energy-period-strip small{font-size:.58rem;color:#8fa4bd;text-transform:uppercase;letter-spacing:.045em}.energy-period-strip strong{margin-top:.12rem;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .tech-groups{display:grid;gap:.42rem}.tech-zone{border:1px solid rgba(255,255,255,.09);border-radius:.75rem;background:rgba(2,12,24,.28);overflow:hidden}.tech-zone>summary{display:flex;align-items:center;gap:.45rem;padding:.48rem .58rem;cursor:pointer;list-style:none}.tech-zone>summary::-webkit-details-marker{display:none}.tech-zone>summary span{flex:1;font-size:.7rem;font-weight:850;letter-spacing:.04em}.tech-zone>summary strong{font-size:.82rem}.tech-zone>summary .tech-chevron{font-size:.62rem;color:#8fa4bd;transition:transform .15s ease}.tech-zone[open]>summary .tech-chevron{transform:rotate(180deg)}
+      .tech-device-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.32rem;padding:0 .48rem .48rem}.tech-device{display:flex;align-items:center;justify-content:space-between;gap:.4rem;padding:.38rem .44rem;border-radius:.55rem;background:rgba(255,255,255,.045)}.tech-device small{font-size:.62rem;color:#aebed1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tech-device strong{font-size:.72rem;white-space:nowrap}
     `;
     document.head.appendChild(style);
   }
@@ -82,6 +99,21 @@
 
   function metrics(items) {
     return `<div class="metric-grid two">${items.map(([label, value]) => `<div><small>${label}</small><strong>${value}</strong></div>`).join('')}</div>`;
+  }
+
+  function energyPeriodStrip(group, values = {}) {
+    return `<div class="energy-period-strip" data-energy-group="${group}">
+      <div><small>Oggi</small><strong data-period="today">${periodEnergy(values.today)}</strong></div>
+      <div><small>Ieri</small><strong data-period="yesterday">${periodEnergy(values.yesterday)}</strong></div>
+      <div><small>Mese</small><strong data-period="month">${periodEnergy(values.month)}</strong></div>
+    </div>`;
+  }
+
+  function technologyGroup(id, label, icon, total, devices) {
+    return `<details class="tech-zone" data-tech-group="${id}" ${techOpenGroups.has(id) ? 'open' : ''}>
+      <summary><i class="fa-solid ${icon}"></i><span>${label}</span><strong data-tech-total="${id}">${power(total)}</strong><i class="fa-solid fa-chevron-down tech-chevron"></i></summary>
+      <div class="tech-device-grid">${devices.map(([key, deviceLabel, value]) => `<div class="tech-device" data-tech-device="${key}"><small>${deviceLabel}</small><strong>${power(value)}</strong></div>`).join('')}</div>
+    </details>`;
   }
 
   function card({ title, value = '', icon = 'fa-chart-simple', cls = '', body = '', target = '' }) {
@@ -144,8 +176,21 @@
     const map = {
       housePower: ['housePower'], houseToday: ['houseToday'], houseCost: ['houseCost'], housePeak: ['housePeak'], houseVs: ['houseVsYesterday'],
       pvPower: ['pvPower'], pvToday: ['pvToday'], pvSelf: ['pvSelfConsumption'], gridImport: ['gridImport'], gridExport: ['gridExport'],
-      heatPumpPower: ['heatPumpPower'], heatPumpToday: ['heatPumpToday'], heatPumpMonth: ['heatPumpMonth'], inductionPower: ['inductionPower'], inductionToday: ['inductionToday'], inductionPeak: ['inductionPeak'],
-      washerPower: ['washerPower'], dryerPower: ['dryerPower'], ovenPower: ['ovenPower'], fridgePower: ['fridgePower'], tvPower: ['tvPower'], shieldPower: ['shieldPower'], mediaPcPower: ['mediaPcPower'], hddPower: ['hddPower'], pcPower: ['pcPower'], monitorPower: ['monitorPower'], ps5Power: ['ps5Power'], dockPower: ['dockPower'],
+      heatPumpPower: ['heatPumpPower'], heatPumpToday: ['heatPumpToday'], heatPumpYesterday: ['heatPumpYesterday'], heatPumpMonth: ['heatPumpMonth'],
+      inductionPower: ['inductionPower'], inductionToday: ['inductionToday'], inductionYesterday: ['inductionYesterday'], inductionMonth: ['inductionMonth'], inductionPeak: ['inductionPeak'],
+      washerPower: ['washerPower'], washerToday: ['washerToday'], washerYesterday: ['washerYesterday'], washerMonth: ['washerMonth'],
+      dryerPower: ['dryerPower'], dryerToday: ['dryerToday'], dryerYesterday: ['dryerYesterday'], dryerMonth: ['dryerMonth'],
+      ovenPower: ['ovenPower'], ovenToday: ['ovenToday'], ovenYesterday: ['ovenYesterday'], ovenMonth: ['ovenMonth'],
+      fridgePower: ['fridgePower'], fridgeToday: ['fridgeToday'], fridgeYesterday: ['fridgeYesterday'], fridgeMonth: ['fridgeMonth'],
+      dishwasherPower: ['dishwasherPower'], dishwasherToday: ['dishwasherToday'], dishwasherYesterday: ['dishwasherYesterday'], dishwasherMonth: ['dishwasherMonth'],
+      tvPower: ['tvPower'], tvToday: ['tvToday'], tvYesterday: ['tvYesterday'], tvMonth: ['tvMonth'],
+      shieldPower: ['shieldPower'], shieldToday: ['shieldToday'], shieldYesterday: ['shieldYesterday'], shieldMonth: ['shieldMonth'],
+      mediaPcPower: ['mediaPcPower'], mediaPcToday: ['mediaPcToday'], mediaPcYesterday: ['mediaPcYesterday'], mediaPcMonth: ['mediaPcMonth'],
+      hddPower: ['hddPower'], hddToday: ['hddToday'], hddYesterday: ['hddYesterday'], hddMonth: ['hddMonth'],
+      pcPower: ['pcPower'], pcToday: ['pcToday'], pcYesterday: ['pcYesterday'], pcMonth: ['pcMonth'],
+      monitorPower: ['monitorPower'], monitorToday: ['monitorToday'], monitorYesterday: ['monitorYesterday'], monitorMonth: ['monitorMonth'],
+      ps5Power: ['ps5Power'], ps5Today: ['ps5Today'], ps5Yesterday: ['ps5Yesterday'], ps5Month: ['ps5Month'],
+      dockPower: ['dockPower'], dockToday: ['dockToday'], dockYesterday: ['dockYesterday'], dockMonth: ['dockMonth'],
       networkLinkDown: ['networkLinkDown'], networkLinkUp: ['networkLinkUp'], networkCurrentDown: ['networkCurrentDown'], networkCurrentUp: ['networkCurrentUp'], networkPing: ['networkPing'], networkJitter: ['networkJitter'], networkPacketLoss: ['networkPacketLoss'], networkUptimeHours: ['networkUptimeHours'], networkClients: ['networkClients'], networkWifiClients: ['networkWifiClients'],
     };
     Object.entries(map).forEach(([dataKey, [entityKey]]) => {
@@ -279,15 +324,17 @@
     return mode ? mode.replaceAll('_', ' ') : '—';
   };
 
-  function solarCard() {
-    const net = data.pvPower - data.housePower;
-    return card({ title: 'Fotovoltaico casa', value: power(data.pvPower), icon: 'fa-solar-panel', cls: 'pv-card featured-card', target: 'energy', body: `
-      <div class="energy-flow"><div class="flow-node solar"><i class="fa-solid fa-sun"></i><small>Produzione</small><strong>${power(data.pvPower)}</strong></div><i class="fa-solid fa-arrow-right flow-arrow"></i><div class="flow-node home"><i class="fa-solid fa-house"></i><small>Casa</small><strong>${power(Math.min(data.pvPower, data.housePower))}</strong></div><i class="fa-solid fa-arrow-right-arrow-left flow-arrow"></i><div class="flow-node grid"><i class="fa-solid fa-bolt"></i><small>Rete</small><strong>${net >= 0 ? '↑' : '↓'} ${power(Math.abs(net))}</strong></div></div>
+  function solarCard(clickable = true) {
+    const production = Number.isFinite(Number(data.pvPower)) ? Math.max(0, Number(data.pvPower)) : 0;
+    const house = Number.isFinite(Number(data.housePower)) ? Math.max(0, Number(data.housePower)) : 0;
+    const net = production - house;
+    return card({ title: 'Fotovoltaico casa', value: power(production), icon: 'fa-solar-panel', cls: 'pv-card featured-card', target: clickable ? 'energy' : '', body: `
+      <div class="energy-flow"><div class="flow-node solar"><i class="fa-solid fa-sun"></i><small>Produzione</small><strong>${power(production)}</strong></div><i class="fa-solid fa-arrow-right flow-arrow"></i><div class="flow-node home"><i class="fa-solid fa-house"></i><small>Casa</small><strong>${power(Math.min(production, house))}</strong></div><i class="fa-solid fa-arrow-right-arrow-left flow-arrow"></i><div class="flow-node grid"><i class="fa-solid fa-bolt"></i><small>Rete</small><strong>${net >= 0 ? '↑' : '↓'} ${power(Math.abs(net))}</strong></div></div>
       ${metrics([['Produzione oggi', energy(data.pvToday)], ['Autoconsumo', `${fmt.format(data.pvSelf)}%`], ['Prelievo', energy(data.gridImport)], ['Immissione', energy(data.gridExport)]])}` });
   }
 
-  function houseCard() {
-    return card({ title: 'Bilancio casa', value: power(data.housePower), icon: 'fa-gauge-high', cls: 'energy-card', target: 'energy', body: metrics([
+  function houseCard(clickable = true) {
+    return card({ title: 'Bilancio casa', value: power(data.housePower), icon: 'fa-gauge-high', cls: 'energy-card', target: clickable ? 'energy' : '', body: metrics([
       ['Consumo oggi', energy(data.houseToday)], ['Costo stimato', money.format(data.houseCost)], ['Picco', `${fmt.format(data.housePeak)} kW`], ['Vs ieri', `${fmt.format(data.houseVs)}%`],
     ]) });
   }
@@ -341,11 +388,29 @@
   function roomsView() { left.innerHTML = roomColumn('first'); right.innerHTML = roomColumn('second'); renderRoomContext(); }
 
   function energyView() {
-    const appliances = sum(data.washerPower, data.dryerPower, data.ovenPower, data.fridgePower);
+    const appliances = sum(data.washerPower, data.dryerPower, data.ovenPower, data.fridgePower, data.dishwasherPower);
     const tv = sum(data.tvPower, data.shieldPower, data.mediaPcPower, data.hddPower);
     const studio = sum(data.pcPower, data.monitorPower, data.ps5Power, data.dockPower);
-    left.innerHTML = solarCard() + houseCard();
-    right.innerHTML = card({ title: 'Linee Shelly', value: power(sum(data.heatPumpPower, data.inductionPower)), icon: 'fa-bolt-lightning', cls: 'shelly-card', body: metrics([['Pompa di calore', power(data.heatPumpPower)], ['Modalità', data.heatPumpMode], ['Induzione', power(data.inductionPower)], ['Oggi', energy(sum(data.heatPumpToday, data.inductionToday))]]) }) + card({ title: 'Elettrodomestici', value: power(appliances), icon: 'fa-plug', cls: 'appliances-card', body: metrics([['Lavatrice', power(data.washerPower)], ['Asciugatrice', power(data.dryerPower)], ['Forno', power(data.ovenPower)], ['Frigorifero', power(data.fridgePower)]]) }) + card({ title: 'Tecnologia', value: power(tv + studio), icon: 'fa-microchip', cls: 'tech-card', body: metrics([['Zona TV', power(tv)], ['Studio / gaming', power(studio)], ['Mini PC + HDD', power(sum(data.mediaPcPower, data.hddPower))], ['PC + PS5', power(sum(data.pcPower, data.ps5Power))]]) });
+    const shellyPeriods = {
+      today: finiteValue(data.heatPumpToday) && finiteValue(data.inductionToday) ? sum(data.heatPumpToday, data.inductionToday) : null,
+      yesterday: finiteValue(data.heatPumpYesterday) && finiteValue(data.inductionYesterday) ? sum(data.heatPumpYesterday, data.inductionYesterday) : null,
+      month: finiteValue(data.heatPumpMonth) && finiteValue(data.inductionMonth) ? sum(data.heatPumpMonth, data.inductionMonth) : null,
+    };
+    const appliancePeriods = { today:null, yesterday:null, month:null };
+    const technologyPeriods = { today:null, yesterday:null, month:null };
+
+    left.innerHTML = solarCard(false) + houseCard(false);
+    right.innerHTML =
+      card({ title: 'Linee Shelly', value: power(sum(data.heatPumpPower, data.inductionPower)), icon: 'fa-bolt-lightning', cls: 'shelly-card', body:
+        metrics([['Pompa di calore', power(data.heatPumpPower)], ['Induzione', power(data.inductionPower)]]) + energyPeriodStrip('shelly', shellyPeriods) }) +
+      card({ title: 'Elettrodomestici', value: power(appliances), icon: 'fa-plug', cls: 'appliances-card', body:
+        metrics([['Lavatrice', power(data.washerPower)], ['Asciugatrice', power(data.dryerPower)], ['Forno', power(data.ovenPower)], ['Frigorifero', power(data.fridgePower)], ['Lavastoviglie', power(data.dishwasherPower)]]) + energyPeriodStrip('appliances', appliancePeriods) }) +
+      card({ title: 'Tecnologia', value: power(tv + studio), icon: 'fa-microchip', cls: 'tech-card', body:
+        `<div class="tech-groups">${technologyGroup('zona-tv', 'ZONA TV', 'fa-tv', tv, [
+          ['tvPower','TV',data.tvPower], ['shieldPower','Nvidia Shield',data.shieldPower], ['mediaPcPower','Mini PC',data.mediaPcPower], ['hddPower','HDD',data.hddPower],
+        ])}${technologyGroup('studio-gaming', 'Studio / gaming', 'fa-gamepad', studio, [
+          ['pcPower','PC',data.pcPower], ['monitorPower','Monitor',data.monitorPower], ['ps5Power','PS5',data.ps5Power], ['dockPower','Splitter',data.dockPower],
+        ])}</div>` + energyPeriodStrip('technology', technologyPeriods) });
     context.hidden = true;
   }
 
@@ -390,6 +455,12 @@
     if (dialog?.showModal) dialog.showModal(); else toast('Videocitofono aperto');
   }
 
+  function controlledShutterEntities() {
+    const exact = window.CASA_SHUTTERS?.resolved?.map((item) => item.entity_id).filter(Boolean) || [];
+    if (exact.length) return exact;
+    return rooms.map((room) => roomStates[room.id].resolved.cover).filter(Boolean);
+  }
+
   async function runAction(action, roomId, button) {
     const roomState = roomStates[roomId];
     const resolved = roomState?.resolved || {};
@@ -402,9 +473,9 @@
     else if (action === 'climate-up' && roomState) await setClimateTemperature(roomState, number(roomState.targetTemperature, roomState.temperature) + 0.5, button);
     else if (action === 'climate-down' && roomState) await setClimateTemperature(roomState, number(roomState.targetTemperature, roomState.temperature) - 0.5, button);
     else if (action === 'climate-power' && roomState) await callService('climate', roomState.hvacMode === 'off' ? 'turn_on' : 'turn_off', resolved.climate, {}, button);
-    else if (action === 'covers-open-all') await callService('cover', 'open_cover', globalEntity('allShutters', false) || rooms.map((room) => roomStates[room.id].resolved.cover).filter(Boolean), {}, button);
-    else if (action === 'covers-close-all') await callService('cover', 'close_cover', globalEntity('allShutters', false) || rooms.map((room) => roomStates[room.id].resolved.cover).filter(Boolean), {}, button);
-    else if (action === 'covers-stop-all') await callService('cover', 'stop_cover', globalEntity('allShutters', false) || rooms.map((room) => roomStates[room.id].resolved.cover).filter(Boolean), {}, button);
+    else if (action === 'covers-open-all') await callService('cover', 'open_cover', controlledShutterEntities(), {}, button);
+    else if (action === 'covers-close-all') await callService('cover', 'close_cover', controlledShutterEntities(), {}, button);
+    else if (action === 'covers-stop-all') await callService('cover', 'stop_cover', controlledShutterEntities(), {}, button);
     else if (action === 'lights-off-all') await callService('light', 'turn_off', globalEntity('allLights', false) || rooms.map((room) => roomStates[room.id].resolved.lights).filter(Boolean), {}, button);
     else if (action === 'alarm-home') await callService('alarm_control_panel', 'alarm_arm_home', globalEntity('alarm'), {}, button);
     else if (action === 'alarm-away') await callService('alarm_control_panel', 'alarm_arm_away', globalEntity('alarm'), {}, button);
@@ -419,6 +490,13 @@
     if (await callService('climate', 'set_temperature', roomState.resolved.climate, { temperature: clamped }, button)) roomState.targetTemperature = clamped;
     else if (!ui.connected) roomState.targetTemperature = clamped;
   }
+
+  document.addEventListener('toggle', (event) => {
+    const details = event.target.closest?.('details[data-tech-group]');
+    if (!details) return;
+    if (details.open) techOpenGroups.add(details.dataset.techGroup);
+    else techOpenGroups.delete(details.dataset.techGroup);
+  }, true);
 
   document.addEventListener('click', (event) => {
     const nav = event.target.closest('[data-view]');

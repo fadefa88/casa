@@ -30,26 +30,39 @@ window.CASA_DASHBOARD_CONFIG = {
 
     heatPumpPower: ['sensor.heat_pump_power', 'sensor.pompa_di_calore_potenza'],
     heatPumpToday: ['sensor.heat_pump_today_energy', 'sensor.pompa_di_calore_energia_oggi'],
+    heatPumpYesterday: ['sensor.heat_pump_yesterday_energy', 'sensor.pompa_di_calore_energia_ieri'],
     heatPumpMonth: ['sensor.heat_pump_month_energy', 'sensor.pompa_di_calore_energia_mese'],
     heatPumpMode: ['sensor.heat_pump_mode', 'sensor.modalita_pompa_di_calore'],
     inductionPower: ['sensor.induction_power', 'sensor.induzione_potenza'],
     inductionToday: ['sensor.induction_today_energy', 'sensor.induzione_energia_oggi'],
+    inductionYesterday: ['sensor.induction_yesterday_energy', 'sensor.induzione_energia_ieri'],
+    inductionMonth: ['sensor.induction_month_energy', 'sensor.induzione_energia_mese'],
     inductionPeak: ['sensor.induction_peak_power', 'sensor.induzione_picco'],
 
     washerPower: ['sensor.washer_power', 'sensor.lavatrice_potenza'],
     washerToday: ['sensor.washer_today_energy', 'sensor.lavatrice_energia_oggi'],
+    washerYesterday: ['sensor.washer_yesterday_energy', 'sensor.lavatrice_energia_ieri'],
+    washerMonth: ['sensor.washer_month_energy', 'sensor.lavatrice_energia_mese'],
     washerState: ['sensor.washer_state', 'sensor.lavatrice_stato'],
     dryerPower: ['sensor.dryer_power', 'sensor.asciugatrice_potenza'],
     dryerToday: ['sensor.dryer_today_energy', 'sensor.asciugatrice_energia_oggi'],
+    dryerYesterday: ['sensor.dryer_yesterday_energy', 'sensor.asciugatrice_energia_ieri'],
+    dryerMonth: ['sensor.dryer_month_energy', 'sensor.asciugatrice_energia_mese'],
     dryerState: ['sensor.dryer_state', 'sensor.asciugatrice_stato'],
     ovenPower: ['sensor.oven_power', 'sensor.forno_potenza'],
     ovenToday: ['sensor.oven_today_energy', 'sensor.forno_energia_oggi'],
+    ovenYesterday: ['sensor.oven_yesterday_energy', 'sensor.forno_energia_ieri'],
+    ovenMonth: ['sensor.oven_month_energy', 'sensor.forno_energia_mese'],
     ovenState: ['sensor.oven_state', 'sensor.forno_stato'],
     fridgePower: ['sensor.fridge_power', 'sensor.frigorifero_potenza'],
     fridgeToday: ['sensor.fridge_today_energy', 'sensor.frigorifero_energia_oggi'],
+    fridgeYesterday: ['sensor.fridge_yesterday_energy', 'sensor.frigorifero_energia_ieri'],
+    fridgeMonth: ['sensor.fridge_month_energy', 'sensor.frigorifero_energia_mese'],
     fridgeState: ['sensor.fridge_state', 'sensor.frigorifero_stato'],
     dishwasherPower: ['sensor.dishwasher_power', 'sensor.lavastoviglie_potenza'],
     dishwasherToday: ['sensor.dishwasher_today_energy', 'sensor.lavastoviglie_energia_oggi'],
+    dishwasherYesterday: ['sensor.dishwasher_yesterday_energy', 'sensor.lavastoviglie_energia_ieri'],
+    dishwasherMonth: ['sensor.dishwasher_month_energy', 'sensor.lavastoviglie_energia_mese'],
     dishwasherState: ['sensor.dishwasher_state', 'sensor.lavastoviglie_stato'],
 
     // Tecnologia · Zona TV. Sono incluse le varianti tipiche create da Shelly/Home Assistant.
@@ -88,10 +101,36 @@ window.CASA_DASHBOARD_CONFIG = {
       'sensor.media_hdd_power'
     ],
 
+
+    tvToday: ['sensor.tv_today_energy', 'sensor.tv_energia_oggi'],
+    tvYesterday: ['sensor.tv_yesterday_energy', 'sensor.tv_energia_ieri'],
+    tvMonth: ['sensor.tv_month_energy', 'sensor.tv_energia_mese'],
+    shieldToday: ['sensor.nvidia_shield_today_energy', 'sensor.nvidia_shield_energia_oggi', 'sensor.shield_energia_oggi'],
+    shieldYesterday: ['sensor.nvidia_shield_yesterday_energy', 'sensor.nvidia_shield_energia_ieri', 'sensor.shield_energia_ieri'],
+    shieldMonth: ['sensor.nvidia_shield_month_energy', 'sensor.nvidia_shield_energia_mese', 'sensor.shield_energia_mese'],
+    mediaPcToday: ['sensor.mini_pc_today_energy', 'sensor.mini_pc_energia_oggi'],
+    mediaPcYesterday: ['sensor.mini_pc_yesterday_energy', 'sensor.mini_pc_energia_ieri'],
+    mediaPcMonth: ['sensor.mini_pc_month_energy', 'sensor.mini_pc_energia_mese'],
+    hddToday: ['sensor.hdd_today_energy', 'sensor.hdd_energia_oggi'],
+    hddYesterday: ['sensor.hdd_yesterday_energy', 'sensor.hdd_energia_ieri'],
+    hddMonth: ['sensor.hdd_month_energy', 'sensor.hdd_energia_mese'],
+
     pcPower: ['sensor.pc_power', 'sensor.pc_potenza', 'sensor.office_pc_power', 'sensor.pc_studio_potenza'],
-    monitorPower: ['sensor.office_monitor_power', 'sensor.monitor_potenza'],
+    pcToday: ['sensor.pc_today_energy', 'sensor.pc_energia_oggi', 'sensor.pc_studio_energia_oggi'],
+    pcYesterday: ['sensor.pc_yesterday_energy', 'sensor.pc_energia_ieri', 'sensor.pc_studio_energia_ieri'],
+    pcMonth: ['sensor.pc_month_energy', 'sensor.pc_energia_mese', 'sensor.pc_studio_energia_mese'],
+    monitorPower: ['sensor.office_monitor_power', 'sensor.monitor_power', 'sensor.monitor_potenza'],
+    monitorToday: ['sensor.monitor_today_energy', 'sensor.monitor_energia_oggi'],
+    monitorYesterday: ['sensor.monitor_yesterday_energy', 'sensor.monitor_energia_ieri'],
+    monitorMonth: ['sensor.monitor_month_energy', 'sensor.monitor_energia_mese'],
     ps5Power: ['sensor.ps_5_power', 'sensor.ps_5_potenza', 'sensor.ps5_power', 'sensor.ps5_potenza'],
-    dockPower: ['sensor.office_dock_power', 'sensor.dock_potenza'],
+    ps5Today: ['sensor.ps_5_today_energy', 'sensor.ps5_today_energy', 'sensor.ps_5_energia_oggi', 'sensor.ps5_energia_oggi'],
+    ps5Yesterday: ['sensor.ps_5_yesterday_energy', 'sensor.ps5_yesterday_energy', 'sensor.ps_5_energia_ieri', 'sensor.ps5_energia_ieri'],
+    ps5Month: ['sensor.ps_5_month_energy', 'sensor.ps5_month_energy', 'sensor.ps_5_energia_mese', 'sensor.ps5_energia_mese'],
+    dockPower: ['sensor.office_dock_power', 'sensor.dock_power', 'sensor.dock_potenza', 'sensor.splitter_power', 'sensor.splitter_potenza'],
+    dockToday: ['sensor.splitter_today_energy', 'sensor.splitter_energia_oggi', 'sensor.dock_energia_oggi'],
+    dockYesterday: ['sensor.splitter_yesterday_energy', 'sensor.splitter_energia_ieri', 'sensor.dock_energia_ieri'],
+    dockMonth: ['sensor.splitter_month_energy', 'sensor.splitter_energia_mese', 'sensor.dock_energia_mese'],
 
     networkState: ['sensor.fritzbox_wan_status', 'sensor.fritz_box_connessione'],
     networkLinkDown: ['sensor.fritzbox_link_download_mbps', 'sensor.fritz_box_download_massimo'],
@@ -114,12 +153,3 @@ window.CASA_DASHBOARD_CONFIG = {
     gateButton: ['button.apri_cancello', 'button.cancello']
   }
 };
-
-(() => {
-  if (document.querySelector('script[data-energy-devices-v60]')) return;
-  const script = document.createElement('script');
-  script.src = './energy-devices-v60.js?v=61';
-  script.async = false;
-  script.dataset.energyDevicesV60 = 'true';
-  document.head.appendChild(script);
-})();

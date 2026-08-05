@@ -51,8 +51,8 @@ window.CASA_ROOMS = [
   },
   {
     id:'second-mansarda', modelKey:'second__LivingRoom-39392', floor:'second', name:'Mansarda', icon:'fa-couch', type:'indoor', aliases:['mansarda','soggiorno mansarda','salotto mansarda'],
-    entities:{temperature:'sensor.mansarda_temperatura',lights:'light.mansarda',cover:'cover.mansarda',climate:'climate.clima_mansarda'},
-    candidates:{temperature:['sensor.soggiorno_mansarda_temperatura'],lights:['light.luce_mansarda','light.soggiorno_mansarda'],cover:['cover.tapparella_mansarda','cover.soggiorno_mansarda'],climate:['climate.mansarda','climate.soggiorno_mansarda','climate.clima_soggiorno_mansarda']}
+    entities:{temperature:'sensor.mansarda_temperatura',cover:'cover.mansarda',climate:'climate.clima_mansarda'},
+    candidates:{temperature:['sensor.soggiorno_mansarda_temperatura'],cover:['cover.tapparella_mansarda','cover.soggiorno_mansarda'],climate:['climate.mansarda','climate.soggiorno_mansarda','climate.clima_soggiorno_mansarda']}
   },
   {
     id:'second-camera-mansarda', modelKey:'second__Bedroom-35912', floor:'second', name:'Camera Mansarda', icon:'fa-bed', type:'indoor', aliases:['camera mansarda'],

@@ -3,6 +3,18 @@
 
   const NULL_TEXT = 'NULL';
   const EXPECTED_SHUTTERS = 10;
+  const SHUTTER_DEFINITIONS = [
+    { label:'Tapparella Salotto', names:['Tapparella Salotto'], ids:['cover.tapparella_salotto','cover.salotto'] },
+    { label:'Portafinestra Salotto', names:['Portafinestra Salotto'], ids:['cover.portafinestra_salotto'] },
+    { label:'Tapparella Scale', names:['Tapparella Scale'], ids:['cover.tapparella_scale','cover.scale'] },
+    { label:'Tapparella Cucina', names:['Tapparella Cucina'], ids:['cover.tapparella_cucina','cover.cucina'] },
+    { label:'Tapparella Camera Matrimoniale', names:['Tapparella Camera Matrimoniale'], ids:['cover.tapparella_camera_matrimoniale','cover.camera_matrimoniale'] },
+    { label:'Portafinestra Studio', names:['Portafinestra Studio'], ids:['cover.portafinestra_studio','cover.studio'] },
+    { label:'Tapparella Cameretta', names:['Tapparella Cameretta'], ids:['cover.tapparella_cameretta','cover.cameretta'] },
+    { label:'Tapparella Bagno Mansarda', names:['Tapparella Bagno Mansarda'], ids:['cover.tapparella_bagno_mansarda','cover.bagno_mansarda'] },
+    { label:'Portafinestra Mansarda', names:['Portafinestra Mansarda','Tapparella Mansarda'], ids:['cover.portafinestra_mansarda','cover.tapparella_mansarda','cover.mansarda'] },
+    { label:'Portafinestra Camera Mansarda', names:['Portafinestra Camera Mansarda'], ids:['cover.portafinestra_camera_mansarda','cover.camera_mansarda'] },
+  ];
   let scheduled = false;
 
   const normalize = (value) => String(value ?? '')
@@ -41,19 +53,6 @@
 
   function removeCard(title) {
     findCard(title)?.remove();
-  }
-
-  function patchTechnology() {
-    const card = findCard('Tecnologia');
-    if (!card) return;
-    setText(card.querySelector('.card-head > strong'), NULL_TEXT);
-    card.querySelectorAll('.metric-grid strong').forEach((node) => setText(node, NULL_TEXT));
-  }
-
-  function patchShellyToday() {
-    const card = findCard('Linee Shelly');
-    if (!card) return;
-    setText(metricNode(card, 'Oggi'), NULL_TEXT);
   }
 
   function patchSolarMetadata() {
@@ -124,71 +123,57 @@
     ].some((token) => text.includes(normalize(token)));
   }
 
-  function configuredCandidates(room) {
-    const values = [];
-    const primary = room?.entities?.cover;
-    const candidates = room?.candidates?.cover;
-    if (Array.isArray(primary)) values.push(...primary); else if (primary) values.push(primary);
-    if (Array.isArray(candidates)) values.push(...candidates); else if (candidates) values.push(candidates);
-    return [...new Set(values.filter(Boolean))];
+  function coverObjectId(entity) {
+    return normalize(String(entity?.entity_id || '').split('.').slice(1).join(' '));
   }
 
-  function roomTokens(room) {
-    return [room?.name, ...(room?.aliases || [])]
-      .map(normalize)
-      .filter((token) => token.length >= 4)
-      .sort((a, b) => b.length - a.length);
-  }
+  function resolveDefinedCover(definition, used) {
+    const map = states();
+    for (const entityId of definition.ids) {
+      const entity = map.get(entityId);
+      if (validCover(entity) && !used.has(entity.entity_id)) return entity;
+    }
 
-  function fuzzyScore(entity, room) {
-    const text = coverText(entity);
-    const tokens = roomTokens(room);
-    let score = 0;
-
-    tokens.forEach((token, index) => {
-      if (!token || !text.includes(token)) return;
-      score = Math.max(score, 70 + token.split(' ').length * 15 + Math.max(0, 10 - index));
-    });
-
-    if (text.includes('tapparella') || text.includes('shutter') || text.includes('blind')) score += 12;
-    return score;
+    const wanted = definition.names.map(normalize);
+    let best = null;
+    let bestScore = 0;
+    for (const entity of map.values()) {
+      if (!validCover(entity) || used.has(entity.entity_id)) continue;
+      const friendly = normalize(entity.attributes?.friendly_name);
+      const objectId = coverObjectId(entity);
+      const text = normalize(`${friendly} ${objectId}`);
+      let score = 0;
+      wanted.forEach((name, index) => {
+        const penalty = index * 2;
+        if (friendly === name) score = Math.max(score, 220 - penalty);
+        else if (objectId === name) score = Math.max(score, 210 - penalty);
+        else {
+          const tokens = name.split(' ').filter((token) => token.length > 2);
+          if (tokens.length && tokens.every((token) => text.includes(token))) {
+            score = Math.max(score, 110 + tokens.length * 10 - penalty);
+          }
+        }
+      });
+      if (score > bestScore) { bestScore = score; best = entity; }
+    }
+    return bestScore >= 130 ? best : null;
   }
 
   function discoverCovers() {
     if (!connected()) return [];
-
-    const map = states();
-    const available = [...map.values()].filter((entity) => validCover(entity) && !excludedCover(entity));
     const used = new Set();
     const resolved = [];
-    const rooms = (window.CASA_ROOMS || []).filter((room) => configuredCandidates(room).length);
-
-    rooms.forEach((room) => {
-      let match = configuredCandidates(room)
-        .map((entityId) => map.get(entityId))
-        .find((entity) => validCover(entity) && !used.has(entity.entity_id));
-
-      if (!match) {
-        match = available
-          .filter((entity) => !used.has(entity.entity_id))
-          .map((entity) => ({ entity, score: fuzzyScore(entity, room) }))
-          .sort((a, b) => b.score - a.score)
-          .find((item) => item.score >= 70)?.entity || null;
-      }
-
-      if (match) {
-        used.add(match.entity_id);
-        resolved.push(match);
-      }
-    });
-
-    available.forEach((entity) => {
-      if (resolved.length >= EXPECTED_SHUTTERS || used.has(entity.entity_id)) return;
+    SHUTTER_DEFINITIONS.forEach((definition) => {
+      const entity = resolveDefinedCover(definition, used);
+      if (!entity) return;
       used.add(entity.entity_id);
-      resolved.push(entity);
+      resolved.push({ definition, entity });
     });
-
-    return resolved.slice(0, EXPECTED_SHUTTERS);
+    window.CASA_SHUTTERS = {
+      expected: SHUTTER_DEFINITIONS.map((item) => item.label),
+      resolved: resolved.map(({ definition, entity }) => ({ label:definition.label, entity_id:entity.entity_id })),
+    };
+    return resolved;
   }
 
   function coverPosition(entity) {
@@ -203,24 +188,19 @@
   }
 
   function coverSnapshot() {
-    const covers = discoverCovers();
-    if (!covers.length) return { total: EXPECTED_SHUTTERS, open: 0, closed: EXPECTED_SHUTTERS, average: 100 };
-
-    const positions = covers.map(coverPosition);
-    const knownPositions = positions.filter(Number.isFinite);
-    const open = positions.filter((value) => Number.isFinite(value) && value < 99).length;
-    const explicitlyClosed = positions.filter((value) => Number.isFinite(value) && value >= 99).length;
-    const unresolved = Math.max(0, EXPECTED_SHUTTERS - open - explicitlyClosed);
-    const closed = explicitlyClosed + unresolved;
-    const average = [...knownPositions, ...Array(unresolved).fill(100)]
-      .reduce((sum, value) => sum + value, 0) / EXPECTED_SHUTTERS;
-
-    return { total: EXPECTED_SHUTTERS, open, closed, average };
+    const resolved = discoverCovers();
+    const positions = resolved.map(({ entity }) => coverPosition(entity));
+    const known = positions.filter(Number.isFinite);
+    const open = known.filter((value) => value < 99).length;
+    const closed = known.filter((value) => value >= 99).length;
+    const complete = resolved.length === EXPECTED_SHUTTERS && known.length === EXPECTED_SHUTTERS;
+    const average = complete ? known.reduce((sum, value) => sum + value, 0) / EXPECTED_SHUTTERS : null;
+    return { total: EXPECTED_SHUTTERS, resolved: resolved.length, open, closed, average, complete };
   }
 
   function patchShutters() {
     const snapshot = coverSnapshot();
-    const average = `${Math.round(snapshot.average)}%`;
+    const average = Number.isFinite(snapshot.average) ? `${Math.round(snapshot.average)}%` : NULL_TEXT;
 
     const overview = findCard('Comfort e stanze');
     const overviewTile = [...(overview?.querySelectorAll('.overview-kpi') || [])].find((item) =>
@@ -267,8 +247,6 @@
     injectStyles();
     removeCard('Riepilogo linea');
     removeCard('Videocitofono');
-    patchTechnology();
-    patchShellyToday();
     patchSolarMetadata();
     compactUptimeDays();
     patchShutters();

@@ -55,7 +55,6 @@
       { source: 'Tapparella Bagno Mansarda', label: 'Bagno Mansarda', kind: 'cover' },
     ],
     'second-mansarda': [
-      { source: 'Luce Mansarda', label: 'Mansarda', kind: 'light' },
       { source: 'Led Mansarda DX', label: 'Led Mansarda DX', kind: 'light' },
       { source: 'Led Mansarda SX', label: 'Led Mansarda SX', kind: 'light' },
       { source: 'Led Mansarda Centrale', label: 'Led Mansarda Centrale', kind: 'light' },

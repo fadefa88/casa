@@ -16,7 +16,6 @@
     'second-vano-tecnico': ['Luce Vano Tecnico', 'Vano Tecnico', 'Luce Locale Tecnico'],
     'second-bagno-mansarda': ['Luce Bagno Mansarda', 'Specchio Bagno Mansarda'],
     'second-mansarda': [
-      'Luce Mansarda',
       'Led Mansarda DX',
       'Led Mansarda SX',
       'Led Mansarda Centrale',
