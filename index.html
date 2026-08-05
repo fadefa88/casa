@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#08121f">
-  <title>Casa 5B · Dashboard</title>
+  <title>Via Fausto Rossi 37 · Dashboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
   <link rel="stylesheet" href="./styles.css?v=35">
   <link rel="stylesheet" href="./mobile-landscape.css?v=66">
   <link rel="stylesheet" href="./dashboard-v36.css?v=66">
-  <link rel="stylesheet" href="./dashboard-fix-v38.css?v=68">
+  <link rel="stylesheet" href="./dashboard-fix-v38.css?v=69">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/"}}</script>
 </head>
 <body>
@@ -17,7 +17,7 @@
   <canvas id="scene"></canvas>
   <div class="overlay-frame"></div>
   <header class="tablet-top glass">
-    <div class="brand-block"><div class="brand-icon"><i class="fa-solid fa-house-signal"></i></div><div><small>CASA 5B</small><h1 id="view-title">Panoramica</h1></div></div>
+    <div class="brand-block"><div class="brand-icon"><i class="fa-solid fa-location-dot"></i></div><div><small class="home-address">Via Fausto Rossi 37, 35010 Limena (PD)</small><h1 id="view-title">Panoramica</h1></div></div>
     <div class="top-center"><div class="status-pills"><span class="pill ok" id="alarm-pill"><i class="fa-solid fa-shield-halved"></i> Disattivato</span><span class="pill ok" id="internet-pill"><i class="fa-solid fa-globe"></i> FTTH online</span><span class="pill warn" id="backup-pill"><i class="fa-solid fa-tower-cell"></i> 5G standby</span></div></div>
     <div class="clock-block"><div id="clock">--:--</div><div id="date">--</div></div>
   </header>
@@ -42,7 +42,7 @@
   <div id="toast" class="toast" hidden></div>
   <dialog id="intercom-modal" class="intercom-modal"><div class="intercom-head"><div><small>VIDEOCITOFONO</small><strong>Ingresso principale</strong></div><button id="close-intercom" aria-label="Chiudi"><i class="fa-solid fa-xmark"></i></button></div><div class="intercom-video" id="intercom-video"><i class="fa-solid fa-video"></i><strong>Anteprima videocitofono</strong><span id="intercom-status">Flusso non collegato</span></div><div class="intercom-actions"><button data-action="intercom-audio"><i class="fa-solid fa-volume-high"></i> Audio</button><button data-action="intercom-mic"><i class="fa-solid fa-microphone"></i> Parla</button><button class="primary" data-action="open-gate"><i class="fa-solid fa-door-open"></i> Apri cancello</button></div></dialog>
   <div id="loading" class="loading"><div class="spinner"></div><strong>Caricamento casa Homestyler</strong><span id="progress">Download del modello…</span></div>
-  <header class="top glass legacy"><div><small>CASA 5B</small><h1>Casa virtuale</h1></div><div id="status">Caricamento…</div></header>
+  <header class="top glass legacy"><div><small>Via Fausto Rossi 37, 35010 Limena (PD)</small><h1>Casa virtuale</h1></div><div id="status">Caricamento…</div></header>
   <nav class="floors glass legacy"><button data-floor="both" class="active">Entrambi</button><button data-floor="first">Primo piano</button><button data-floor="second">Secondo piano</button></nav>
   <nav class="tools glass legacy"><button id="iso">◇</button><button id="topview">⌂</button><button id="rotate">↻</button><button id="list-toggle">☰</button></nav>
   <aside id="info" class="info glass legacy" hidden><button id="close">×</button><small>OGGETTO SELEZIONATO</small><h2 id="info-title"></h2><p id="info-detail"></p><dl class="meta"><div><dt>Piano</dt><dd id="meta-floor"></dd></div><div><dt>Stanza</dt><dd id="meta-room"></dd></div><div><dt>Instance ID</dt><dd id="meta-instance"></dd></div><div><dt>Mesh / slot</dt><dd id="meta-slot"></dd></div></dl><label class="field-label" for="object-code">Codice oggetto</label><textarea id="object-code" readonly></textarea><div class="actions"><button id="copy-code" class="primary">Copia codice</button></div></aside>
@@ -51,6 +51,6 @@
 </main>
 <script src="./config.js?v=63"></script>
 <script src="./rooms-config.js?v=64"></script>
-<script type="module" src="./dashboard-v38.js?v=70"></script>
+<script type="module" src="./dashboard-v38.js?v=71"></script>
 </body>
 </html>

@@ -287,3 +287,49 @@ body{
   align-self:center;
 }
 .room-climate-current strong{margin-top:0!important}
+
+/* Header indirizzo, Stanze uniformi e dispositivi da 250 px. */
+.tablet-top .home-address{
+  display:block;
+  max-width:min(31vw,330px);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:8.5px!important;
+  line-height:1.2!important;
+  font-weight:750!important;
+  letter-spacing:.015em!important;
+  text-transform:none!important;
+  color:#aebed1!important;
+}
+
+.room-device-floor{
+  width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  align-self:stretch!important;
+}
+
+@media (orientation:landscape) and (min-width:1000px) and (min-height:560px){
+  .dashboard-rail .room-device-floor{
+    width:100%!important;
+    max-width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    align-self:stretch!important;
+  }
+
+  .ha-device-row{
+    justify-content:safe center!important;
+  }
+
+  .ha-device-tile,
+  .ha-device-tile.cover{
+    flex:0 0 250px!important;
+    width:250px!important;
+    min-width:250px!important;
+    max-width:250px!important;
+    box-sizing:border-box!important;
+  }
+}
+

@@ -3893,7 +3893,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const style = document.createElement('style');
     style.id = 'rooms-devices-v52-styles';
     style.textContent = `
-      .room-device-floor{flex:0 0 auto!important;height:auto!important;min-height:0!important;align-self:flex-start;padding-bottom:.6rem!important}
+      .room-device-floor{flex:0 0 auto!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;height:auto!important;min-height:0!important;align-self:stretch!important;padding-bottom:.6rem!important}
       .room-device-list{display:grid;gap:.38rem;margin-top:.45rem}
       .room-device-card{display:grid;grid-template-columns:2.35rem minmax(0,1fr) auto;align-items:center;gap:.55rem;width:100%;padding:.48rem .55rem;border:1px solid rgba(255,255,255,.075);border-radius:.78rem;background:rgba(255,255,255,.035);color:#f8fbff;text-align:left;cursor:pointer;transition:.16s ease}
       .room-device-card:hover,.room-device-card.active{border-color:rgba(96,165,250,.52);background:rgba(37,99,235,.17)}
