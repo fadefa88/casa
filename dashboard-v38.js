@@ -385,6 +385,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     for (const [entityId, entity] of ui.states) {
       if (!entityId.startsWith(`${domain}.`)) continue;
       const text = normalize(`${entityId} ${entity.attributes?.friendly_name || ''}`);
+      if (room.id === 'second-mansarda' && ['temperature','climate'].includes(key) && /(?:camera|bagno|vano tecnico|locale tecnico) mansarda/.test(text)) continue;
       const roomScore = tokens.reduce((max, token) => Math.max(max, token && text.includes(token) ? token.split(' ').length * 3 : 0), 0);
       const keyScore = keywords.some((word) => text.includes(word)) ? 2 : 0;
       const candidateScore = roomScore + keyScore;
@@ -1220,6 +1221,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     for (const [entityId, entity] of map) {
       if (!isValid(entity) || !entityId.startsWith(`${domain}.`)) continue;
       const text = entityDescription(entity);
+      if (room?.id === 'second-mansarda' && ['temperature','climate'].includes(key) && /(?:camera|bagno|vano tecnico|locale tecnico) mansarda/.test(text)) continue;
       let score = 0;
       roomTokens.forEach((token) => {
         if (token && text.includes(token)) score = Math.max(score, 7 + token.split(' ').length * 2);
@@ -3674,6 +3676,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     for (const entity of map.values()) {
       if (!valid(entity) || !entity.entity_id.startsWith('climate.')) continue;
       const text = entityText(entity);
+      if (roomId === 'second-mansarda' && /(?:camera|bagno|vano tecnico|locale tecnico) mansarda/.test(text)) continue;
       let score = 0;
       tokens.forEach((token) => {
         if (text.includes(token)) score = Math.max(score, 20 + token.split(' ').length * 8);
@@ -3713,6 +3716,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       if (!valid(entity) || !entity.entity_id.startsWith('sensor.')) continue;
       const text = entityText(entity);
       if (!text.includes('temperatura') && !text.includes('temperature')) continue;
+      if (roomId === 'second-mansarda' && /(?:camera|bagno|vano tecnico|locale tecnico) mansarda/.test(text)) continue;
       const score = tokens.reduce((max, token) => Math.max(max, text.includes(token) ? 10 + token.split(' ').length * 3 : 0), 0);
       const value = Number(entity.state);
       if (Number.isFinite(value) && score > bestScore) { bestScore = score; best = value; }
