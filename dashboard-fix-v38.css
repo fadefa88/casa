@@ -265,16 +265,25 @@ body{
   }
 
   .ha-device-tile{
-    flex:0 1 172px!important;
-    width:172px!important;
-    min-width:148px!important;
-    max-width:172px!important;
+    flex:0 1 190px!important;
+    width:190px!important;
+    min-width:164px!important;
+    max-width:190px!important;
   }
 
   .ha-device-tile.cover{
-    flex:0 1 218px!important;
-    width:218px!important;
-    min-width:188px!important;
-    max-width:218px!important;
+    flex:0 1 238px!important;
+    width:238px!important;
+    min-width:206px!important;
+    max-width:238px!important;
   }
 }
+
+
+/* Stanze · riepilogo essenziale e pulsanti leggermente più larghi. */
+.room-device-context-summary>span:last-child,
+.room-climate-copy,
+.room-climate-current{
+  align-self:center;
+}
+.room-climate-current strong{margin-top:0!important}

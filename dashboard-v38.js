@@ -3568,11 +3568,11 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   };
 
   const CLIMATE_SOURCE = {
-    'first-salotto': { roomId: 'first-salotto', note: 'Condiviso con Cucina' },
-    'first-cucina': { roomId: 'first-salotto', note: 'Condiviso con Salotto' },
-    'first-camera-matrimoniale': { roomId: 'first-camera-matrimoniale', note: '' },
-    'second-mansarda': { roomId: 'second-mansarda', note: '' },
-    'second-camera-mansarda': { roomId: 'second-camera-mansarda', note: '' },
+    'first-salotto': { roomId: 'first-salotto' },
+    'first-cucina': { roomId: 'first-salotto' },
+    'first-camera-matrimoniale': { roomId: 'first-camera-matrimoniale' },
+    'second-mansarda': { roomId: 'second-mansarda' },
+    'second-camera-mansarda': { roomId: 'second-camera-mansarda' },
   };
 
   const normalize = (value) => String(value ?? '')
@@ -3839,11 +3839,9 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const disabled = entity ? '' : 'disabled';
     const state = normalize(entity?.state);
     const active = entity && state !== 'off';
-    const note = mapping.note ? `<small>${mapping.note}</small>` : '<small>Termostato ambiente</small>';
-
     return `<div class="room-climate-control ${active ? 'active' : ''}">
-      <div class="room-climate-copy"><span>Temperatura</span>${note}</div>
-      <div class="room-climate-current"><small>Ambiente</small><strong>${Number.isFinite(current) ? `${fmt.format(current)}°` : NULL_TEXT}</strong></div>
+      <div class="room-climate-copy"><span>Temperatura</span></div>
+      <div class="room-climate-current"><strong>${Number.isFinite(current) ? `${fmt.format(current)}°` : NULL_TEXT}</strong></div>
       <div class="room-climate-actions">
         <button data-room-climate-action="down" data-entity-id="${entityId}" title="Riduci temperatura" ${disabled}><i class="fa-solid fa-minus"></i></button>
         <strong>${Number.isFinite(target) ? `${fmt.format(target)}°` : NULL_TEXT}</strong>
@@ -3855,8 +3853,6 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
   function contextHtml(room) {
     const snapshot = roomSnapshot(room.id);
-    const floor = room.floor === 'first' ? 'Primo piano' : 'Secondo piano';
-    const available = snapshot.devices.length - snapshot.unavailable;
     const lights = snapshot.devices.filter((device) => device.item.kind === 'light');
     const covers = snapshot.devices.filter((device) => device.item.kind === 'cover');
 
@@ -3864,7 +3860,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       <div class="room-device-context-head">
         <div class="room-device-context-summary">
           <span class="room-device-context-icon"><i class="fa-solid ${room.icon || 'fa-door-open'}"></i></span>
-          <span><strong>${room.name}</strong><small>${floor} · ${available}/${snapshot.devices.length} collegati</small></span>
+          <span><strong>${room.name}</strong></span>
         </div>
         ${climateHtml(room.id)}
       </div>
