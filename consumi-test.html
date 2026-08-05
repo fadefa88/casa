@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <title>Test consumi · Casa 5B</title>
+  <link rel="icon" href="./icon.svg">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070b14;
+      --surface: rgba(17, 24, 39, .92);
+      --surface-2: rgba(26, 35, 52, .88);
+      --line: rgba(255,255,255,.09);
+      --text: #f4f7fb;
+      --muted: #9ca9bb;
+      --accent: #66d9ef;
+      --ok: #73e2a7;
+      --warn: #ffc96b;
+      --error: #ff7d8d;
+      --radius: 20px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; margin: 0; background: radial-gradient(circle at top, #17233d 0, var(--bg) 46%); color: var(--text); }
+    body { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+    button, a { font: inherit; }
+    .shell { width: min(1500px, 100%); margin: 0 auto; }
+    .topbar {
+      position: sticky; top: 8px; z-index: 10; display: flex; align-items: center; gap: 14px;
+      padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--line); border-radius: 22px;
+      background: rgba(10,15,27,.88); backdrop-filter: blur(18px); box-shadow: 0 16px 50px rgba(0,0,0,.28);
+    }
+    .topbar h1 { font-size: clamp(18px, 2vw, 27px); line-height: 1.1; margin: 0; }
+    .topbar p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+    .topbar-main { min-width: 0; flex: 1; }
+    .status { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; padding: 9px 12px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 13px; font-weight: 700; }
+    .status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 4px rgba(255,201,107,.12); }
+    .status.ok { color: var(--ok); }
+    .status.ok::before { background: var(--ok); box-shadow: 0 0 0 4px rgba(115,226,167,.12); }
+    .status.error { color: var(--error); }
+    .status.error::before { background: var(--error); box-shadow: 0 0 0 4px rgba(255,125,141,.12); }
+    .action { border: 1px solid var(--line); background: var(--surface-2); color: var(--text); padding: 10px 13px; border-radius: 13px; cursor: pointer; font-weight: 800; }
+    .action:disabled { opacity: .55; cursor: progress; }
+    .intro {
+      display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 18px;
+    }
+    .intro article { padding: 13px 15px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
+    .intro strong { display: block; font-size: 14px; }
+    .intro span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .group { margin: 22px 0 8px; display: flex; align-items: end; justify-content: space-between; gap: 10px; }
+    .group h2 { margin: 0; font-size: clamp(18px, 2vw, 25px); }
+    .group small { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+    .device {
+      min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: var(--radius);
+      background: linear-gradient(145deg, var(--surface), rgba(12,18,31,.94)); box-shadow: 0 13px 36px rgba(0,0,0,.22);
+    }
+    .device-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .device-head h3 { margin: 0; font-size: 18px; }
+    .device-head code { max-width: 65%; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    .metric { min-width: 0; padding: 11px; border: 1px solid rgba(255,255,255,.07); border-radius: 15px; background: rgba(255,255,255,.035); }
+    .metric small { display: block; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .metric strong { display: block; margin-top: 5px; font-size: clamp(18px, 2.2vw, 27px); line-height: 1; font-variant-numeric: tabular-nums; }
+    .metric .source { display: block; min-height: 28px; margin-top: 7px; color: var(--muted); font-size: 9.5px; line-height: 1.25; overflow-wrap: anywhere; }
+    .metric .method { display: inline-block; margin-top: 6px; padding: 3px 6px; border-radius: 999px; background: rgba(102,217,239,.10); color: var(--accent); font-size: 9px; font-weight: 800; }
+    .metric.missing strong { color: var(--error); }
+    .metric.loading strong { color: var(--muted); }
+    .foot { margin-top: 22px; color: var(--muted); font-size: 11px; text-align: center; }
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .topbar p { display: none; }
+    }
+    @media (max-width: 720px) {
+      body { padding: 8px; }
+      .topbar { top: 4px; border-radius: 17px; flex-wrap: wrap; }
+      .status { order: 3; flex: 1; justify-content: center; }
+      .intro { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+  </style>
+  <script src="./config.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="topbar-main">
+        <h1>Diagnostica consumi Home Assistant</h1>
+        <p>Stessa mappatura e stessa logica del sito Casa 3D, con sorgenti visibili.</p>
+      </div>
+      <div id="connection-status" class="status">Connessione…</div>
+      <button id="refresh" class="action" type="button">Aggiorna</button>
+      <a class="action" href="./index.html">Casa 3D</a>
+    </header>
+
+    <section class="intro" aria-label="Definizione periodi">
+      <article><strong>Oggi</strong><span>Dalle 00:00:00 locali fino all’ora dell’ultimo aggiornamento.</span></article>
+      <article><strong>Ieri</strong><span>Dalle 00:00:00 di ieri alle 00:00:00 di oggi: l’intera giornata precedente.</span></article>
+      <article><strong>Mese</strong><span>Dalle 00:00:00 del primo giorno del mese fino all’ora dell’ultimo aggiornamento.</span></article>
+    </section>
+
+    <div class="group"><h2>Elettrodomestici</h2><small id="updated-at">—</small></div>
+    <section id="appliances" class="grid"></section>
+
+    <div class="group"><h2>Zona TV</h2><small>TV, Shield, Mini PC e HDD</small></div>
+    <section id="tv-zone" class="grid"></section>
+
+    <div class="group"><h2>Studio / gaming</h2><small>PC, monitor, PS5 e splitter</small></div>
+    <section id="studio-zone" class="grid"></section>
+
+    <p class="foot">I valori storici vengono ricalcolati ogni 5 minuti; la potenza attuale viene aggiornata ogni 5 secondi.</p>
+  </main>
+
+<script>
+(() => {
+  'use strict';
+
+  const config = window.CASA_DASHBOARD_CONFIG || {};
+  const haConfig = config.homeAssistant || {};
+  const fmt = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 3 });
+  const state = { states: new Map(), connected: false, syncing: false, lastSync: null };
+  const historyCache = new Map();
+  const statisticsCache = new Map();
+
+  const DEVICES = {
+    washer: { label:'Lavatrice', powerKey:'washerPower', todayKey:'washerToday', yesterdayKey:'washerYesterday', monthKey:'washerMonth', aliases:['lavatrice','washing machine','washer'] },
+    fridge: { label:'Frigorifero', powerKey:'fridgePower', todayKey:'fridgeToday', yesterdayKey:'fridgeYesterday', monthKey:'fridgeMonth', aliases:['frigorifero','frigo congelatore','frigo','congelatore','fridge freezer','fridge','freezer'] },
+    oven: { label:'Forno', powerKey:'ovenPower', todayKey:'ovenToday', yesterdayKey:'ovenYesterday', monthKey:'ovenMonth', aliases:['forno','oven'] },
+    dishwasher: { label:'Lavastoviglie', powerKey:'dishwasherPower', todayKey:'dishwasherToday', yesterdayKey:'dishwasherYesterday', monthKey:'dishwasherMonth', aliases:['lavastoviglie','lavapiatti','dishwasher'] },
+    dryer: { label:'Asciugatrice', powerKey:'dryerPower', todayKey:'dryerToday', yesterdayKey:'dryerYesterday', monthKey:'dryerMonth', aliases:['asciugatrice','tumble dryer','dryer'] },
+    tv: { label:'TV', powerKey:'tvPower', todayKey:'tvToday', yesterdayKey:'tvYesterday', monthKey:'tvMonth', aliases:['tv','televisore','smart tv','samsung tv'] },
+    shield: { label:'Nvidia Shield', powerKey:'shieldPower', todayKey:'shieldToday', yesterdayKey:'shieldYesterday', monthKey:'shieldMonth', aliases:['nvidia shield','shield tv','shield'] },
+    mediaPc: { label:'Mini PC', powerKey:'mediaPcPower', todayKey:'mediaPcToday', yesterdayKey:'mediaPcYesterday', monthKey:'mediaPcMonth', aliases:['mini pc','minipc','media mini pc'] },
+    hdd: { label:'HDD', powerKey:'hddPower', todayKey:'hddToday', yesterdayKey:'hddYesterday', monthKey:'hddMonth', aliases:['hdd','hard disk','disco esterno'] },
+    pc: { label:'PC', powerKey:'pcPower', todayKey:'pcToday', yesterdayKey:'pcYesterday', monthKey:'pcMonth', aliases:['pc','pc studio','computer studio','office pc','desktop pc'], exclude:['mini pc','minipc','media pc'] },
+    monitor: { label:'Monitor', powerKey:'monitorPower', todayKey:'monitorToday', yesterdayKey:'monitorYesterday', monthKey:'monitorMonth', aliases:['monitor','monitor studio','office monitor'] },
+    ps5: { label:'PS5', powerKey:'ps5Power', todayKey:'ps5Today', yesterdayKey:'ps5Yesterday', monthKey:'ps5Month', aliases:['ps 5','ps5','playstation 5','playstation5'] },
+    dock: { label:'Splitter', powerKey:'dockPower', todayKey:'dockToday', yesterdayKey:'dockYesterday', monthKey:'dockMonth', aliases:['splitter','dock studio','office dock','dock'] }
+  };
+
+  const GROUPS = {
+    appliances: ['washer','fridge','oven','dishwasher','dryer'],
+    tv: ['tv','shield','mediaPc','hdd'],
+    studio: ['pc','monitor','ps5','dock']
+  };
+
+  const PERIOD_WORDS = {
+    today: ['oggi','today','daily','giornaliera','giornaliero','day energy'],
+    yesterday: ['ieri','yesterday','previous day','giorno precedente'],
+    month: ['mese','mensile','month','monthly']
+  };
+
+  const normalize = (value) => String(value ?? '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  const compact = (value) => normalize(value).replace(/\s+/g,'');
+  const valid = (entity) => Boolean(entity && !['unknown','unavailable','null','none',''].includes(normalize(entity.state)));
+
+  function haBase() { return String(haConfig.url || '').trim().replace(/\/$/,''); }
+  function usableConfig() {
+    const token = String(haConfig.token || '');
+    return Boolean(haBase() && token && token !== 'insert token' && !token.includes('REPLACE_'));
+  }
+  async function haFetch(path, options = {}) {
+    const response = await fetch(`${haBase()}${path}`, {
+      ...options,
+      headers: { Authorization:`Bearer ${haConfig.token}`, 'Content-Type':'application/json', ...(options.headers || {}) },
+      cache:'no-store'
+    });
+    if (!response.ok) throw new Error(`Home Assistant ${response.status}`);
+    if (response.status === 204) return null;
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  }
+
+  function configuredCandidates(key) {
+    const configured = config.entities?.[key];
+    return (Array.isArray(configured) ? configured : [configured]).filter(Boolean);
+  }
+  function entityParts(entity) {
+    const entityName = normalize(String(entity?.entity_id || '').replace(/^[^.]+\./,''));
+    const friendly = normalize(entity?.attributes?.friendly_name);
+    const text = normalize([entityName,friendly,entity?.attributes?.device_class,entity?.attributes?.unit_of_measurement,entity?.attributes?.icon].filter(Boolean).join(' '));
+    return { entityName, friendly, text };
+  }
+  function isPowerSensor(entity) {
+    if (!valid(entity) || !String(entity.entity_id || '').startsWith('sensor.') || !Number.isFinite(Number(entity.state))) return false;
+    const { text } = entityParts(entity);
+    const unit = normalize(entity.attributes?.unit_of_measurement);
+    const deviceClass = normalize(entity.attributes?.device_class);
+    const positive = deviceClass === 'power' || ['w','kw','mw'].includes(unit) || /(^| )(power|potenza)( |$)/.test(text);
+    const negative = ['energy','energia','kwh','wh','mwh','voltage','tensione','current','corrente','frequency','frequenza','power factor'].some((word) => text.includes(word));
+    return positive && !negative;
+  }
+  function isEnergySensor(entity) {
+    if (!valid(entity) || !String(entity.entity_id || '').startsWith('sensor.')) return false;
+    if (!Number.isFinite(Number(entity.state)) && !Number.isFinite(Number(entity.attributes?.last_period))) return false;
+    const unit = normalize(entity.attributes?.unit_of_measurement);
+    const deviceClass = normalize(entity.attributes?.device_class);
+    return deviceClass === 'energy' || ['wh','kwh','mwh'].includes(unit);
+  }
+  function aliasScore(value, alias) {
+    const normalizedValue = normalize(value);
+    const normalizedAlias = normalize(alias);
+    if (!normalizedValue || !normalizedAlias) return 0;
+    if (normalizedValue === normalizedAlias) return 110;
+    if (compact(normalizedValue) === compact(normalizedAlias)) return 106;
+    const suffixes = ['power','potenza','energy','energia','consumo','presa','plug','switch'];
+    if (suffixes.some((suffix) => normalizedValue === `${normalizedAlias} ${suffix}`)) return 100;
+    const escaped = normalizedAlias.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    if (new RegExp(`(^| )${escaped}( |$)`).test(normalizedValue)) return normalizedAlias.length <= 2 ? 78 : 90;
+    if (compact(normalizedAlias).length >= 3 && compact(normalizedValue).includes(compact(normalizedAlias))) return 72;
+    return 0;
+  }
+  function deviceScore(entity, device) {
+    const parts = entityParts(entity);
+    if ((device.exclude || []).some((term) => parts.text.includes(normalize(term)))) return 0;
+    let score = 0;
+    for (const alias of device.aliases) score = Math.max(score, aliasScore(parts.friendly,alias), aliasScore(parts.entityName,alias) - 4);
+    if (parts.text.includes('shelly')) score += 5;
+    if (parts.text.includes('plug') || parts.text.includes('presa')) score += 3;
+    return score;
+  }
+  function resolvePower(device) {
+    for (const entityId of configuredCandidates(device.powerKey)) {
+      const entity = state.states.get(entityId);
+      if (isPowerSensor(entity)) return { entity, method:'configurazione diretta' };
+    }
+    let best = null, bestScore = 0;
+    for (const entity of state.states.values()) {
+      if (!isPowerSensor(entity)) continue;
+      const score = deviceScore(entity,device);
+      if (score > bestScore) { bestScore = score; best = entity; }
+    }
+    return bestScore >= 72 ? { entity:best, method:'riconoscimento nome' } : { entity:null, method:'non trovato' };
+  }
+  function periodScore(entity, period) {
+    const text = entityParts(entity).text;
+    let score = (PERIOD_WORDS[period] || []).reduce((total,word) => total + (text.includes(normalize(word)) ? (word.includes(' ') ? 18 : 12) : 0),0);
+    if (period === 'today' && ['ieri','yesterday','mese','month','annuale','yearly','totale','total'].some((word) => text.includes(word))) score -= 40;
+    if (period === 'yesterday' && !['ieri','yesterday','previous day','giorno precedente'].some((word) => text.includes(normalize(word)))) score -= 50;
+    if (period === 'month' && ['anno','year','totale','total'].some((word) => text.includes(word))) score -= 35;
+    return score;
+  }
+  function utilityMeterPeriod(entity) {
+    const text = entityParts(entity).text;
+    const attrs = entity?.attributes || {};
+    const meter = normalize(attrs.meter_period || attrs.period || attrs.cycle || attrs.tariff);
+    const lastReset = Date.parse(attrs.last_reset || attrs.last_reset_time || '');
+    const reset = Number.isFinite(lastReset) ? new Date(lastReset) : null;
+    if (meter.includes('day') || meter.includes('giorn')) return 'today';
+    if (meter.includes('month') || meter.includes('mese')) return 'month';
+    if (reset) {
+      const now = new Date();
+      if (reset.getFullYear() === now.getFullYear() && reset.getMonth() === now.getMonth() && reset.getDate() === now.getDate()) return 'today';
+      if (reset.getFullYear() === now.getFullYear() && reset.getMonth() === now.getMonth() && reset.getDate() === 1) return 'month';
+    }
+    if (Number.isFinite(Number(attrs.last_period)) && ['utility meter','utility_meter'].some((word) => text.includes(normalize(word)))) return 'today';
+    return null;
+  }
+  function hasPeriodEvidence(entity, period) {
+    const text = entityParts(entity).text;
+    if ((PERIOD_WORDS[period] || []).some((word) => text.includes(normalize(word)))) return true;
+    return (period === 'today' || period === 'month') && utilityMeterPeriod(entity) === period;
+  }
+  function resolveEnergy(device, period) {
+    const key = period === 'today' ? device.todayKey : period === 'yesterday' ? device.yesterdayKey : device.monthKey;
+    for (const entityId of configuredCandidates(key)) {
+      const entity = state.states.get(entityId);
+      if (isEnergySensor(entity)) return { entity, method:'configurazione diretta' };
+    }
+    let best = null, bestScore = 0;
+    for (const entity of state.states.values()) {
+      if (!isEnergySensor(entity) || !hasPeriodEvidence(entity,period)) continue;
+      const score = deviceScore(entity,device) + periodScore(entity,period);
+      if (score > bestScore) { bestScore = score; best = entity; }
+    }
+    return bestScore >= 88 ? { entity:best, method:'riconoscimento nome/periodo' } : { entity:null, method:'non trovato' };
+  }
+  function resolveCumulativeEnergy(device) {
+    let best = null, bestScore = 0;
+    for (const entity of state.states.values()) {
+      if (!isEnergySensor(entity)) continue;
+      const parts = entityParts(entity);
+      if (Object.values(PERIOD_WORDS).flat().some((word) => parts.text.includes(normalize(word)))) continue;
+      if (['anno','year','totale giornaliero','daily total'].some((word) => parts.text.includes(normalize(word)))) continue;
+      let score = deviceScore(entity,device);
+      const stateClass = normalize(entity.attributes?.state_class);
+      if (stateClass === 'total increasing' || stateClass === 'total_increasing') score += 24;
+      else if (stateClass === 'total') score += 12;
+      if (parts.text.includes('total energy') || parts.text.includes('energia totale') || parts.text.includes('consumo totale')) score += 8;
+      if (score > bestScore) { bestScore = score; best = entity; }
+    }
+    return bestScore >= 90 ? best : null;
+  }
+  function watts(entity) {
+    if (!isPowerSensor(entity)) return null;
+    const value = Number(entity.state);
+    const unit = normalize(entity.attributes?.unit_of_measurement);
+    if (unit === 'kw') return value * 1000;
+    if (unit === 'mw') return value * 1000000;
+    return value;
+  }
+  function energyKwh(entity, rawValue = entity?.state) {
+    if (!isEnergySensor(entity) || !Number.isFinite(Number(rawValue))) return null;
+    const value = Number(rawValue);
+    const unit = normalize(entity.attributes?.unit_of_measurement);
+    if (unit === 'wh') return value / 1000;
+    if (unit === 'mwh') return value * 1000;
+    return value;
+  }
+  function periodRange(period) {
+    const now = new Date();
+    const end = new Date(now);
+    const start = new Date(now);
+    if (period === 'today') start.setHours(0,0,0,0);
+    else if (period === 'yesterday') { end.setHours(0,0,0,0); start.setTime(end.getTime()); start.setDate(start.getDate() - 1); }
+    else if (period === 'month') { start.setDate(1); start.setHours(0,0,0,0); }
+    return { start, end };
+  }
+  function historyTimestamp(item) {
+    const value = Date.parse(item?.last_updated || item?.last_changed || '');
+    return Number.isFinite(value) ? value : null;
+  }
+  function rawHistoryValue(item) { const value = Number(item?.state); return Number.isFinite(value) ? value : null; }
+  function rawToKwh(entity,value) {
+    if (!Number.isFinite(value)) return null;
+    const unit = normalize(entity?.attributes?.unit_of_measurement);
+    if (unit === 'wh') return value / 1000;
+    if (unit === 'mwh') return value * 1000;
+    return value;
+  }
+  async function historyEnergy(entity, period) {
+    if (!entity) return null;
+    const { start,end } = periodRange(period);
+    const movingBucket = Math.floor(end.getTime() / 300000);
+    const cacheKey = `${entity.entity_id}|${period}|${start.toISOString().slice(0,10)}|${period === 'today' || period === 'month' ? movingBucket : 'closed'}`;
+    if (historyCache.has(cacheKey)) return historyCache.get(cacheKey);
+    const task = (async () => {
+      try {
+        const queryStart = new Date(start); queryStart.setHours(queryStart.getHours() - 2);
+        const path = `/api/history/period/${encodeURIComponent(queryStart.toISOString())}?filter_entity_id=${encodeURIComponent(entity.entity_id)}&end_time=${encodeURIComponent(end.toISOString())}&minimal_response&no_attributes`;
+        const payload = await haFetch(path);
+        const rows = Array.isArray(payload?.[0]) ? payload[0] : [];
+        const points = rows.map((item) => ({ time:historyTimestamp(item), value:rawHistoryValue(item) }))
+          .filter((item) => Number.isFinite(item.time) && Number.isFinite(item.value)).sort((a,b) => a.time-b.time);
+        if (!points.length) return null;
+        const startMs = start.getTime(), endMs = end.getTime();
+        const baseline = [...points].reverse().find((point) => point.time <= startMs) || points.find((point) => point.time >= startMs);
+        if (!baseline) return null;
+        let previous = baseline.value, total = 0, samples = 0;
+        for (const point of points) {
+          if (point.time <= baseline.time || point.time < startMs) continue;
+          if (point.time > endMs) break;
+          const diff = point.value - previous;
+          total += diff >= 0 ? diff : Math.max(0,point.value);
+          previous = point.value; samples += 1;
+        }
+        if (!samples) return 0;
+        return rawToKwh(entity,total);
+      } catch (_error) { return null; }
+    })();
+    historyCache.set(cacheKey,task);
+    return task;
+  }
+  function statisticsPayload(payload) { return payload?.service_response?.statistics || payload?.response?.statistics || payload?.statistics || null; }
+  function statisticRowsValue(rows) {
+    if (!Array.isArray(rows) || !rows.length) return null;
+    const changes = rows.map((row) => Number(row?.change)).filter(Number.isFinite);
+    if (changes.length) return changes.reduce((total,value) => total + value,0);
+    const sums = rows.map((row) => Number(row?.sum)).filter(Number.isFinite);
+    if (sums.length >= 2) return Math.max(0,sums.at(-1)-sums[0]);
+    return null;
+  }
+  async function recorderStatistic(entity, period) {
+    if (!entity) return null;
+    const { start,end } = periodRange(period);
+    const movingBucket = Math.floor(end.getTime()/300000);
+    const cacheKey = `${entity.entity_id}|${period}|${start.toISOString().slice(0,10)}|${period === 'yesterday' ? 'closed' : movingBucket}`;
+    if (statisticsCache.has(cacheKey)) return statisticsCache.get(cacheKey);
+    const task = (async () => {
+      try {
+        const payload = await haFetch('/api/services/recorder/get_statistics?return_response', {
+          method:'POST', body:JSON.stringify({ statistic_ids:[entity.entity_id], start_time:start.toISOString(), end_time:end.toISOString(), period:'day', types:['change','sum'], units:{ energy:'kWh' } })
+        });
+        const statistics = statisticsPayload(payload);
+        return statisticRowsValue(statistics?.[entity.entity_id]);
+      } catch (_error) { return null; }
+    })();
+    statisticsCache.set(cacheKey,task);
+    return task;
+  }
+  async function metricForPeriod(device, period) {
+    if (period === 'yesterday') {
+      const direct = resolveEnergy(device,'yesterday');
+      if (direct.entity) return { value:energyKwh(direct.entity), entity:direct.entity, method:direct.method };
+      const daily = resolveEnergy(device,'today');
+      if (daily.entity && Number.isFinite(Number(daily.entity.attributes?.last_period))) {
+        return { value:energyKwh(daily.entity,daily.entity.attributes.last_period), entity:daily.entity, method:'last_period utility meter' };
+      }
+    } else {
+      const direct = resolveEnergy(device,period);
+      if (direct.entity) return { value:energyKwh(direct.entity), entity:direct.entity, method:direct.method };
+    }
+    const cumulative = resolveCumulativeEnergy(device);
+    if (!cumulative) return { value:null, entity:null, method:'nessun sensore compatibile' };
+    const statistic = await recorderStatistic(cumulative,period);
+    if (Number.isFinite(statistic)) return { value:statistic, entity:cumulative, method:'Recorder statistiche' };
+    const history = await historyEnergy(cumulative,period);
+    return { value:history, entity:cumulative, method:Number.isFinite(history) ? 'differenza storico cumulativo' : 'storico non disponibile' };
+  }
+
+  function formatPower(value) {
+    if (!Number.isFinite(value)) return 'NULL';
+    return Math.abs(value) >= 1000 ? `${fmt.format(value/1000)} kW` : `${fmt.format(value)} W`;
+  }
+  function formatEnergy(value) { return Number.isFinite(value) ? `${fmt.format(value)} kWh` : 'NULL'; }
+  function sourceText(entity) {
+    if (!entity) return 'Nessuna entità';
+    const unit = entity.attributes?.unit_of_measurement || '';
+    const raw = entity.state ?? '';
+    return `${entity.entity_id} · raw ${raw}${unit ? ` ${unit}` : ''}`;
+  }
+  function metricHtml(label, kind) {
+    return `<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong><span class="source">Ricerca entità…</span><span class="method">in attesa</span></div>`;
+  }
+  function deviceHtml(id) {
+    const device = DEVICES[id];
+    return `<article class="device" data-device="${id}"><div class="device-head"><h3>${device.label}</h3><code>${device.powerKey}</code></div><div class="metrics">${metricHtml('Attuale','power')}${metricHtml('Oggi','today')}${metricHtml('Ieri','yesterday')}${metricHtml('Mese','month')}</div></article>`;
+  }
+  function renderSkeletons() {
+    document.querySelector('#appliances').innerHTML = GROUPS.appliances.map(deviceHtml).join('');
+    document.querySelector('#tv-zone').innerHTML = GROUPS.tv.map(deviceHtml).join('');
+    document.querySelector('#studio-zone').innerHTML = GROUPS.studio.map(deviceHtml).join('');
+  }
+  function patchMetric(deviceId,kind,value,entity,method) {
+    const node = document.querySelector(`[data-device="${deviceId}"] [data-kind="${kind}"]`);
+    if (!node) return;
+    const formatted = kind === 'power' ? formatPower(value) : formatEnergy(value);
+    node.querySelector('strong').textContent = formatted;
+    node.querySelector('.source').textContent = sourceText(entity);
+    node.querySelector('.method').textContent = method;
+    node.classList.toggle('missing',formatted === 'NULL');
+    node.classList.remove('loading');
+  }
+  async function updateDevice(id) {
+    const device = DEVICES[id];
+    const powerResult = resolvePower(device);
+    patchMetric(id,'power',watts(powerResult.entity),powerResult.entity,powerResult.method);
+    const results = await Promise.all(['today','yesterday','month'].map((period) => metricForPeriod(device,period)));
+    ['today','yesterday','month'].forEach((period,index) => {
+      const result = results[index];
+      patchMetric(id,period,result.value,result.entity,result.method);
+    });
+  }
+  function setStatus(text,type='') {
+    const node = document.querySelector('#connection-status');
+    node.textContent = text;
+    node.className = `status ${type}`.trim();
+  }
+  async function sync() {
+    if (state.syncing) return;
+    const button = document.querySelector('#refresh');
+    state.syncing = true; button.disabled = true;
+    try {
+      if (!usableConfig()) throw new Error('URL o token non configurati in config.js');
+      setStatus('Connessione…');
+      const payload = await haFetch('/api/states');
+      state.states = new Map(payload.map((entity) => [entity.entity_id,entity]));
+      state.connected = true; state.lastSync = new Date();
+      setStatus('Home Assistant collegato','ok');
+      await Promise.all(Object.keys(DEVICES).map(updateDevice));
+      document.querySelector('#updated-at').textContent = `Aggiornato alle ${state.lastSync.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+    } catch (error) {
+      state.connected = false;
+      setStatus(error.message,'error');
+      console.error('[Test consumi]',error);
+    } finally {
+      state.syncing = false; button.disabled = false;
+    }
+  }
+
+  renderSkeletons();
+  document.querySelector('#refresh').addEventListener('click',() => { historyCache.clear(); statisticsCache.clear(); sync(); });
+  sync();
+  setInterval(sync,5000);
+})();
+</script>
+</body>
+</html>
