@@ -833,3 +833,154 @@ body{
   .view-nav button{font-size:8px!important}
   .view-nav button i{font-size:15px!important}
 }
+
+/* ========================================================================== 
+   MOBILE FLOW FIX v74
+   Stabilizza il layout smartphone: rail e card partecipano al flusso normale,
+   senza posizionamenti o offset ereditati dalla dashboard 3D.
+   ========================================================================== */
+@media (max-width:699px), (orientation:landscape) and (max-width:999px) and (max-height:700px){
+  html.mobile-dashboard-only,
+  html.mobile-dashboard-only body{
+    width:100%!important;
+    min-width:0!important;
+    height:100%!important;
+    min-height:100%!important;
+    overflow:hidden!important;
+  }
+
+  html.mobile-dashboard-only #dashboard{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:760px!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0 auto!important;
+    padding:
+      max(8px,env(safe-area-inset-top))
+      max(10px,env(safe-area-inset-right))
+      calc(84px + env(safe-area-inset-bottom))
+      max(10px,env(safe-area-inset-left))!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    scroll-padding-top:112px!important;
+    isolation:isolate!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > .tablet-top{
+    order:0!important;
+    flex:0 0 auto!important;
+    position:sticky!important;
+    inset:auto!important;
+    top:0!important;
+    width:100%!important;
+    transform:none!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > .dashboard-rail{
+    order:1!important;
+    position:static!important;
+    inset:auto!important;
+    display:flex!important;
+    flex:0 0 auto!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:none!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:visible!important;
+    transform:none!important;
+    contain:none!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > #right-rail{
+    order:2!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .card,
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .card.fill,
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .card.scrollable,
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .room-device-floor{
+    position:static!important;
+    inset:auto!important;
+    top:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    z-index:auto!important;
+    display:block!important;
+    flex:0 0 auto!important;
+    align-self:stretch!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0!important;
+    transform:none!important;
+    translate:none!important;
+    overflow:visible!important;
+    contain:none!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > #context-panel{
+    order:3!important;
+    position:static!important;
+    inset:auto!important;
+    flex:0 0 auto!important;
+    align-self:stretch!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0!important;
+    transform:none!important;
+    overflow:visible!important;
+    contain:none!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > #context-panel[hidden]{
+    display:none!important;
+  }
+
+  html.mobile-dashboard-only .card,
+  html.mobile-dashboard-only .context-panel,
+  html.mobile-dashboard-only .room-device-floor,
+  html.mobile-dashboard-only .room-device-context-layout,
+  html.mobile-dashboard-only .ha-device-sections,
+  html.mobile-dashboard-only .ha-device-section{
+    box-sizing:border-box!important;
+  }
+
+  html.mobile-dashboard-only .card::after,
+  html.mobile-dashboard-only .context-panel::after{
+    pointer-events:none!important;
+  }
+}
+
+/* In orizzontale manteniamo due colonne, ma dentro ogni rail e nel flusso normale. */
+@media (orientation:landscape) and (min-width:600px) and (max-width:999px) and (max-height:700px){
+  html.mobile-dashboard-only #dashboard > .dashboard-rail{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    align-items:start!important;
+    gap:10px!important;
+  }
+
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .featured-card,
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .pv-card,
+  html.mobile-dashboard-only #dashboard > .dashboard-rail > .room-device-floor{
+    grid-column:1/-1!important;
+  }
+}

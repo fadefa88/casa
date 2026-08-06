@@ -66,6 +66,8 @@
     .metric strong { display: block; margin-top: 5px; font-size: clamp(18px, 2.2vw, 27px); line-height: 1; font-variant-numeric: tabular-nums; }
     .metric .source { display: block; min-height: 28px; margin-top: 7px; color: var(--muted); font-size: 9.5px; line-height: 1.25; overflow-wrap: anywhere; }
     .metric .method { display: inline-block; margin-top: 6px; padding: 3px 6px; border-radius: 999px; background: rgba(102,217,239,.10); color: var(--accent); font-size: 9px; font-weight: 800; }
+    .metric .cost { display: block; margin-top: 7px; color: var(--ok); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .metric .cost[hidden] { display: none; }
     .metric.missing strong { color: var(--error); }
     .metric.loading strong { color: var(--muted); }
     .foot { margin-top: 22px; color: var(--muted); font-size: 11px; text-align: center; }
@@ -99,7 +101,7 @@
     <section class="intro" aria-label="Definizione periodi">
       <article><strong>Oggi</strong><span>Dalle 00:00:00 locali fino all’ora dell’ultimo aggiornamento.</span></article>
       <article><strong>Ieri</strong><span>Dalle 00:00:00 di ieri alle 00:00:00 di oggi: l’intera giornata precedente.</span></article>
-      <article><strong>Mese</strong><span>Dalle 00:00:00 del primo giorno del mese fino all’ora dell’ultimo aggiornamento.</span></article>
+      <article><strong>Mese</strong><span>Dalle 00:00:00 del primo giorno del mese fino all’ora dell’ultimo aggiornamento. Costi calcolati a 0,287 €/kWh.</span></article>
     </section>
 
     <div class="group"><h2>Elettrodomestici</h2><small id="updated-at">—</small></div>
@@ -111,7 +113,7 @@
     <div class="group"><h2>Studio / gaming</h2><small>PC, monitor, PS5 e splitter</small></div>
     <section id="studio-zone" class="grid"></section>
 
-    <p class="foot">Oggi = stato dell’helper giornaliero · Ieri = attributo last_period del giornaliero · Mese = stato dell’helper mensile. Aggiornamento ogni 5 secondi.</p>
+    <p class="foot">Oggi = stato dell’helper giornaliero · Ieri = attributo last_period del giornaliero · Mese = stato dell’helper mensile · Valori assenti = 0 · Costo = kWh × 0,287 €. Aggiornamento ogni 5 secondi.</p>
   </main>
 
 <script>
@@ -121,6 +123,8 @@
   const config = window.CASA_DASHBOARD_CONFIG || {};
   const haConfig = config.homeAssistant || {};
   const fmt = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 3 });
+  const ENERGY_PRICE_EUR_KWH = 0.287;
+  const costFmt = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 3 });
   const state = { states: new Map(), connected: false, syncing: false, lastSync: null };
   const historyCache = new Map();
   const statisticsCache = new Map();
@@ -449,40 +453,47 @@
     const monthly = state.states.get(device.monthlyHelper) || null;
 
     if (period === 'today') {
+      const raw = energyKwh(daily);
       return {
-        value: energyKwh(daily),
+        value: Number.isFinite(raw) ? raw : 0,
         entity: daily,
         rawValue: daily?.state,
         sourceField: 'stato helper giornaliero',
-        method: daily ? 'helper giornaliero esplicito' : 'helper giornaliero non trovato'
+        method: Number.isFinite(raw) ? 'helper giornaliero esplicito' : 'nessun valore · usato 0'
       };
     }
 
     if (period === 'yesterday') {
       const lastPeriod = daily?.attributes?.last_period;
+      const raw = energyKwh(daily, lastPeriod);
       return {
-        value: energyKwh(daily, lastPeriod),
+        value: Number.isFinite(raw) ? raw : 0,
         entity: daily,
         rawValue: lastPeriod,
         sourceField: 'attributo last_period',
-        method: Number.isFinite(Number(lastPeriod)) ? 'last_period helper giornaliero' : 'last_period non disponibile'
+        method: Number.isFinite(raw) ? 'last_period helper giornaliero' : 'last_period assente · usato 0'
       };
     }
 
+    const raw = energyKwh(monthly);
     return {
-      value: energyKwh(monthly),
+      value: Number.isFinite(raw) ? raw : 0,
       entity: monthly,
       rawValue: monthly?.state,
       sourceField: 'stato helper mensile',
-      method: monthly ? 'helper mensile esplicito' : 'helper mensile non trovato'
+      method: Number.isFinite(raw) ? 'helper mensile esplicito' : 'nessun valore · usato 0'
     };
   }
 
   function formatPower(value) {
-    if (!Number.isFinite(value)) return 'NULL';
-    return Math.abs(value) >= 1000 ? `${fmt.format(value/1000)} kW` : `${fmt.format(value)} W`;
+    const safe = Number.isFinite(value) ? value : 0;
+    return Math.abs(safe) >= 1000 ? `${fmt.format(safe/1000)} kW` : `${fmt.format(safe)} W`;
   }
-  function formatEnergy(value) { return Number.isFinite(value) ? `${fmt.format(value)} kWh` : 'NULL'; }
+  function formatEnergy(value) { return `${fmt.format(Number.isFinite(value) ? value : 0)} kWh`; }
+  function formatCost(value) {
+    const kwh = Number.isFinite(value) ? Math.max(0, value) : 0;
+    return costFmt.format(kwh * ENERGY_PRICE_EUR_KWH);
+  }
   function sourceText(entity, rawValue, sourceField = 'stato') {
     if (!entity) return 'Nessuna entità';
     const unit = entity.attributes?.unit_of_measurement || '';
@@ -490,7 +501,8 @@
     return `${entity.entity_id} · ${sourceField}: ${raw}${unit ? ` ${unit}` : ''}`;
   }
   function metricHtml(label, kind) {
-    return `<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong><span class="source">Ricerca entità…</span><span class="method">in attesa</span></div>`;
+    const cost = kind === 'power' ? '<span class="cost" hidden></span>' : '<span class="cost">Costo stimato: € 0,00</span>';
+    return `<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong>${cost}<span class="source">Ricerca entità…</span><span class="method">in attesa</span></div>`;
   }
   function deviceHtml(id) {
     const device = DEVICES[id];
@@ -506,9 +518,14 @@
     if (!node) return;
     const formatted = kind === 'power' ? formatPower(value) : formatEnergy(value);
     node.querySelector('strong').textContent = formatted;
+    const costNode = node.querySelector('.cost');
+    if (costNode) {
+      costNode.hidden = kind === 'power';
+      if (kind !== 'power') costNode.textContent = `Costo stimato: ${formatCost(value)}`;
+    }
     node.querySelector('.source').textContent = sourceText(entity,rawValue,sourceField);
     node.querySelector('.method').textContent = method;
-    node.classList.toggle('missing',formatted === 'NULL');
+    node.classList.remove('missing');
     node.classList.remove('loading');
   }
   async function updateDevice(id) {
