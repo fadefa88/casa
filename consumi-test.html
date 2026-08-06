@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b1020">
-  <title>Test consumi · Casa 5B</title>
+  <title>Consumi Totali · Casa 5B</title>
   <link rel="icon" href="./icon.svg">
   <style>
     :root {
@@ -35,20 +35,8 @@
     .topbar h1 { font-size: clamp(18px, 2vw, 27px); line-height: 1.1; margin: 0; }
     .topbar p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
     .topbar-main { min-width: 0; flex: 1; }
-    .status { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; padding: 9px 12px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 13px; font-weight: 700; }
-    .status::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 4px rgba(255,201,107,.12); }
-    .status.ok { color: var(--ok); }
-    .status.ok::before { background: var(--ok); box-shadow: 0 0 0 4px rgba(115,226,167,.12); }
-    .status.error { color: var(--error); }
-    .status.error::before { background: var(--error); box-shadow: 0 0 0 4px rgba(255,125,141,.12); }
     .action { border: 1px solid var(--line); background: var(--surface-2); color: var(--text); padding: 10px 13px; border-radius: 13px; cursor: pointer; font-weight: 800; }
     .action:disabled { opacity: .55; cursor: progress; }
-    .intro {
-      display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 18px;
-    }
-    .intro article { padding: 13px 15px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); }
-    .intro strong { display: block; font-size: 14px; }
-    .intro span { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.35; }
     .group { margin: 22px 0 8px; display: flex; align-items: end; justify-content: space-between; gap: 10px; }
     .group h2 { margin: 0; font-size: clamp(18px, 2vw, 25px); }
     .group small { color: var(--muted); }
@@ -59,18 +47,16 @@
     }
     .device-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
     .device-head h3 { margin: 0; font-size: 18px; }
-    .device-head code { max-width: 65%; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 10px; white-space: nowrap; }
+    .total-device { grid-column: 1 / -1; border-color: rgba(102,217,239,.28); background: linear-gradient(145deg, rgba(23,42,60,.96), rgba(12,18,31,.96)); }
+    .total-device .device-head h3 { color: var(--accent); }
     .metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
     .metric { min-width: 0; padding: 11px; border: 1px solid rgba(255,255,255,.07); border-radius: 15px; background: rgba(255,255,255,.035); }
     .metric small { display: block; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
     .metric strong { display: block; margin-top: 5px; font-size: clamp(18px, 2.2vw, 27px); line-height: 1; font-variant-numeric: tabular-nums; }
-    .metric .source { display: block; min-height: 28px; margin-top: 7px; color: var(--muted); font-size: 9.5px; line-height: 1.25; overflow-wrap: anywhere; }
-    .metric .method { display: inline-block; margin-top: 6px; padding: 3px 6px; border-radius: 999px; background: rgba(102,217,239,.10); color: var(--accent); font-size: 9px; font-weight: 800; }
     .metric .cost { display: block; margin-top: 7px; color: var(--ok); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
     .metric .cost[hidden] { display: none; }
     .metric.missing strong { color: var(--error); }
     .metric.loading strong { color: var(--muted); }
-    .foot { margin-top: 22px; color: var(--muted); font-size: 11px; text-align: center; }
     @media (max-width: 1100px) {
       .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
       .topbar p { display: none; }
@@ -78,8 +64,6 @@
     @media (max-width: 720px) {
       body { padding: 8px; }
       .topbar { top: 4px; border-radius: 17px; flex-wrap: wrap; }
-      .status { order: 3; flex: 1; justify-content: center; }
-      .intro { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr; }
       .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
@@ -90,30 +74,19 @@
   <main class="shell">
     <header class="topbar">
       <div class="topbar-main">
-        <h1>Diagnostica consumi Home Assistant</h1>
-        <p>Potenza attuale dal sito Casa 3D; consumi storici da helper Utility Meter espliciti.</p>
+        <h1>Consumi Totali</h1>
       </div>
-      <div id="connection-status" class="status">Connessione…</div>
-      <button id="refresh" class="action" type="button">Aggiorna</button>
       <a class="action" href="./index.html">Casa 3D</a>
     </header>
-
-    <section class="intro" aria-label="Definizione periodi">
-      <article><strong>Oggi</strong><span>Dalle 00:00:00 locali fino all’ora dell’ultimo aggiornamento.</span></article>
-      <article><strong>Ieri</strong><span>Dalle 00:00:00 di ieri alle 00:00:00 di oggi: l’intera giornata precedente.</span></article>
-      <article><strong>Mese</strong><span>Dalle 00:00:00 del primo giorno del mese fino all’ora dell’ultimo aggiornamento. Costi calcolati a 0,287 €/kWh.</span></article>
-    </section>
 
     <div class="group"><h2>Elettrodomestici</h2><small id="updated-at">—</small></div>
     <section id="appliances" class="grid"></section>
 
-    <div class="group"><h2>Zona TV</h2><small>TV, Shield, Mini PC e HDD</small></div>
+    <div class="group"><h2>Zona TV</h2></div>
     <section id="tv-zone" class="grid"></section>
 
-    <div class="group"><h2>Studio / gaming</h2><small>PC, monitor, PS5 e splitter</small></div>
+    <div class="group"><h2>Studio / gaming</h2></div>
     <section id="studio-zone" class="grid"></section>
-
-    <p class="foot">Oggi = stato dell’helper giornaliero · Ieri = attributo last_period del giornaliero · Mese = stato dell’helper mensile · Valori assenti = 0 · Costo = kWh × 0,287 €. Aggiornamento ogni 5 secondi.</p>
   </main>
 
 <script>
@@ -125,7 +98,7 @@
   const fmt = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 3 });
   const ENERGY_PRICE_EUR_KWH = 0.287;
   const costFmt = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 3 });
-  const state = { states: new Map(), connected: false, syncing: false, lastSync: null };
+  const state = { states: new Map(), metrics: new Map(), connected: false, syncing: false, lastSync: null };
   const historyCache = new Map();
   const statisticsCache = new Map();
 
@@ -494,79 +467,107 @@
     const kwh = Number.isFinite(value) ? Math.max(0, value) : 0;
     return costFmt.format(kwh * ENERGY_PRICE_EUR_KWH);
   }
-  function sourceText(entity, rawValue, sourceField = 'stato') {
-    if (!entity) return 'Nessuna entità';
-    const unit = entity.attributes?.unit_of_measurement || '';
-    const raw = rawValue ?? entity.state ?? '';
-    return `${entity.entity_id} · ${sourceField}: ${raw}${unit ? ` ${unit}` : ''}`;
-  }
   function metricHtml(label, kind) {
-    const cost = kind === 'power' ? '<span class="cost" hidden></span>' : '<span class="cost">Costo stimato: € 0,00</span>';
-    return `<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong>${cost}<span class="source">Ricerca entità…</span><span class="method">in attesa</span></div>`;
+    const cost = kind === 'power'
+      ? '<span class="cost" hidden></span>'
+      : '<span class="cost">Costo stimato: € 0,00</span>';
+    return `<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong>${cost}</div>`;
   }
+
   function deviceHtml(id) {
     const device = DEVICES[id];
-    return `<article class="device" data-device="${id}"><div class="device-head"><h3>${device.label}</h3><code>${device.powerKey}</code></div><div class="metrics">${metricHtml('Attuale','power')}${metricHtml('Oggi','today')}${metricHtml('Ieri','yesterday')}${metricHtml('Mese','month')}</div></article>`;
+    return `<article class="device" data-device="${id}"><div class="device-head"><h3>${device.label}</h3></div><div class="metrics">${metricHtml('Attuale','power')}${metricHtml('Oggi','today')}${metricHtml('Ieri','yesterday')}${metricHtml('Mese','month')}</div></article>`;
   }
+
+  const TOTAL_LABELS = {
+    appliances: 'Totale Elettrodomestici',
+    tv: 'Totale Zona TV',
+    studio: 'Totale Studio / gaming'
+  };
+
+  function totalHtml(groupId) {
+    return `<article class="device total-device" data-total="${groupId}"><div class="device-head"><h3>${TOTAL_LABELS[groupId]}</h3></div><div class="metrics">${metricHtml('Attuale','power')}${metricHtml('Oggi','today')}${metricHtml('Ieri','yesterday')}${metricHtml('Mese','month')}</div></article>`;
+  }
+
   function renderSkeletons() {
-    document.querySelector('#appliances').innerHTML = GROUPS.appliances.map(deviceHtml).join('');
-    document.querySelector('#tv-zone').innerHTML = GROUPS.tv.map(deviceHtml).join('');
-    document.querySelector('#studio-zone').innerHTML = GROUPS.studio.map(deviceHtml).join('');
+    document.querySelector('#appliances').innerHTML = GROUPS.appliances.map(deviceHtml).join('') + totalHtml('appliances');
+    document.querySelector('#tv-zone').innerHTML = GROUPS.tv.map(deviceHtml).join('') + totalHtml('tv');
+    document.querySelector('#studio-zone').innerHTML = GROUPS.studio.map(deviceHtml).join('') + totalHtml('studio');
   }
-  function patchMetric(deviceId,kind,value,entity,method,rawValue,sourceField) {
-    const node = document.querySelector(`[data-device="${deviceId}"] [data-kind="${kind}"]`);
+
+  function patchNode(node, kind, value) {
     if (!node) return;
-    const formatted = kind === 'power' ? formatPower(value) : formatEnergy(value);
-    node.querySelector('strong').textContent = formatted;
+    const safeValue = Number.isFinite(value) ? value : 0;
+    node.querySelector('strong').textContent = kind === 'power' ? formatPower(safeValue) : formatEnergy(safeValue);
     const costNode = node.querySelector('.cost');
     if (costNode) {
       costNode.hidden = kind === 'power';
-      if (kind !== 'power') costNode.textContent = `Costo stimato: ${formatCost(value)}`;
+      if (kind !== 'power') costNode.textContent = `Costo stimato: ${formatCost(safeValue)}`;
     }
-    node.querySelector('.source').textContent = sourceText(entity,rawValue,sourceField);
-    node.querySelector('.method').textContent = method;
-    node.classList.remove('missing');
-    node.classList.remove('loading');
+    node.classList.remove('missing', 'loading');
   }
+
+  function patchMetric(deviceId, kind, value) {
+    patchNode(document.querySelector(`[data-device="${deviceId}"] [data-kind="${kind}"]`), kind, value);
+  }
+
+  function patchTotal(groupId, kind, value) {
+    patchNode(document.querySelector(`[data-total="${groupId}"] [data-kind="${kind}"]`), kind, value);
+  }
+
+  function updateTotals() {
+    for (const [groupId, deviceIds] of Object.entries(GROUPS)) {
+      const totals = { power: 0, today: 0, yesterday: 0, month: 0 };
+      for (const deviceId of deviceIds) {
+        const values = state.metrics.get(deviceId) || {};
+        for (const kind of Object.keys(totals)) {
+          const value = Number(values[kind]);
+          totals[kind] += Number.isFinite(value) ? value : 0;
+        }
+      }
+      for (const [kind, value] of Object.entries(totals)) patchTotal(groupId, kind, value);
+    }
+  }
+
   async function updateDevice(id) {
     const device = DEVICES[id];
     const powerResult = resolvePower(device);
-    patchMetric(id,'power',watts(powerResult.entity),powerResult.entity,powerResult.method,powerResult.entity?.state,'stato potenza');
+    const powerValue = watts(powerResult.entity);
     const results = await Promise.all(['today','yesterday','month'].map((period) => metricForPeriod(device,period)));
-    ['today','yesterday','month'].forEach((period,index) => {
-      const result = results[index];
-      patchMetric(id,period,result.value,result.entity,result.method,result.rawValue,result.sourceField);
-    });
-  }
-  function setStatus(text,type='') {
-    const node = document.querySelector('#connection-status');
-    node.textContent = text;
-    node.className = `status ${type}`.trim();
+    const values = {
+      power: Number.isFinite(powerValue) ? powerValue : 0,
+      today: Number.isFinite(results[0]?.value) ? results[0].value : 0,
+      yesterday: Number.isFinite(results[1]?.value) ? results[1].value : 0,
+      month: Number.isFinite(results[2]?.value) ? results[2].value : 0
+    };
+    state.metrics.set(id, values);
+    patchMetric(id, 'power', values.power);
+    patchMetric(id, 'today', values.today);
+    patchMetric(id, 'yesterday', values.yesterday);
+    patchMetric(id, 'month', values.month);
   }
   async function sync() {
     if (state.syncing) return;
-    const button = document.querySelector('#refresh');
-    state.syncing = true; button.disabled = true;
+    state.syncing = true;
     try {
       if (!usableConfig()) throw new Error('URL o token non configurati in config.js');
-      setStatus('Connessione…');
       const payload = await haFetch('/api/states');
       state.states = new Map(payload.map((entity) => [entity.entity_id,entity]));
-      state.connected = true; state.lastSync = new Date();
-      setStatus('Home Assistant collegato','ok');
+      state.connected = true;
+      state.lastSync = new Date();
       await Promise.all(Object.keys(DEVICES).map(updateDevice));
+      updateTotals();
       document.querySelector('#updated-at').textContent = `Aggiornato alle ${state.lastSync.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
     } catch (error) {
       state.connected = false;
-      setStatus(error.message,'error');
-      console.error('[Test consumi]',error);
+      document.querySelector('#updated-at').textContent = 'Errore collegamento';
+      console.error('[Consumi Totali]',error);
     } finally {
-      state.syncing = false; button.disabled = false;
+      state.syncing = false;
     }
   }
 
   renderSkeletons();
-  document.querySelector('#refresh').addEventListener('click',() => { historyCache.clear(); statisticsCache.clear(); sync(); });
   sync();
   setInterval(sync,5000);
 })();
