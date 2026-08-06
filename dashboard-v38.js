@@ -730,7 +730,20 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   }
 
   async function setClimateTemperature(roomState, temperature, button) {
-    const clamped = Math.max(10, Math.min(30, Math.round(temperature * 2) / 2));
+    const climateEntity = stateOf(roomState.resolved.climate);
+    const configuredMin = Number(climateEntity?.attributes?.min_temp);
+    const configuredMax = Number(climateEntity?.attributes?.max_temp);
+    const configuredStep = Number(climateEntity?.attributes?.target_temp_step);
+
+    const minimumTemperature = Number.isFinite(configuredMin) ? configuredMin : 3;
+    const maximumTemperature = Number.isFinite(configuredMax) ? configuredMax : 40;
+    const temperatureStep = Number.isFinite(configuredStep) && configuredStep > 0
+      ? configuredStep
+      : 0.5;
+
+    const rounded = Math.round(temperature / temperatureStep) * temperatureStep;
+    const clamped = Math.max(minimumTemperature, Math.min(maximumTemperature, rounded));
+
     if (await callService('climate', 'set_temperature', roomState.resolved.climate, { temperature: clamped }, button)) roomState.targetTemperature = clamped;
     else if (!ui.connected) roomState.targetTemperature = clamped;
   }
@@ -4043,7 +4056,24 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       const currentTarget = Number(entity?.attributes?.temperature);
       const fallback = Number(entity?.attributes?.current_temperature);
       const base = Number.isFinite(currentTarget) ? currentTarget : (Number.isFinite(fallback) ? fallback : 20);
-      const temperature = Math.max(10, Math.min(30, Math.round((base + (action === 'up' ? 0.5 : -0.5)) * 2) / 2));
+
+      const configuredMin = Number(entity?.attributes?.min_temp);
+      const configuredMax = Number(entity?.attributes?.max_temp);
+      const configuredStep = Number(entity?.attributes?.target_temp_step);
+
+      const minimumTemperature = Number.isFinite(configuredMin) ? configuredMin : 3;
+      const maximumTemperature = Number.isFinite(configuredMax) ? configuredMax : 40;
+      const temperatureStep = Number.isFinite(configuredStep) && configuredStep > 0
+        ? configuredStep
+        : 0.5;
+
+      const requestedTemperature = base + (action === 'up' ? temperatureStep : -temperatureStep);
+      const roundedTemperature = Math.round(requestedTemperature / temperatureStep) * temperatureStep;
+      const temperature = Math.max(
+        minimumTemperature,
+        Math.min(maximumTemperature, roundedTemperature)
+      );
+
       window.CASA_HA?.service?.('climate', 'set_temperature', entityId, { temperature }, climateButton).then(() => schedule(true));
     }
   }, true);
