@@ -351,15 +351,12 @@ body{
   body{
     height:100%!important;
     overflow:hidden!important;
-    background:#07111e!important;
+    background:#eef4f7!important;
   }
 
   body{
     min-width:0!important;
-    background:
-      radial-gradient(circle at 12% -8%,rgba(37,99,235,.20),transparent 34%),
-      radial-gradient(circle at 94% 18%,rgba(14,165,233,.10),transparent 30%),
-      #07111e!important;
+    background:#eef4f7!important;
   }
 
   #dashboard{
@@ -408,7 +405,7 @@ body{
 
   /* Header app: indirizzo + sezione + tutti gli stati sempre leggibili. */
   .tablet-top{
-    position:sticky!important;
+    position:relative!important;
     z-index:90!important;
     top:0!important;
     left:auto!important;
@@ -875,9 +872,9 @@ body{
   html.mobile-dashboard-only #dashboard > .tablet-top{
     order:0!important;
     flex:0 0 auto!important;
-    position:sticky!important;
+    position:relative!important;
     inset:auto!important;
-    top:0!important;
+    top:auto!important;
     width:100%!important;
     transform:none!important;
   }
