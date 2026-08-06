@@ -1,8 +1,8 @@
 window.CASA_ROOMS = [
   {
     id:'first-salotto', modelKey:'first__LivingDiningRoom-116276', floor:'first', name:'Salotto', icon:'fa-couch', type:'indoor', aliases:['salotto','soggiorno','living'],
-    entities:{temperature:'sensor.salotto_temperatura',lights:'light.salotto',cover:'cover.salotto',climate:'climate.clima_salotto'},
-    candidates:{temperature:['sensor.termostato_salotto_temperatura','sensor.clima_soggiorno_temperatura','sensor.soggiorno_temperatura'],lights:['light.luce_salotto','light.luci_salotto','light.soggiorno'],cover:['cover.tapparella_salotto','cover.soggiorno'],climate:['climate.salotto','climate.termostato_salotto','climate.clima_soggiorno','climate.soggiorno']}
+    entities:{temperature:'sensor.salotto_temperatura',lights:'light.salotto',cover:'cover.salotto',climate:'climate.termostato_salotto_mqtt'},
+    candidates:{temperature:['sensor.termostato_salotto_temperatura','sensor.clima_soggiorno_temperatura','sensor.soggiorno_temperatura'],lights:['light.luce_salotto','light.luci_salotto','light.soggiorno'],cover:['cover.tapparella_salotto','cover.soggiorno'],climate:['climate.clima_salotto','climate.salotto','climate.termostato_salotto','climate.clima_soggiorno','climate.soggiorno']}
   },
   {
     id:'first-cucina', modelKey:null, floor:'first', name:'Cucina', icon:'fa-kitchen-set', type:'indoor', aliases:['cucina','kitchen'], temperatureFrom:'first-salotto',
@@ -11,8 +11,8 @@ window.CASA_ROOMS = [
   },
   {
     id:'first-camera-matrimoniale', modelKey:'first__MasterBedroom-105249', floor:'first', name:'Camera Matrimoniale', icon:'fa-bed', type:'indoor', aliases:['camera matrimoniale','matrimoniale'],
-    entities:{temperature:'sensor.camera_matrimoniale_temperatura',lights:'light.camera_matrimoniale',cover:'cover.camera_matrimoniale',climate:'climate.clima_camera_matrimoniale'},
-    candidates:{temperature:['sensor.termostato_camera_matrimoniale_temperatura'],lights:['light.luce_camera_matrimoniale'],cover:['cover.tapparella_camera_matrimoniale'],climate:['climate.camera_matrimoniale','climate.termostato_camera_matrimoniale']}
+    entities:{temperature:'sensor.camera_matrimoniale_temperatura',lights:'light.camera_matrimoniale',cover:'cover.camera_matrimoniale',climate:'climate.termostato_camera_matrimoniale_mqtt'},
+    candidates:{temperature:['sensor.termostato_camera_matrimoniale_temperatura'],lights:['light.luce_camera_matrimoniale'],cover:['cover.tapparella_camera_matrimoniale'],climate:['climate.clima_camera_matrimoniale','climate.camera_matrimoniale','climate.termostato_camera_matrimoniale']}
   },
   {
     id:'first-studio', modelKey:'first__Bedroom-106328', floor:'first', name:'Studio', icon:'fa-laptop', type:'indoor', aliases:['studio','ufficio','office'],
@@ -51,12 +51,12 @@ window.CASA_ROOMS = [
   },
   {
     id:'second-mansarda', modelKey:'second__LivingRoom-39392', floor:'second', name:'Mansarda', icon:'fa-couch', type:'indoor', aliases:['mansarda','soggiorno mansarda','salotto mansarda'],
-    entities:{temperature:'sensor.mansarda_temperatura',cover:'cover.mansarda',climate:'climate.clima_mansarda'},
-    candidates:{temperature:['sensor.temperatura_mansarda','sensor.mansarda_temperature','sensor.termostato_mansarda_temperatura','sensor.clima_mansarda_temperatura','sensor.soggiorno_mansarda_temperatura'],cover:['cover.tapparella_mansarda','cover.soggiorno_mansarda'],climate:['climate.mansarda','climate.termostato_mansarda','climate.soggiorno_mansarda','climate.clima_soggiorno_mansarda']}
+    entities:{temperature:'sensor.mansarda_temperatura',cover:'cover.mansarda',climate:'climate.termostato_mansarda_mqtt'},
+    candidates:{temperature:['sensor.temperatura_mansarda','sensor.mansarda_temperature','sensor.termostato_mansarda_temperatura','sensor.clima_mansarda_temperatura','sensor.soggiorno_mansarda_temperatura'],cover:['cover.tapparella_mansarda','cover.soggiorno_mansarda'],climate:['climate.clima_mansarda','climate.mansarda','climate.termostato_mansarda','climate.soggiorno_mansarda','climate.clima_soggiorno_mansarda']}
   },
   {
     id:'second-camera-mansarda', modelKey:'second__Bedroom-35912', floor:'second', name:'Camera Mansarda', icon:'fa-bed', type:'indoor', aliases:['camera mansarda'],
-    entities:{temperature:'sensor.camera_mansarda_temperatura',lights:'light.camera_mansarda',cover:'cover.camera_mansarda',climate:'climate.clima_camera_mansarda'},
-    candidates:{lights:['light.luce_camera_mansarda'],cover:['cover.tapparella_camera_mansarda'],climate:['climate.camera_mansarda','climate.termostato_camera_mansarda']}
+    entities:{temperature:'sensor.camera_mansarda_temperatura',lights:'light.camera_mansarda',cover:'cover.camera_mansarda',climate:'climate.termostato_camera_mansarda_mqtt'},
+    candidates:{lights:['light.luce_camera_mansarda'],cover:['cover.tapparella_camera_mansarda'],climate:['climate.clima_camera_mansarda','climate.camera_mansarda','climate.termostato_camera_mansarda']}
   }
 ];
