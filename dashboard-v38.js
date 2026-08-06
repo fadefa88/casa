@@ -1644,7 +1644,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
   // Totali energetici deterministici per le card Casa 3D.
   // Oggi = stato helper giornaliero; Ieri = last_period del giornaliero;
-  // Mese = stato helper mensile. Nessun riconoscimento automatico o fallback storico.
+  // Mese = stato helper mensile. Un helper senza un valore numerico contribuisce con 0.
   const GROUP_PERIOD_HELPERS = {
     appliances: {
       washer: {
@@ -2121,12 +2121,17 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     for (const helper of Object.values(helpers)) {
       const entityId = period === 'month' ? helper.monthly : helper.daily;
       const entity = states().get(entityId);
-      if (!isEnergySensor(entity)) return null;
 
-      const rawValue = period === 'yesterday' ? entity.attributes?.last_period : entity.state;
+      // Gli Utility Meter possono non avere ancora uno stato valido (per esempio
+      // subito dopo la creazione o prima del primo reset). In quel caso il loro
+      // contributo al totale deve essere zero, senza invalidare l'intera somma.
+      if (!isEnergySensor(entity)) continue;
+
+      const rawValue = period === 'yesterday'
+        ? entity.attributes?.last_period
+        : entity.state;
       const value = energyKwh(entity, rawValue);
-      if (!Number.isFinite(value)) return null;
-      total += value;
+      total += Number.isFinite(value) ? value : 0;
     }
     return total;
   }
@@ -4701,8 +4706,19 @@ function applyCustomOverrides(){
   scaleInstanceAroundCenter('179008', .765);
 }
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
-new GLTFLoader().load("./assets/casa_homestyler.glb?v=29",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
-function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}loop();
+const MOBILE_DASHBOARD_ONLY = window.matchMedia('(max-width: 699px), (orientation: landscape) and (max-width: 999px) and (max-height: 700px)').matches;
+
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}
+function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}
+
+if (MOBILE_DASHBOARD_ONLY) {
+  document.documentElement.classList.add('mobile-dashboard-only');
+  loading?.classList.add('hidden');
+  console.info('[Casa dashboard] Modalità mobile: scena 3D non caricata.');
+} else {
+  new GLTFLoader().load("./assets/casa_homestyler.glb?v=29",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+  loop();
+}
 
 /* ===== Navigazione dashboard ===== */
 {
