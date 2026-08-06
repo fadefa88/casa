@@ -449,15 +449,22 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     rooms.forEach((room) => {
       const target = roomStates[room.id];
       const climateId = exactOrFuzzy(room, 'climate', 'climate');
-      const temperatureId = exactOrFuzzy(room, 'temperature', 'sensor');
+      const configuredTemperature = Array.isArray(room.entities?.temperature)
+        ? room.entities.temperature[0]
+        : room.entities?.temperature;
+      const temperatureId = room.temperatureStrict
+        ? configuredTemperature
+        : exactOrFuzzy(room, 'temperature', 'sensor');
       const humidityId = exactOrFuzzy(room, 'humidity', 'sensor');
       const lightId = exactOrFuzzy(room, 'lights', 'light');
       const coverId = exactOrFuzzy(room, 'cover', 'cover');
       target.resolved = { climate: climateId, temperature: temperatureId, humidity: humidityId, lights: lightId, cover: coverId };
       const climate = stateOf(climateId);
-      const temp = climate?.attributes?.current_temperature ?? stateNumber(temperatureId);
+      const temp = room.temperatureStrict
+        ? stateNumber(temperatureId)
+        : (climate?.attributes?.current_temperature ?? stateNumber(temperatureId));
       const humidity = climate?.attributes?.current_humidity ?? stateNumber(humidityId);
-      if (Number.isFinite(Number(temp))) target.temperature = Number(temp);
+      target.temperature = Number.isFinite(Number(temp)) ? Number(temp) : null;
       if (Number.isFinite(Number(humidity))) target.humidity = Number(humidity);
       if (climate) {
         target.targetTemperature = Number.isFinite(Number(climate.attributes?.temperature)) ? Number(climate.attributes.temperature) : target.targetTemperature;
@@ -994,7 +1001,12 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
   function roomSnapshot(room) {
     const climateId = resolveRoom(room, 'climate', 'climate');
-    const tempId = resolveRoom(room, 'temperature', 'sensor');
+    const configuredTemperature = Array.isArray(room.entities?.temperature)
+      ? room.entities.temperature[0]
+      : room.entities?.temperature;
+    const tempId = room.temperatureStrict
+      ? configuredTemperature
+      : resolveRoom(room, 'temperature', 'sensor');
     const humidityId = resolveRoom(room, 'humidity', 'sensor');
     const lightId = resolveRoom(room, 'lights', 'light');
     const coverId = resolveRoom(room, 'cover', 'cover');
@@ -1004,7 +1016,10 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const light = states().get(lightId);
     const cover = states().get(coverId);
 
-    const currentTemperature = Number(climate?.attributes?.current_temperature ?? tempSensor?.state);
+    const rawCurrentTemperature = room.temperatureStrict
+      ? tempSensor?.state
+      : (climate?.attributes?.current_temperature ?? tempSensor?.state);
+    const currentTemperature = rawCurrentTemperature == null ? Number.NaN : Number(rawCurrentTemperature);
     const humidity = Number(climate?.attributes?.current_humidity ?? humiditySensor?.state);
     const position = Number(cover?.attributes?.current_position);
 
@@ -1233,11 +1248,23 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   }
 
   function physicalTemperature(room) {
+    const configuredTemperature = Array.isArray(room?.entities?.temperature)
+      ? room.entities.temperature[0]
+      : room?.entities?.temperature;
+
+    if (room?.temperatureStrict) {
+      const sensor = states().get(configuredTemperature);
+      if (!isValid(sensor)) return null;
+      const value = Number(sensor.state);
+      return Number.isFinite(value) ? value : null;
+    }
+
     const climateId = resolveRoomEntity(room, 'climate', 'climate');
     const sensorId = resolveRoomEntity(room, 'temperature', 'sensor');
     const climate = states().get(climateId);
     const sensor = states().get(sensorId);
-    const value = Number(climate?.attributes?.current_temperature ?? sensor?.state);
+    const rawValue = climate?.attributes?.current_temperature ?? sensor?.state;
+    const value = rawValue == null ? Number.NaN : Number(rawValue);
     return Number.isFinite(value) ? value : null;
   }
 
@@ -3694,11 +3721,24 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     visiting.add(roomId);
     if (room.temperatureFrom) return temperatureFor(room.temperatureFrom, visiting);
 
+    const map = states();
+    const configuredTemperature = Array.isArray(room.entities?.temperature)
+      ? room.entities.temperature[0]
+      : room.entities?.temperature;
+
+    // Per le stanze con sorgente temperatura vincolata si usa solo
+    // l'entity_id configurato. Sensore assente/non valido => NULL.
+    if (room.temperatureStrict) {
+      const sensor = map.get(configuredTemperature);
+      if (!valid(sensor)) return null;
+      const value = Number(sensor.state);
+      return Number.isFinite(value) ? value : null;
+    }
+
     const climate = resolveClimate(roomId);
     const climateTemperature = Number(climate?.attributes?.current_temperature);
     if (valid(climate) && Number.isFinite(climateTemperature)) return climateTemperature;
 
-    const map = states();
     for (const entityId of entityCandidates(room, 'climate')) {
       const entity = map.get(entityId);
       const value = Number(entity?.attributes?.current_temperature);
@@ -3835,7 +3875,11 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     if (!mapping) return '';
     const entity = resolveClimate(roomId);
     const entityId = entity?.entity_id || '';
-    const current = Number(entity?.attributes?.current_temperature ?? temperatureFor(roomId));
+    const room = roomConfig(roomId);
+    const rawCurrent = room?.temperatureStrict
+      ? temperatureFor(roomId)
+      : (entity?.attributes?.current_temperature ?? temperatureFor(roomId));
+    const current = rawCurrent == null ? Number.NaN : Number(rawCurrent);
     const target = Number(entity?.attributes?.temperature);
     const disabled = entity ? '' : 'disabled';
     const state = normalize(entity?.state);
