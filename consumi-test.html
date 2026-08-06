@@ -28,7 +28,7 @@
     button, a { font: inherit; }
     .shell { width: min(1500px, 100%); margin: 0 auto; }
     .topbar {
-      position: sticky; top: 8px; z-index: 10; display: flex; align-items: center; gap: 14px;
+      position: static; display: flex; align-items: center; gap: 14px;
       padding: 12px 14px; margin-bottom: 14px; border: 1px solid var(--line); border-radius: 22px;
       background: rgba(10,15,27,.88); backdrop-filter: blur(18px); box-shadow: 0 16px 50px rgba(0,0,0,.28);
     }
@@ -47,7 +47,7 @@
     }
     .device-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
     .device-head h3 { margin: 0; font-size: 18px; }
-    .total-device { grid-column: 1 / -1; border-color: rgba(102,217,239,.28); background: linear-gradient(145deg, rgba(23,42,60,.96), rgba(12,18,31,.96)); }
+    .total-device { border-color: rgba(102,217,239,.28); background: linear-gradient(145deg, rgba(23,42,60,.96), rgba(12,18,31,.96)); }
     .total-device .device-head h3 { color: var(--accent); }
     .metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
     .metric { min-width: 0; padding: 11px; border: 1px solid rgba(255,255,255,.07); border-radius: 15px; background: rgba(255,255,255,.035); }
@@ -63,7 +63,7 @@
     }
     @media (max-width: 720px) {
       body { padding: 8px; }
-      .topbar { top: 4px; border-radius: 17px; flex-wrap: wrap; }
+      .topbar { border-radius: 17px; flex-wrap: wrap; }
       .grid { grid-template-columns: 1fr; }
       .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
     }
@@ -79,7 +79,7 @@
       <a class="action" href="./index.html">Casa 3D</a>
     </header>
 
-    <div class="group"><h2>Elettrodomestici</h2><small id="updated-at">—</small></div>
+    <div class="group"><h2>Elettrodomestici</h2></div>
     <section id="appliances" class="grid"></section>
 
     <div class="group"><h2>Zona TV</h2></div>
@@ -557,10 +557,8 @@
       state.lastSync = new Date();
       await Promise.all(Object.keys(DEVICES).map(updateDevice));
       updateTotals();
-      document.querySelector('#updated-at').textContent = `Aggiornato alle ${state.lastSync.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
     } catch (error) {
       state.connected = false;
-      document.querySelector('#updated-at').textContent = 'Errore collegamento';
       console.error('[Consumi Totali]',error);
     } finally {
       state.syncing = false;
