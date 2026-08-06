@@ -3404,11 +3404,9 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const [condition, icon] = conditionInfo(entity?.state);
     const attrs = entity?.attributes || {};
     const temperatureUnit = attrs.temperature_unit || '°C';
-    const pressureUnit = attrs.pressure_unit || 'hPa';
     const windUnit = attrs.wind_speed_unit || 'km/h';
     const temperature = value(entity, 'temperature', ` ${temperatureUnit}`);
     const apparent = value(entity, 'apparent_temperature', ` ${temperatureUnit}`);
-    const pressure = value(entity, 'pressure', ` ${pressureUnit}`);
     const humidity = value(entity, 'humidity', '%');
     const wind = value(entity, 'wind_speed', ` ${windUnit}`);
     const direction = windDirection(attrs.wind_bearing);
@@ -3421,7 +3419,6 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
         <div class="weather-condition"><strong>${condition}</strong><small>${apparent !== NULL_TEXT ? `Percepita ${apparent}` : (attrs.friendly_name || 'Casa')}</small></div>
       </div>
       <div class="weather-metrics">
-        <div><i class="fa-solid fa-gauge-high"></i><small>Pressione</small><strong>${pressure}</strong></div>
         <div><i class="fa-solid fa-droplet"></i><small>Umidità</small><strong>${humidity}</strong></div>
         <div><i class="fa-solid fa-wind"></i><small>Vento</small><strong>${windText}</strong></div>
       </div>
@@ -3434,7 +3431,6 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       <div class="card-head"><span class="title"><i class="fa-solid fa-cloud-sun"></i> Meteo esterno</span><strong class="ha-null-value">${NULL_TEXT}</strong></div>
       <div class="weather-current"><div class="weather-condition-icon"><i class="fa-solid fa-cloud"></i></div><div class="weather-condition"><strong class="ha-null-value">${NULL_TEXT}</strong><small>Home Assistant</small></div></div>
       <div class="weather-metrics">
-        <div><i class="fa-solid fa-gauge-high"></i><small>Pressione</small><strong class="ha-null-value">${NULL_TEXT}</strong></div>
         <div><i class="fa-solid fa-droplet"></i><small>Umidità</small><strong class="ha-null-value">${NULL_TEXT}</strong></div>
         <div><i class="fa-solid fa-wind"></i><small>Vento</small><strong class="ha-null-value">${NULL_TEXT}</strong></div>
       </div>
@@ -3450,7 +3446,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       .weather-current{display:flex;align-items:center;gap:.75rem;margin:.2rem 0 .55rem}
       .weather-condition-icon{display:grid;place-items:center;width:2.9rem;height:2.9rem;border-radius:50%;background:rgba(255,210,70,.12);font-size:1.55rem;color:#ffd64a;flex:0 0 auto}
       .weather-condition{min-width:0}.weather-condition>strong,.weather-condition>small{display:block}.weather-condition>strong{font-size:1.05rem}.weather-condition>small{margin-top:.12rem;color:#8ea2b7;font-size:.72rem}
-      .weather-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem}
+      .weather-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
       .weather-metrics>div{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:.38rem;align-items:center;min-width:0;padding:.42rem .45rem;border:1px solid rgba(255,255,255,.08);border-radius:.68rem;background:rgba(2,12,24,.25)}
       .weather-metrics i{grid-row:1/3;color:#55b6ff}.weather-metrics small,.weather-metrics strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.weather-metrics small{font-size:.62rem;color:#8ea2b7}.weather-metrics strong{font-size:.75rem}
       .weather-forecast{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.25rem;margin-top:.48rem;padding-top:.48rem;border-top:1px solid rgba(255,255,255,.08)}
