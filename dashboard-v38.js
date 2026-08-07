@@ -4384,7 +4384,7 @@ GLTFLoader.prototype.load = function (url, onLoad, onProgress, onError) {
 const $=s=>document.querySelector(s),canvas=$("#scene"),loading=$("#loading"),progress=$("#progress"),status=$("#status");
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xdce6f0);scene.fog=new THREE.Fog(0xdce6f0,45,100);
 const camera=new THREE.PerspectiveCamera(38,1,.04,260);camera.position.set(22,18,22);
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.98;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.98;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
 const pmrem=new THREE.PMREMGenerator(renderer);scene.environment=pmrem.fromScene(new RoomEnvironment(),.03).texture;
 const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.07;controls.screenSpacePanning=true;controls.minDistance=3;controls.maxDistance=90;controls.maxPolarAngle=Math.PI/2.01;
 scene.add(new THREE.HemisphereLight(0xffffff,0x8b8b8b,1.5));const sun=new THREE.DirectionalLight(0xffffff,2.05);sun.position.set(15,24,12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);const fill=new THREE.DirectionalLight(0xffffff,.35);fill.position.set(-15,11,-12);scene.add(fill);
@@ -4764,6 +4764,7 @@ if (MOBILE_DASHBOARD_ONLY) {
   console.info('[Casa dashboard] Modalità mobile: scena 3D non caricata.');
 } else {
   let modelLoadFinished = false;
+  console.error('[Casa dashboard] BUILD 79 · avvio loader 3D ottimizzato');
   const MODEL_LOAD_TIMEOUT_MS = 20000;
   const modelLoadWatchdog = window.setTimeout(() => {
     if (modelLoadFinished) return;
@@ -4773,7 +4774,7 @@ if (MOBILE_DASHBOARD_ONLY) {
   }, MODEL_LOAD_TIMEOUT_MS);
 
   new GLTFLoader().load(
-    "./assets/casa_homestyler.glb?v=30",
+    "./assets/casa_homestyler_128.glb?v=31",
     g => {
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
