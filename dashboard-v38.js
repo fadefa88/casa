@@ -4764,7 +4764,7 @@ if (MOBILE_DASHBOARD_ONLY) {
   console.info('[Casa dashboard] Modalità mobile: scena 3D non caricata.');
 } else {
   let modelLoadFinished = false;
-  console.error('[Casa dashboard] BUILD 79 · avvio loader 3D ottimizzato');
+  console.error('[Casa dashboard] BUILD 80 · test 3D senza texture');
   const MODEL_LOAD_TIMEOUT_MS = 20000;
   const modelLoadWatchdog = window.setTimeout(() => {
     if (modelLoadFinished) return;
@@ -4774,7 +4774,7 @@ if (MOBILE_DASHBOARD_ONLY) {
   }, MODEL_LOAD_TIMEOUT_MS);
 
   new GLTFLoader().load(
-    "./assets/casa_homestyler_128.glb?v=31",
+    "./assets/casa_homestyler_notextures.glb?v=32",
     g => {
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
