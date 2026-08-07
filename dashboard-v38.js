@@ -4764,7 +4764,7 @@ if (MOBILE_DASHBOARD_ONLY) {
   console.info('[Casa dashboard] Modalità mobile: scena 3D non caricata.');
 } else {
   let modelLoadFinished = false;
-  console.error('[Casa dashboard] BUILD 80 · test 3D senza texture');
+  console.error('[Casa dashboard] BUILD 81 · avvio modalità parser diretto');
   const MODEL_LOAD_TIMEOUT_MS = 20000;
   const modelLoadWatchdog = window.setTimeout(() => {
     if (modelLoadFinished) return;
@@ -4773,39 +4773,176 @@ if (MOBILE_DASHBOARD_ONLY) {
     loading?.classList.add('hidden');
   }, MODEL_LOAD_TIMEOUT_MS);
 
-  new GLTFLoader().load(
-    "./assets/casa_homestyler_notextures.glb?v=32",
-    g => {
+  // BUILD 81: parser GLB minimale proprietario.
+  // Evita GLTFLoader, che su Edge corrente si blocca prima del callback onLoad.
+  async function loadSimpleGeometryGLB(url) {
+    const startedAt = performance.now();
+    if (progress) progress.textContent = 'Download modello…';
+
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} durante il download del modello`);
+    }
+
+    const buffer = await response.arrayBuffer();
+    console.error(`[Casa dashboard] BUILD 81 · GLB scaricato: ${(buffer.byteLength / 1048576).toFixed(1)} MB`);
+    if (progress) progress.textContent = 'Lettura geometria…';
+
+    const view = new DataView(buffer);
+    if (view.getUint32(0, true) !== 0x46546c67) throw new Error('File GLB non valido');
+    if (view.getUint32(4, true) !== 2) throw new Error('Versione GLB non supportata');
+
+    let offset = 12;
+    let json = null;
+    let binOffset = null;
+
+    while (offset + 8 <= buffer.byteLength) {
+      const chunkLength = view.getUint32(offset, true);
+      const chunkType = view.getUint32(offset + 4, true);
+      const chunkStart = offset + 8;
+
+      if (chunkType === 0x4E4F534A) {
+        const bytes = new Uint8Array(buffer, chunkStart, chunkLength);
+        json = JSON.parse(new TextDecoder().decode(bytes).replace(/\u0000+$/g, '').trimEnd());
+      } else if (chunkType === 0x004E4942) {
+        binOffset = chunkStart;
+      }
+
+      offset = chunkStart + chunkLength;
+    }
+
+    if (!json || binOffset == null) throw new Error('Chunk JSON/BIN mancante nel GLB');
+
+    const componentInfo = {
+      5120: { ctor: Int8Array, bytes: 1 },
+      5121: { ctor: Uint8Array, bytes: 1 },
+      5122: { ctor: Int16Array, bytes: 2 },
+      5123: { ctor: Uint16Array, bytes: 2 },
+      5125: { ctor: Uint32Array, bytes: 4 },
+      5126: { ctor: Float32Array, bytes: 4 },
+    };
+    const componentCount = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 };
+
+    function readAccessor(accessorIndex) {
+      const accessor = json.accessors?.[accessorIndex];
+      if (!accessor) throw new Error(`Accessor ${accessorIndex} mancante`);
+      const bufferView = json.bufferViews?.[accessor.bufferView];
+      if (!bufferView) throw new Error(`BufferView mancante per accessor ${accessorIndex}`);
+      if (bufferView.byteStride) throw new Error('byteStride interlacciato non supportato in BUILD 81');
+
+      const info = componentInfo[accessor.componentType];
+      const components = componentCount[accessor.type];
+      if (!info || !components) throw new Error(`Accessor ${accessorIndex} non supportato`);
+
+      const byteOffset = binOffset + (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
+      const length = accessor.count * components;
+      const array = new info.ctor(buffer, byteOffset, length);
+      return { accessor, array, components };
+    }
+
+    const materials = (json.materials || []).map((source, index) => {
+      const pbr = source.pbrMetallicRoughness || {};
+      const rgba = pbr.baseColorFactor || [0.82, 0.84, 0.86, 1];
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(rgba[0], rgba[1], rgba[2]),
+        opacity: rgba[3] ?? 1,
+        transparent: (rgba[3] ?? 1) < 0.999 || source.alphaMode === 'BLEND',
+        side: source.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
+      });
+      material.name = source.name || `material_${index}`;
+      return material;
+    });
+
+    const meshObjects = (json.meshes || []).map((meshDef, meshIndex) => {
+      const primitives = meshDef.primitives || [];
+      const objects = primitives.map((primitive, primitiveIndex) => {
+        const positionAccessor = primitive.attributes?.POSITION;
+        if (positionAccessor == null) return null;
+
+        const pos = readAccessor(positionAccessor);
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(pos.array, pos.components, Boolean(pos.accessor.normalized)));
+
+        if (primitive.indices != null) {
+          const idx = readAccessor(primitive.indices);
+          geometry.setIndex(new THREE.BufferAttribute(idx.array, 1, Boolean(idx.accessor.normalized)));
+        }
+
+        // MeshBasicMaterial non richiede normali né texture: evita completamente
+        // la parte del pipeline che oggi blocca GLTFLoader su questo modello.
+        const material = materials[primitive.material] || new THREE.MeshBasicMaterial({ color: 0xd8dde3 });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = meshDef.name || `mesh_${meshIndex}_${primitiveIndex}`;
+        return mesh;
+      }).filter(Boolean);
+
+      if (objects.length === 1) return objects[0];
+      const group = new THREE.Group();
+      group.name = meshDef.name || `mesh_${meshIndex}`;
+      objects.forEach(object => group.add(object));
+      return group;
+    });
+
+    const nodes = (json.nodes || []).map((nodeDef, nodeIndex) => {
+      let object;
+      if (nodeDef.mesh != null && meshObjects[nodeDef.mesh]) {
+        object = meshObjects[nodeDef.mesh];
+      } else {
+        object = new THREE.Group();
+      }
+
+      object.name = nodeDef.name || object.name || `node_${nodeIndex}`;
+
+      if (Array.isArray(nodeDef.matrix) && nodeDef.matrix.length === 16) {
+        object.matrix.fromArray(nodeDef.matrix);
+        object.matrix.decompose(object.position, object.quaternion, object.scale);
+      } else {
+        if (nodeDef.translation) object.position.fromArray(nodeDef.translation);
+        if (nodeDef.rotation) object.quaternion.fromArray(nodeDef.rotation);
+        if (nodeDef.scale) object.scale.fromArray(nodeDef.scale);
+      }
+      return object;
+    });
+
+    (json.nodes || []).forEach((nodeDef, nodeIndex) => {
+      for (const childIndex of nodeDef.children || []) {
+        if (nodes[childIndex]) nodes[nodeIndex].add(nodes[childIndex]);
+      }
+    });
+
+    const root = new THREE.Group();
+    root.name = 'CasaHomestylerSimpleGLB';
+    const sceneIndex = json.scene ?? 0;
+    const sceneDef = json.scenes?.[sceneIndex] || json.scenes?.[0] || {};
+    for (const nodeIndex of sceneDef.nodes || []) {
+      if (nodes[nodeIndex]) root.add(nodes[nodeIndex]);
+    }
+
+    console.error(`[Casa dashboard] BUILD 81 · geometria costruita: ${meshObjects.length} mesh in ${Math.round(performance.now() - startedAt)} ms`);
+    return root;
+  }
+
+  (async () => {
+    try {
+      console.error('[Casa dashboard] BUILD 81 · parser GLB diretto, GLTFLoader disattivato');
+      const root = await loadSimpleGeometryGLB('./assets/casa_homestyler_notextures.glb?v=33');
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
-      console.info('[Casa dashboard] GLB scaricato e parsato. Avvio preparazione scena 3D.');
+      if (progress) progress.textContent = 'Preparazione scena…';
+
       const prepareStartedAt = performance.now();
-      try {
-        prepare(g.scene);
-        setFloor("both");
-        console.info(`[Casa dashboard] Preparazione scena completata in ${Math.round(performance.now() - prepareStartedAt)} ms.`);
-      } catch (error) {
-        console.error('[Casa dashboard] Errore preparazione modello 3D:', error);
-      } finally {
-        loading?.classList.add('hidden');
-      }
-    },
-    p => {
-      if (p.total) {
-        const percentage = Math.round(p.loaded / p.total * 100);
-        if (progress) progress.textContent = `${percentage}%`;
-      } else if (progress) {
-        progress.textContent = 'Download modello…';
-      }
-    },
-    e => {
+      prepare(root);
+      console.error(`[Casa dashboard] BUILD 81 · prepare completato in ${Math.round(performance.now() - prepareStartedAt)} ms`);
+      setFloor('both');
+      loading?.classList.add('hidden');
+    } catch (error) {
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
-      console.error('Errore caricamento modello:', e);
+      console.error('[Casa dashboard] BUILD 81 · ERRORE:', error);
       if (progress) progress.textContent = 'Modello 3D non disponibile · dashboard attiva';
       loading?.classList.add('hidden');
     }
-  );
+  })();
   loop();
 }
 
