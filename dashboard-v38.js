@@ -4786,7 +4786,45 @@ if (MOBILE_DASHBOARD_ONLY) {
   loading?.classList.add('hidden');
   console.info('[Casa dashboard] Modalità mobile: scena 3D non caricata.');
 } else {
-  new GLTFLoader().load("./assets/casa_homestyler.glb?v=29",g=>{prepare(g.scene);setFloor("both");loading.classList.add("hidden")},p=>{if(p.total)progress.textContent=`${Math.round(p.loaded/p.total*100)}%`;else progress.textContent="Download modello…"},e=>{console.error("Errore caricamento modello:",e);loading.classList.add("hidden")});
+  let modelLoadFinished = false;
+  const MODEL_LOAD_TIMEOUT_MS = 20000;
+  const modelLoadWatchdog = window.setTimeout(() => {
+    if (modelLoadFinished) return;
+    console.error(`[Casa dashboard] Timeout caricamento modello dopo ${MODEL_LOAD_TIMEOUT_MS / 1000}s`);
+    if (progress) progress.textContent = 'Modello 3D non disponibile · dashboard attiva';
+    loading?.classList.add('hidden');
+  }, MODEL_LOAD_TIMEOUT_MS);
+
+  new GLTFLoader().load(
+    "./assets/casa_homestyler.glb?v=30",
+    g => {
+      modelLoadFinished = true;
+      window.clearTimeout(modelLoadWatchdog);
+      try {
+        prepare(g.scene);
+        setFloor("both");
+      } catch (error) {
+        console.error('[Casa dashboard] Errore preparazione modello 3D:', error);
+      } finally {
+        loading?.classList.add('hidden');
+      }
+    },
+    p => {
+      if (p.total) {
+        const percentage = Math.round(p.loaded / p.total * 100);
+        if (progress) progress.textContent = `${percentage}%`;
+      } else if (progress) {
+        progress.textContent = 'Download modello…';
+      }
+    },
+    e => {
+      modelLoadFinished = true;
+      window.clearTimeout(modelLoadWatchdog);
+      console.error('Errore caricamento modello:', e);
+      if (progress) progress.textContent = 'Modello 3D non disponibile · dashboard attiva';
+      loading?.classList.add('hidden');
+    }
+  );
   loop();
 }
 
