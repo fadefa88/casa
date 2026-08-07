@@ -93,14 +93,27 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     return Boolean(entity && !['unknown', 'unavailable', 'none', 'null', ''].includes(normalize(entity.state)));
   }
 
+  const trafficEntityCache = {
+    download: null,
+    upload: null,
+  };
+
   function findTrafficEntity(direction) {
+    const states = stateMap();
+    const cachedId = trafficEntityCache[direction];
+    const cached = cachedId ? states.get(cachedId) : null;
+
+    // I due entity_id del traffico Fritz non cambiano durante la sessione:
+    // una volta individuati, evitiamo di riscorrere tutte le entità HA.
+    if (validEntity(cached)) return cached;
+
     const wanted = direction === 'download'
       ? 'velocita effettiva di scaricamento'
       : 'velocita effettiva di caricamento';
     let best = null;
     let bestScore = -1;
 
-    for (const entity of stateMap().values()) {
+    for (const entity of states.values()) {
       if (!validEntity(entity) || !entity.entity_id.startsWith('sensor.')) continue;
       const friendly = normalize(entity.attributes?.friendly_name);
       const entityId = normalize(entity.entity_id);
@@ -117,6 +130,8 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
         best = entity;
       }
     }
+
+    trafficEntityCache[direction] = best?.entity_id || null;
     return best;
   }
 
@@ -204,7 +219,8 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
         return descriptor.get.call(this);
       },
       set(value) {
-        refreshStableData();
+        // Non riscannerizzare Home Assistant durante ogni render DOM.
+        // transformHtml usa l'ultimo snapshot stabile aggiornato dal timer.
         descriptor.set.call(this, transformHtml(value));
       },
     });
@@ -221,13 +237,15 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     patchRoot(document);
   }
 
-  const observer = new MutationObserver(apply);
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-  const timer = setInterval(apply, 500);
+  // IMPORTANTE: niente MutationObserver su document.body.
+  // La dashboard modifica continuamente il DOM; l'observer precedente lanciava
+  // una scansione completa delle entità Home Assistant a ogni mutazione e poteva
+  // saturare il main thread. Il render delle rail è già intercettato da
+  // protectInnerHtml(), mentre questo timer mantiene aggiornati i dati di rete.
+  const timer = setInterval(apply, 1000);
 
   window.addEventListener('beforeunload', () => {
     clearInterval(timer);
-    observer.disconnect();
   });
 
   apply();
