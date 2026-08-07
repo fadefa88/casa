@@ -4339,8 +4339,12 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   apply();
 })();
 
-/* ===== Integrazione indicatori stanze nel modello 3D ===== */
-{
+/* ===== Contesto 3D leggero =====
+   Il precedente calcolo degli anchor stanza eseguiva Box3.setFromObject()
+   su ogni mesh appena terminato il download del GLB. Su modelli grandi può
+   bloccare il main thread per molto tempo. Gli anchor non sono utilizzati
+   dal resto della dashboard, quindi manteniamo solo il contesto renderer.
+   ========================================================================== */
 window.CASA_3D_CONTEXT = window.CASA_3D_CONTEXT || { scene:null, camera:null, renderer:null, anchors:[] };
 
 const originalRender = THREE.WebGLRenderer.prototype.render;
@@ -4350,33 +4354,6 @@ THREE.WebGLRenderer.prototype.render = function(scene, camera) {
   window.CASA_3D_CONTEXT.renderer = this;
   return originalRender.call(this, scene, camera);
 };
-
-const originalLoad = GLTFLoader.prototype.load;
-GLTFLoader.prototype.load = function(url, onLoad, onProgress, onError) {
-  return originalLoad.call(this, url, (gltf) => {
-    const root = gltf.scene;
-    root.updateMatrixWorld(true);
-    const grouped = new Map();
-    root.traverse((object) => {
-      if (!object.isMesh || !object.name) return;
-      const parts = object.name.split('__');
-      if (!['first','second'].includes(parts[0]) || !parts[1] || parts[1] === 'none') return;
-      const key = `${parts[0]}__${parts[1]}`;
-      const box = new THREE.Box3().setFromObject(object);
-      if (box.isEmpty()) return;
-      if (!grouped.has(key)) grouped.set(key, box);
-      else grouped.get(key).union(box);
-    });
-    window.CASA_3D_CONTEXT.anchors = [...grouped].map(([modelKey, box]) => {
-      const point = box.getCenter(new THREE.Vector3());
-      point.y = box.max.y + 0.18;
-      return { modelKey, floor:modelKey.startsWith('first__')?'first':'second', point };
-    });
-    window.dispatchEvent(new CustomEvent('casa:rooms-ready', { detail:window.CASA_3D_CONTEXT.anchors }));
-    onLoad?.(gltf);
-  }, onProgress, onError);
-};
-}
 
 /* ===== Correzione materiale mobile mansarda ===== */
 {
@@ -4800,9 +4777,12 @@ if (MOBILE_DASHBOARD_ONLY) {
     g => {
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
+      console.info('[Casa dashboard] GLB scaricato e parsato. Avvio preparazione scena 3D.');
+      const prepareStartedAt = performance.now();
       try {
         prepare(g.scene);
         setFloor("both");
+        console.info(`[Casa dashboard] Preparazione scena completata in ${Math.round(performance.now() - prepareStartedAt)} ms.`);
       } catch (error) {
         console.error('[Casa dashboard] Errore preparazione modello 3D:', error);
       } finally {
