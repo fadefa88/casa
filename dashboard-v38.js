@@ -4384,11 +4384,12 @@ GLTFLoader.prototype.load = function (url, onLoad, onProgress, onError) {
 const $=s=>document.querySelector(s),canvas=$("#scene"),loading=$("#loading"),progress=$("#progress"),status=$("#status");
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xdce6f0);scene.fog=new THREE.Fog(0xdce6f0,45,100);
 const camera=new THREE.PerspectiveCamera(38,1,.04,260);camera.position.set(22,18,22);
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:"high-performance"});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.98;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
-const pmrem=new THREE.PMREMGenerator(renderer);scene.environment=pmrem.fromScene(new RoomEnvironment(),.03).texture;
+const renderer=new THREE.WebGLRenderer({canvas,antialias:false,powerPreference:"default"});renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.shadowMap.enabled=false;
+// BUILD 82: niente PMREM/environment durante la diagnosi del blocco WebGL.
+scene.environment=null;
 const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.07;controls.screenSpacePanning=true;controls.minDistance=3;controls.maxDistance=90;controls.maxPolarAngle=Math.PI/2.01;
-scene.add(new THREE.HemisphereLight(0xffffff,0x8b8b8b,1.5));const sun=new THREE.DirectionalLight(0xffffff,2.05);sun.position.set(15,24,12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-35;sun.shadow.camera.right=35;sun.shadow.camera.top=35;sun.shadow.camera.bottom=-35;scene.add(sun);const fill=new THREE.DirectionalLight(0xffffff,.35);fill.position.set(-15,11,-12);scene.add(fill);
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.ShadowMaterial({color:0x64748b,opacity:.11}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+scene.add(new THREE.HemisphereLight(0xffffff,0x8b8b8b,1.5));const sun=new THREE.DirectionalLight(0xffffff,2.05);sun.position.set(15,24,12);sun.castShadow=false;scene.add(sun);const fill=new THREE.DirectionalLight(0xffffff,.35);fill.position.set(-15,11,-12);scene.add(fill);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(120,120),new THREE.ShadowMaterial({color:0x64748b,opacity:.11}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=false;scene.add(ground);
 const world=new THREE.Group(),first=new THREE.Group(),second=new THREE.Group();world.add(first,second);scene.add(world);
 let current="both",selected=null,saved=null,down=null,allMeshes=[],allEntries=[];
 function makeFabricTexture(base="#8b8f94", dark="#73777c"){
@@ -4755,7 +4756,7 @@ function applyCustomOverrides(){
 canvas.addEventListener("pointerdown",e=>down={x:e.clientX,y:e.clientY});canvas.addEventListener("pointerup",e=>{if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<5)pick(e);down=null});$("#close").onclick=clear;$("#copy-code").onclick=async()=>{const value=$("#object-code").value;try{await navigator.clipboard.writeText(value);const btn=$("#copy-code");const old=btn.textContent;btn.textContent="Copiato";setTimeout(()=>btn.textContent=old,1200)}catch{}};document.querySelectorAll("[data-floor]").forEach(b=>b.onclick=()=>setFloor(b.dataset.floor));$("#iso").onclick=()=>fit(false);$("#topview").onclick=()=>fit(true);$("#rotate").onclick=e=>{controls.autoRotate=!controls.autoRotate;controls.autoRotateSpeed=.55;e.currentTarget.classList.toggle("active",controls.autoRotate)};$("#reset").onclick=()=>{controls.autoRotate=false;$("#rotate").classList.remove("active");setFloor(current)};$("#full").onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};$("#list-toggle").onclick=()=>{const panel=$("#object-list");const opening=panel.hidden;if(opening){panel.hidden=false;$("#list-toggle").classList.add("active");$("#object-search").focus();applySearchFilter($("#object-search").value||"")}else{closeObjectList()}};$("#close-list").onclick=closeObjectList;document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeObjectList()}});$("#object-search").addEventListener('input',e=>applySearchFilter(e.target.value));
 const MOBILE_DASHBOARD_ONLY = window.matchMedia('(max-width: 699px), (orientation: landscape) and (max-width: 999px) and (max-height: 700px)').matches;
 
-function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}
+function resize(){const w=canvas.clientWidth,h=canvas.clientHeight,d=1;if(canvas.width!==Math.floor(w*d)||canvas.height!==Math.floor(h*d)){renderer.setPixelRatio(d);renderer.setSize(w,h,false);camera.aspect=w/Math.max(h,1);camera.updateProjectionMatrix()}}
 function loop(){resize();controls.update();renderer.render(scene,camera);requestAnimationFrame(loop)}
 
 if (MOBILE_DASHBOARD_ONLY) {
@@ -4764,7 +4765,7 @@ if (MOBILE_DASHBOARD_ONLY) {
   console.info('[Casa dashboard] Modalità mobile: scena 3D non caricata.');
 } else {
   let modelLoadFinished = false;
-  console.error('[Casa dashboard] BUILD 81 · avvio modalità parser diretto');
+  console.error('[Casa dashboard] BUILD 82 · render WebGL differito');
   const MODEL_LOAD_TIMEOUT_MS = 20000;
   const modelLoadWatchdog = window.setTimeout(() => {
     if (modelLoadFinished) return;
@@ -4785,7 +4786,7 @@ if (MOBILE_DASHBOARD_ONLY) {
     }
 
     const buffer = await response.arrayBuffer();
-    console.error(`[Casa dashboard] BUILD 81 · GLB scaricato: ${(buffer.byteLength / 1048576).toFixed(1)} MB`);
+    console.error(`[Casa dashboard] BUILD 82 · GLB scaricato: ${(buffer.byteLength / 1048576).toFixed(1)} MB`);
     if (progress) progress.textContent = 'Lettura geometria…';
 
     const view = new DataView(buffer);
@@ -4918,13 +4919,13 @@ if (MOBILE_DASHBOARD_ONLY) {
       if (nodes[nodeIndex]) root.add(nodes[nodeIndex]);
     }
 
-    console.error(`[Casa dashboard] BUILD 81 · geometria costruita: ${meshObjects.length} mesh in ${Math.round(performance.now() - startedAt)} ms`);
+    console.error(`[Casa dashboard] BUILD 82 · geometria costruita: ${meshObjects.length} mesh in ${Math.round(performance.now() - startedAt)} ms`);
     return root;
   }
 
   (async () => {
     try {
-      console.error('[Casa dashboard] BUILD 81 · parser GLB diretto, GLTFLoader disattivato');
+      console.error('[Casa dashboard] BUILD 82 · parser diretto · render NON ancora avviato');
       const root = await loadSimpleGeometryGLB('./assets/casa_homestyler_notextures.glb?v=33');
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
@@ -4932,18 +4933,28 @@ if (MOBILE_DASHBOARD_ONLY) {
 
       const prepareStartedAt = performance.now();
       prepare(root);
-      console.error(`[Casa dashboard] BUILD 81 · prepare completato in ${Math.round(performance.now() - prepareStartedAt)} ms`);
+      console.error(`[Casa dashboard] BUILD 82 · prepare completato in ${Math.round(performance.now() - prepareStartedAt)} ms`);
       setFloor('both');
       loading?.classList.add('hidden');
+
+      // Primo render isolato: permette di capire se il freeze è dentro WebGL.
+      console.error('[Casa dashboard] BUILD 82 · PRIMO RENDER WebGL: start');
+      resize();
+      renderer.render(scene, camera);
+      console.error('[Casa dashboard] BUILD 82 · PRIMO RENDER WebGL: OK');
+
+      // Solo dopo un primo frame riuscito parte il loop continuo.
+      requestAnimationFrame(loop);
     } catch (error) {
       modelLoadFinished = true;
       window.clearTimeout(modelLoadWatchdog);
-      console.error('[Casa dashboard] BUILD 81 · ERRORE:', error);
+      console.error('[Casa dashboard] BUILD 82 · ERRORE:', error);
       if (progress) progress.textContent = 'Modello 3D non disponibile · dashboard attiva';
       loading?.classList.add('hidden');
     }
   })();
-  loop();
+  // BUILD 82: NON avviare il render loop qui. Il primo render viene eseguito
+  // solo dopo download, parsing e preparazione della scena.
 }
 
 /* ===== Navigazione dashboard ===== */
