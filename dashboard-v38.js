@@ -430,6 +430,20 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     return Number.isFinite(Number(value)) ? Number(value) : null;
   }
 
+  // Gli helper Utility Meter possono essere esposti da Home Assistant in Wh o kWh.
+  // La dashboard lavora sempre in kWh per consumo, costo e confronti temporali.
+  function stateEnergyKwh(entityId, attribute) {
+    const entity = stateOf(entityId);
+    if (!entity) return null;
+    const raw = attribute ? entity.attributes?.[attribute] : entity.state;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) return null;
+    const unit = normalize(entity.attributes?.unit_of_measurement);
+    if (unit === 'wh') return value / 1000;
+    if (unit === 'mwh') return value * 1000;
+    return value;
+  }
+
   function applyGlobalStates() {
     const map = {
       housePower: ['housePower'], houseToday: ['houseToday'], houseMonth: ['houseMonth'],
@@ -462,17 +476,18 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
     // Bilancio casa: costo derivato dal consumo giornaliero e confronto con il
     // periodo precedente esposto dall'Utility Meter tramite l'attributo last_period.
-    const houseTodayEntity = stateOf(globalEntity('houseToday', false));
-    const houseToday = stateNumber(globalEntity('houseToday', false));
+    const houseTodayId = globalEntity('houseToday', false);
+    const houseToday = stateEnergyKwh(houseTodayId);
     data.houseToday = houseToday;
     data.houseCost = houseToday !== null ? houseToday * ENERGY_PRICE_EUR_KWH : null;
 
-    const houseMonth = stateNumber(globalEntity('houseMonth', false));
+    const houseMonthId = globalEntity('houseMonth', false);
+    const houseMonth = stateEnergyKwh(houseMonthId);
     data.houseMonth = houseMonth;
 
-    const yesterdayRaw = Number(houseTodayEntity?.attributes?.last_period);
-    data.houseVs = houseToday !== null && Number.isFinite(yesterdayRaw) && yesterdayRaw > 0
-      ? ((houseToday - yesterdayRaw) / yesterdayRaw) * 100
+    const yesterday = stateEnergyKwh(houseTodayId, 'last_period');
+    data.houseVs = houseToday !== null && yesterday !== null && yesterday > 0
+      ? ((houseToday - yesterday) / yesterday) * 100
       : null;
 
     const textMap = {
@@ -2233,22 +2248,30 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     if (!helpers) return null;
 
     let total = 0;
+    let found = 0;
     for (const helper of Object.values(helpers)) {
       const entityId = period === 'month' ? helper.monthly : helper.daily;
       const entity = states().get(entityId);
+      if (!entity) continue;
 
-      // Gli Utility Meter possono non avere ancora uno stato valido (per esempio
-      // subito dopo la creazione o prima del primo reset). In quel caso il loro
-      // contributo al totale deve essere zero, senza invalidare l'intera somma.
-      if (!isEnergySensor(entity)) continue;
-
+      // Questi entity_id sono helper espliciti scelti per la dashboard: non li
+      // scartiamo se Home Assistant non espone device_class=energy. È sufficiente
+      // che lo stato (o last_period per Ieri) sia numerico.
       const rawValue = period === 'yesterday'
         ? entity.attributes?.last_period
         : entity.state;
-      const value = energyKwh(entity, rawValue);
-      total += Number.isFinite(value) ? value : 0;
+      const rawNumber = Number(rawValue);
+      if (!Number.isFinite(rawNumber)) continue;
+
+      const unit = normalize(entity.attributes?.unit_of_measurement);
+      let value = rawNumber;
+      if (unit === 'wh') value = rawNumber / 1000;
+      else if (unit === 'mwh') value = rawNumber * 1000;
+
+      total += value;
+      found += 1;
     }
-    return total;
+    return found ? total : null;
   }
 
   function groupPeriodTotal(groupId, deviceIds, period) {
