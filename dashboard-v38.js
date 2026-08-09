@@ -687,9 +687,9 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const tv = sum(data.tvPower, data.shieldPower, data.mediaPcPower, data.hddPower);
     const studio = sum(data.pcPower, data.monitorPower, data.ps5Power, data.dockPower);
     const shellyPeriods = {
-      today: finiteValue(data.heatPumpToday) && finiteValue(data.inductionToday) ? sum(data.heatPumpToday, data.inductionToday) : null,
-      yesterday: finiteValue(data.heatPumpYesterday) && finiteValue(data.inductionYesterday) ? sum(data.heatPumpYesterday, data.inductionYesterday) : null,
-      month: finiteValue(data.heatPumpMonth) && finiteValue(data.inductionMonth) ? sum(data.heatPumpMonth, data.inductionMonth) : null,
+      today: exactGroupPeriodTotal('shelly', 'today'),
+      yesterday: exactGroupPeriodTotal('shelly', 'yesterday'),
+      month: exactGroupPeriodTotal('shelly', 'month'),
     };
     const appliancePeriods = { today:null, yesterday:null, month:null };
     const technologyPeriods = { today:null, yesterday:null, month:null };
@@ -1738,6 +1738,16 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   // Oggi = stato helper giornaliero; Ieri = last_period del giornaliero;
   // Mese = stato helper mensile. Un helper senza un valore numerico contribuisce con 0.
   const GROUP_PERIOD_HELPERS = {
+    shelly: {
+      induction: {
+        daily: 'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero',
+        monthly: 'sensor.cucina_shelly_induzione_induzione_consumo_mensile',
+      },
+      heatPump: {
+        daily: 'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero',
+        monthly: 'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile',
+      },
+    },
     appliances: {
       washer: {
         daily: 'sensor.vano_tecnico_shelly_plug_lavatrice_lavatrice_energia_giornaliera',
