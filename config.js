@@ -16,17 +16,35 @@ window.CASA_DASHBOARD_CONFIG = {
   // Ogni voce può essere una stringa o un array di possibili entity_id.
   // Il dashboard usa la prima entità realmente presente in Home Assistant.
   entities: {
-    housePower: ['sensor.house_power', 'sensor.potenza_casa'],
-    houseToday: ['sensor.house_today_energy', 'sensor.energia_casa_oggi'],
-    houseCost: ['sensor.house_today_cost', 'sensor.costo_energia_oggi'],
-    housePeak: ['sensor.house_daily_peak', 'sensor.picco_potenza_giornaliero'],
-    houseVsYesterday: ['sensor.house_vs_yesterday_percent', 'sensor.consumo_vs_ieri'],
+    // Bilancio casa: consumo totale misurato da SolarNet e helper Utility Meter dedicati.
+    housePower: [
+      'sensor.vano_tecnico_solarnet_power_load_consumed',
+      'sensor.vano_tecnico_solarnet_power_load',
+      'sensor.house_power',
+      'sensor.potenza_casa'
+    ],
+    houseToday: ['sensor.vano_tecnico_solarnet_power_import_giornaliero'],
+    houseMonth: ['sensor.vano_tecnico_solarnet_power_import_mensile'],
 
     pvPower: ['sensor.fronius_power', 'sensor.fotovoltaico_potenza'],
     pvToday: ['sensor.fronius_today', 'sensor.fotovoltaico_energia_oggi'],
     pvSelfConsumption: ['sensor.pv_self_consumption_percent', 'sensor.autoconsumo_fotovoltaico'],
     gridImport: ['sensor.grid_import_today', 'sensor.prelievo_rete_oggi'],
     gridExport: ['sensor.grid_export_today', 'sensor.immissione_rete_oggi'],
+
+    // Flussi istantanei SolarNet usati nella card "Fotovoltaico casa".
+    solarLoadConsumed: [
+      'sensor.vano_tecnico_solarnet_power_load_consumed',
+      'sensor.vano_tecnico_solarnet_power_load'
+    ],
+    solarGridExportPower: [
+      'sensor.vano_tecnico_solarnet_power_grid_export',
+      'sensor.vano_tecnico_solarnet_grid_export'
+    ],
+    solarGridImportPower: [
+      'sensor.vano_tecnico_solarnet_power_grid_import',
+      'sensor.vano_tecnico_solarnet_grid_import'
+    ],
 
     heatPumpPower: ['sensor.heat_pump_power', 'sensor.pompa_di_calore_potenza'],
     heatPumpToday: ['sensor.heat_pump_today_energy', 'sensor.pompa_di_calore_energia_oggi'],

@@ -270,9 +270,12 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
   const number = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const normalize = (value) => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
+  const ENERGY_PRICE_EUR_KWH = 0.287;
+
   const data = {
-    housePower: 3280, houseToday: 18.6, houseCost: 5.31, housePeak: 5.42, houseVs: -6,
+    housePower: null, houseToday: null, houseCost: null, houseMonth: null, houseVs: null,
     pvPower: 4180, pvToday: 19.8, pvSelf: 78, gridImport: 5.2, gridExport: 6.8,
+    solarLoadConsumed: null, solarGridExportPower: null, solarGridImportPower: null,
     heatPumpPower: 1420, heatPumpToday: null, heatPumpYesterday: null, heatPumpMonth: null, heatPumpMode: 'Raffrescamento',
     inductionPower: 0, inductionToday: null, inductionYesterday: null, inductionMonth: null, inductionPeak: 3.6,
     washerPower: 510, washerToday: null, washerYesterday: null, washerMonth: null, washerState: 'In funzione',
@@ -429,8 +432,9 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
   function applyGlobalStates() {
     const map = {
-      housePower: ['housePower'], houseToday: ['houseToday'], houseCost: ['houseCost'], housePeak: ['housePeak'], houseVs: ['houseVsYesterday'],
+      housePower: ['housePower'], houseToday: ['houseToday'], houseMonth: ['houseMonth'],
       pvPower: ['pvPower'], pvToday: ['pvToday'], pvSelf: ['pvSelfConsumption'], gridImport: ['gridImport'], gridExport: ['gridExport'],
+      solarLoadConsumed: ['solarLoadConsumed'], solarGridExportPower: ['solarGridExportPower'], solarGridImportPower: ['solarGridImportPower'],
       heatPumpPower: ['heatPumpPower'], heatPumpToday: ['heatPumpToday'], heatPumpYesterday: ['heatPumpYesterday'], heatPumpMonth: ['heatPumpMonth'],
       inductionPower: ['inductionPower'], inductionToday: ['inductionToday'], inductionYesterday: ['inductionYesterday'], inductionMonth: ['inductionMonth'], inductionPeak: ['inductionPeak'],
       washerPower: ['washerPower'], washerToday: ['washerToday'], washerYesterday: ['washerYesterday'], washerMonth: ['washerMonth'],
@@ -452,6 +456,25 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       const value = stateNumber(globalEntity(entityKey));
       if (value !== null) data[dataKey] = value;
     });
+
+    // Il consumo istantaneo della casa deve essere il Power Load Consumed di SolarNet.
+    if (finiteValue(data.solarLoadConsumed)) data.housePower = Number(data.solarLoadConsumed);
+
+    // Bilancio casa: costo derivato dal consumo giornaliero e confronto con il
+    // periodo precedente esposto dall'Utility Meter tramite l'attributo last_period.
+    const houseTodayEntity = stateOf(globalEntity('houseToday', false));
+    const houseToday = stateNumber(globalEntity('houseToday', false));
+    data.houseToday = houseToday;
+    data.houseCost = houseToday !== null ? houseToday * ENERGY_PRICE_EUR_KWH : null;
+
+    const houseMonth = stateNumber(globalEntity('houseMonth', false));
+    data.houseMonth = houseMonth;
+
+    const yesterdayRaw = Number(houseTodayEntity?.attributes?.last_period);
+    data.houseVs = houseToday !== null && Number.isFinite(yesterdayRaw) && yesterdayRaw > 0
+      ? ((houseToday - yesterdayRaw) / yesterdayRaw) * 100
+      : null;
+
     const textMap = {
       heatPumpMode: 'heatPumpMode', washerState: 'washerState', dryerState: 'dryerState', ovenState: 'ovenState', fridgeState: 'fridgeState', networkState: 'networkState', backup5gStatus: 'backup5gStatus', doorbellLastEvent: 'doorbellLastEvent',
     };
@@ -588,16 +611,26 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
   function solarCard(clickable = true) {
     const production = Number.isFinite(Number(data.pvPower)) ? Math.max(0, Number(data.pvPower)) : 0;
-    const house = Number.isFinite(Number(data.housePower)) ? Math.max(0, Number(data.housePower)) : 0;
-    const net = production - house;
+    const house = finiteValue(data.solarLoadConsumed)
+      ? Math.max(0, Number(data.solarLoadConsumed))
+      : (finiteValue(data.housePower) ? Math.max(0, Number(data.housePower)) : 0);
+    const exportPower = finiteValue(data.solarGridExportPower) ? Math.max(0, Number(data.solarGridExportPower)) : null;
+    const importPower = finiteValue(data.solarGridImportPower) ? Math.max(0, Number(data.solarGridImportPower)) : null;
+    const exporting = Number.isFinite(exportPower) && exportPower > 0;
+    const gridPower = exporting ? exportPower : (Number.isFinite(importPower) ? importPower : (Number.isFinite(exportPower) ? exportPower : 0));
     return card({ title: 'Fotovoltaico casa', value: power(production), icon: 'fa-solar-panel', cls: 'pv-card featured-card', target: clickable ? 'energy' : '', body: `
-      <div class="energy-flow"><div class="flow-node solar"><i class="fa-solid fa-sun"></i><small>Produzione</small><strong>${power(production)}</strong></div><i class="fa-solid fa-arrow-right flow-arrow"></i><div class="flow-node home"><i class="fa-solid fa-house"></i><small>Casa</small><strong>${power(Math.min(production, house))}</strong></div><i class="fa-solid fa-arrow-right-arrow-left flow-arrow"></i><div class="flow-node grid"><i class="fa-solid fa-bolt"></i><small>Rete</small><strong>${net >= 0 ? '↑' : '↓'} ${power(Math.abs(net))}</strong></div></div>
+      <div class="energy-flow"><div class="flow-node solar"><i class="fa-solid fa-sun"></i><small>Produzione</small><strong>${power(production)}</strong></div><i class="fa-solid fa-arrow-right flow-arrow"></i><div class="flow-node home"><i class="fa-solid fa-house"></i><small>Casa</small><strong>${power(house)}</strong></div><i class="fa-solid fa-arrow-right-arrow-left flow-arrow"></i><div class="flow-node grid"><i class="fa-solid fa-bolt"></i><small>Rete</small><strong>${exporting ? '↑' : '↓'} ${power(gridPower)}</strong></div></div>
       ${metrics([['Produzione oggi', energy(data.pvToday)], ['Autoconsumo', `${fmt.format(data.pvSelf)}%`], ['Prelievo', energy(data.gridImport)], ['Immissione', energy(data.gridExport)]])}` });
   }
 
   function houseCard(clickable = true) {
-    return card({ title: 'Bilancio casa', value: power(data.housePower), icon: 'fa-gauge-high', cls: 'energy-card', target: clickable ? 'energy' : '', body: metrics([
-      ['Consumo oggi', energy(data.houseToday)], ['Costo stimato', money.format(data.houseCost)], ['Picco', `${fmt.format(data.housePeak)} kW`], ['Vs ieri', `${fmt.format(data.houseVs)}%`],
+    const currentPower = finiteValue(data.housePower) ? power(data.housePower) : 'NULL';
+    const today = periodEnergy(data.houseToday);
+    const cost = finiteValue(data.houseCost) ? money.format(data.houseCost) : 'NULL';
+    const month = periodEnergy(data.houseMonth);
+    const vsYesterday = finiteValue(data.houseVs) ? `${fmt.format(data.houseVs)}%` : 'NULL';
+    return card({ title: 'Bilancio casa', value: currentPower, icon: 'fa-gauge-high', cls: 'energy-card', target: clickable ? 'energy' : '', body: metrics([
+      ['Consumo oggi', today], ['Costo stimato', cost], ['Consumo mensile', month], ['Vs ieri', vsYesterday],
     ]) });
   }
 
@@ -991,9 +1024,10 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     // dal resolver energetico, che distingue correttamente 0 da dato assente.
     patchHeader('Bilancio casa', 'housePower');
     patchMetric('Bilancio casa', 'Consumo oggi', 'houseToday');
-    patchMetric('Bilancio casa', 'Costo stimato', 'houseCost');
-    patchMetric('Bilancio casa', 'Picco', 'housePeak');
-    patchMetric('Bilancio casa', 'Vs ieri', 'houseVsYesterday');
+    // Costo e Vs ieri sono derivati dal consumo giornaliero, non da sensori separati.
+    patchMetric('Bilancio casa', 'Costo stimato', 'houseToday');
+    patchMetric('Bilancio casa', 'Consumo mensile', 'houseMonth');
+    patchMetric('Bilancio casa', 'Vs ieri', 'houseToday');
 
     patchHeader('Rete', 'networkPing');
     patchMetric('Rete', 'Download', 'networkLinkDown');
@@ -1776,6 +1810,18 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     dayEnergy: { type: 'energy', labels: ['energia giornaliera', 'daily energy', 'energy day', 'day energy', 'produzione giornaliera', 'energia oggi', 'fronius today'] },
     yearEnergy: { type: 'energy', labels: ['energia annuale', 'yearly energy', 'annual energy', 'energy year', 'produzione annuale'] },
     totalEnergy: { type: 'energy', labels: ['energia totale', 'total energy', 'lifetime energy', 'produzione totale'] },
+    loadConsumed: {
+      type: 'power',
+      labels: ['power load consumed', 'solarnet power load consumed', 'load consumed', 'potenza carico consumata', 'consumo carico']
+    },
+    gridExportPower: {
+      type: 'power',
+      labels: ['power grid export', 'solarnet power grid export', 'grid export', 'potenza rete esportata', 'export power']
+    },
+    gridImportPower: {
+      type: 'power',
+      labels: ['power grid import', 'solarnet power grid import', 'grid import', 'potenza rete importata', 'import power']
+    },
   };
 
   const PERIOD_WORDS = {
@@ -2300,11 +2346,19 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const dayEntity = configuredEntity('pvToday', isEnergySensor) || resolveFronius(FRONIUS.dayEnergy, productionEntity);
     const yearEntity = resolveFronius(FRONIUS.yearEnergy, productionEntity);
     const totalEntity = resolveFronius(FRONIUS.totalEnergy, productionEntity);
-    const houseEntity = configuredEntity('housePower', isPowerSensor);
+    const loadEntity = configuredEntity('solarLoadConsumed', isPowerSensor)
+      || resolveFronius(FRONIUS.loadConsumed, productionEntity)
+      || configuredEntity('housePower', isPowerSensor);
+    const gridExportEntity = configuredEntity('solarGridExportPower', isPowerSensor)
+      || resolveFronius(FRONIUS.gridExportPower, productionEntity);
+    const gridImportEntity = configuredEntity('solarGridImportPower', isPowerSensor)
+      || resolveFronius(FRONIUS.gridImportPower, productionEntity);
 
     const measuredProduction = watts(productionEntity);
     const production = Number.isFinite(measuredProduction) ? Math.max(0, measuredProduction) : 0;
-    const house = watts(houseEntity);
+    const loadConsumed = watts(loadEntity);
+    const gridExportPower = watts(gridExportEntity);
+    const gridImportPower = watts(gridImportEntity);
     const panelPower = watts(panelEntity);
     const dayKwh = energyKwh(dayEntity);
     const yearKwh = energyKwh(yearEntity);
@@ -2315,14 +2369,19 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
       const label = normalize(node.querySelector('small')?.textContent);
       if (label === 'produzione') setValue(node.querySelector('strong'), formatPower(production));
       if (label === 'casa') {
-        const selfConsumption = Number.isFinite(production) && Number.isFinite(house) ? Math.min(Math.max(0, production), Math.max(0, house)) : null;
-        setValue(node.querySelector('strong'), formatPower(selfConsumption));
+        setValue(node.querySelector('strong'), formatPower(Number.isFinite(loadConsumed) ? Math.max(0, loadConsumed) : null));
       }
       if (label === 'rete') {
-        if (!Number.isFinite(production) || !Number.isFinite(house)) setValue(node.querySelector('strong'), NULL_TEXT);
-        else {
-          const net = production - house;
-          setValue(node.querySelector('strong'), `${net >= 0 ? '↑' : '↓'} ${formatPower(Math.abs(net))}`);
+        // SolarNet: se Power Grid Export e' > 0 mostriamo l'export; quando e' 0
+        // usiamo Power Grid Import, come nell'app Fronius.
+        if (Number.isFinite(gridExportPower) && gridExportPower > 0) {
+          setValue(node.querySelector('strong'), `↑ ${formatPower(Math.max(0, gridExportPower))}`);
+        } else if (Number.isFinite(gridImportPower)) {
+          setValue(node.querySelector('strong'), `↓ ${formatPower(Math.max(0, gridImportPower))}`);
+        } else if (Number.isFinite(gridExportPower)) {
+          setValue(node.querySelector('strong'), `↓ ${formatPower(Math.max(0, gridExportPower))}`);
+        } else {
+          setValue(node.querySelector('strong'), NULL_TEXT);
         }
       }
     });
@@ -2341,8 +2400,9 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     });
 
     window.CASA_FRONIUS = {
-      productionEntity, panelEntity, dayEntity, yearEntity, totalEntity, houseEntity,
-      production, house, dayKwh, yearKwh, totalKwh,
+      productionEntity, panelEntity, dayEntity, yearEntity, totalEntity,
+      loadEntity, gridExportEntity, gridImportEntity,
+      production, loadConsumed, gridExportPower, gridImportPower, dayKwh, yearKwh, totalKwh,
     };
   }
 
