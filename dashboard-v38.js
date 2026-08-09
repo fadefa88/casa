@@ -686,11 +686,12 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
     const appliances = sum(data.washerPower, data.dryerPower, data.ovenPower, data.fridgePower, data.dishwasherPower);
     const tv = sum(data.tvPower, data.shieldPower, data.mediaPcPower, data.hddPower);
     const studio = sum(data.pcPower, data.monitorPower, data.ps5Power, data.dockPower);
-    const shellyPeriods = {
-      today: exactGroupPeriodTotal('shelly', 'today'),
-      yesterday: exactGroupPeriodTotal('shelly', 'yesterday'),
-      month: exactGroupPeriodTotal('shelly', 'month'),
-    };
+    // I valori Oggi / Ieri / Mese della card Linee Shelly vengono aggiornati
+    // subito dopo il render dal resolver energetico, che usa gli helper
+    // Utility Meter espliciti definiti in GROUP_PERIOD_HELPERS.
+    // Non richiamare qui exactGroupPeriodTotal(): appartiene all'IIFE del
+    // resolver energetico e non e' visibile in questo scope.
+    const shellyPeriods = { today:null, yesterday:null, month:null };
     const appliancePeriods = { today:null, yesterday:null, month:null };
     const technologyPeriods = { today:null, yesterday:null, month:null };
 
