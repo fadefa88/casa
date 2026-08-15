@@ -56,7 +56,7 @@
     ps5:{label:'PS5',powerKey:'ps5Power',aliases:['ps 5','ps5','playstation 5','playstation5'],dailyHelper:'sensor.studio_ps_5_ps5_energia_giornaliera',monthlyHelper:'sensor.studio_ps_5_ps5_energia_mensile'},
     dock:{label:'Splitter',powerKey:'dockPower',aliases:['splitter','dock studio','office dock','dock'],dailyHelper:'sensor.studio_splitter_energia_giornaliera',monthlyHelper:'sensor.studio_splitter_energia_mensile'},
     heatPump:{label:'Pompa di calore',powerEntity:'sensor.vano_tecnico_shelly_pompa_di_calore_potenza',dailyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore',monthlyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore',annualHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_annuale_pompa_di_calore'},
-    induction:{label:'Induzione',powerEntity:'sensor.cucina_shelly_induzione_potenza',dailyHelper:'sensor.cucina_shelly_induzione_giornaliero_induzione',monthlyHelper:'sensor.cucina_shelly_induzione_mensile_induzione',annualHelper:'sensor.cucina_shelly_induzione_annuale_induzione'}
+    induction:{label:'Induzione',powerEntity:'sensor.cucina_shelly_induzione_potenza',dailyHelper:'sensor.cucina_shelly_induzione_induzione_gg',monthlyHelper:'sensor.cucina_shelly_induzione_induzione_kwh_mese',annualHelper:'sensor.cucina_shelly_induzione_induzione_kwh_anno'}
   };
   const GROUPS={appliances:['washer','fridge','oven','dishwasher','dryer'],tv:['tv','shield','mediaPc','hdd'],studio:['pc','monitor','ps5','dock'],shelly:['heatPump','induction']};
   const TOTAL_LABELS={appliances:'Totale Elettrodomestici',tv:'Totale Zona TV',studio:'Totale Studio / gaming',shelly:'Totale Linee Shelly'};
