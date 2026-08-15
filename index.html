@@ -49,7 +49,7 @@
   <aside id="object-list" class="object-list glass legacy" hidden><div class="object-list-head"><strong>Lista oggetti</strong><button id="close-list">×</button></div><input id="object-search" type="search" placeholder="Cerca oggetto, stanza o codice..."><div id="object-count" class="object-count"></div><div id="object-results" class="object-results"></div></aside>
   <div id="hint" class="hint glass legacy">.</div>
 </main>
-<script src="./config.js?v=66"></script>
+<script src="./config.js?v=67"></script>
 <script src="./rooms-config.js?v=66"></script>
 <script>
 (() => {
@@ -90,8 +90,8 @@ nativeClearInterval(id);
 const ENERGY_ENTITY_ALIASES = Object.freeze({
 'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero': 'sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore',
 'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile': 'sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore',
-'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero': 'sensor.cucina_shelly_induzione_giornaliero_induzione',
-'sensor.cucina_shelly_induzione_induzione_consumo_mensile': 'sensor.cucina_shelly_induzione_mensile_induzione'
+'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero': 'sensor.cucina_shelly_induzione_induzione_gg',
+'sensor.cucina_shelly_induzione_induzione_consumo_mensile': 'sensor.cucina_shelly_induzione_induzione_kwh_mese'
 });
 const IMPORT_RATE_EUR_KWH = 0.287;
 const SSP_RATE_EUR_KWH = 0.16;
