@@ -69,7 +69,7 @@
   function unit(entity){return normalize(entity?.attributes?.unit_of_measurement)}
   function isPower(entity){return valid(entity)&&String(entity.entity_id||'').startsWith('sensor.')&&Number.isFinite(Number(entity.state))&&(normalize(entity.attributes?.device_class)==='power'||['w','kw','mw'].includes(unit(entity)))}
   function watts(entity){if(!isPower(entity))return null;const v=Number(entity.state),u=unit(entity);if(u==='kw')return v*1000;if(u==='mw')return v*1000000;return v}
-  function energyKwh(entity,raw=entity?.state){if(!entity||!Number.isFinite(Number(raw)))return null;const v=Number(raw),u=unit(entity);if(u==='wh')return v/1000;if(u==='mwh')return v*1000;return v}
+  function energyKwh(entity,raw=entity?.state){if(!entity||!Number.isFinite(Number(raw)))return null;return Number(raw)}
   function entityText(entity){return normalize(`${entity?.entity_id||''} ${entity?.attributes?.friendly_name||''}`)}
   function resolvePower(device){
     for(const id of configuredCandidates(device.powerKey)){const e=state.states.get(id);if(isPower(e))return e}
