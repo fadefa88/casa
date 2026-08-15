@@ -27,7 +27,7 @@
       <div class="energy-flow"><div class="flow-node solar"><i class="fa-solid fa-sun"></i><small>Produzione</small><strong>NULL</strong></div><i class="fa-solid fa-arrow-right flow-arrow"></i><div class="flow-node home"><i class="fa-solid fa-house"></i><small>Casa</small><strong>NULL</strong></div><i class="fa-solid fa-arrow-right-arrow-left flow-arrow"></i><div class="flow-node grid"><i class="fa-solid fa-bolt"></i><small>Rete</small><strong>NULL</strong></div></div>
       <div class="metric-grid two"><div><small>Produzione oggi</small><strong>NULL</strong></div><div><small>Autoconsumo</small><strong>NULL</strong></div><div><small>Prelievo</small><strong>NULL</strong></div><div><small>Immissione</small><strong>NULL</strong></div></div>
     </section>
-    <section class="card energy-card clickable-card" data-view-target="energy" role="button" tabindex="0"><div class="card-head"><span class="title"><i class="fa-solid fa-gauge-high"></i> Bilancio casa</span><strong>NULL</strong></div><div class="metric-grid two"><div><small>Consumo oggi</small><strong>NULL</strong></div><div><small>Costo stimato</small><strong>NULL</strong></div><div><small>Consumo mensile</small><strong>NULL</strong></div><div><small>Vs ieri</small><strong>NULL</strong></div></div></section>
+    <section class="card energy-card clickable-card" data-view-target="energy" role="button" tabindex="0"><div class="card-head"><span class="title"><i class="fa-solid fa-gauge-high"></i> Bilancio casa</span><strong>NULL</strong></div><div class="metric-grid two"><div><small>Importazione oggi</small><strong>NULL</strong></div><div><small>Costo stimato</small><strong>NULL</strong></div><div><small>Importazione mensile</small><strong>NULL</strong></div><div><small>Vs ieri</small><strong>NULL</strong></div><div data-house-total-today><small>Consumo totale oggi</small><strong>NULL</strong></div><div data-house-pv-covered><small>Coperto dal fotovoltaico</small><strong>NULL</strong></div></div></section>
   </aside>
   <aside class="right-rail rail dashboard-rail" id="right-rail">
     <section class="card clickable-card" data-view-target="rooms" role="button" tabindex="0"><div class="card-head"><span class="title"><i class="fa-solid fa-house"></i> Comfort e stanze</span><strong>NULL</strong></div><div class="overview-kpis"><div class="overview-kpi"><i class="fa-solid fa-temperature-half"></i><small>Media interna</small><strong>NULL</strong></div><div class="overview-kpi"><i class="fa-solid fa-lightbulb"></i><small>Luci accese</small><strong>NULL</strong></div><div class="overview-kpi"><i class="fa-solid fa-window-maximize"></i><small>Tapparelle</small><strong>NULL</strong></div></div></section>
@@ -99,6 +99,9 @@ const IMPORT_ENTITIES = Object.freeze({
 day: 'sensor.vano_tecnico_solarnet_giornaliero_import',
 month: 'sensor.vano_tecnico_solarnet_mensile_import',
 year: 'sensor.vano_tecnico_solarnet_annuale_import'
+});
+const HOUSE_ENTITIES = Object.freeze({
+totalDay: 'sensor.solarnet_energia_giornaliera'
 });
 const SSP_ENTITIES = Object.freeze({
 power: 'sensor.vano_tecnico_solarnet_power_grid_export',
@@ -205,6 +208,28 @@ normalize(item.querySelector('small')?.textContent) === wanted
 );
 return row?.querySelector('strong') || null;
 }
+function ensureHouseEnergyMetrics(house) {
+const grid = house?.querySelector('.metric-grid');
+if (!grid) return;
+for (const item of grid.querySelectorAll(':scope > div')) {
+const label = item.querySelector('small');
+const normalized = normalize(label?.textContent);
+if (normalized === 'consumo oggi') label.textContent = 'Importazione oggi';
+if (normalized === 'consumo mensile') label.textContent = 'Importazione mensile';
+}
+if (!grid.querySelector('[data-house-total-today]')) {
+const item = document.createElement('div');
+item.dataset.houseTotalToday = 'true';
+item.innerHTML = '<small>Consumo totale oggi</small><strong>NULL</strong>';
+grid.appendChild(item);
+}
+if (!grid.querySelector('[data-house-pv-covered]')) {
+const item = document.createElement('div');
+item.dataset.housePvCovered = 'true';
+item.innerHTML = '<small>Coperto dal fotovoltaico</small><strong>NULL</strong>';
+grid.appendChild(item);
+}
+}
 function setLiveValue(node, value) {
 if (!node) return;
 if (node.textContent !== value) node.textContent = value;
@@ -273,19 +298,24 @@ const view = currentView();
 if (!['panoramica', 'energia'].includes(view)) return;
 const house = findHouseCard(document.querySelector('#left-rail'));
 if (!house) return;
+ensureHouseEnergyMetrics(house);
 const connected = window.CASA_HA?.state?.connected === true;
 const currentPower = connected ? configuredPower(states, 'housePower') : null;
 const importedDay = connected ? energyKwh(states, IMPORT_ENTITIES.day) : null;
 const importedMonth = connected ? energyKwh(states, IMPORT_ENTITIES.month) : null;
+const totalDay = connected ? energyKwh(states, HOUSE_ENTITIES.totalDay) : null;
+const pvCovered = Number.isFinite(totalDay) && Number.isFinite(importedDay) ? totalDay - importedDay : null;
 const yesterday = connected ? attributeEnergyKwh(states, IMPORT_ENTITIES.day, 'last_period') : null;
 const vsYesterday = Number.isFinite(importedDay) && Number.isFinite(yesterday) && yesterday > 0
 ? ((importedDay - yesterday) / yesterday) * 100
 : null;
 setLiveValue(house.querySelector('.card-head > strong'), formatPower(currentPower));
-setLiveValue(metricNode(house, 'Consumo oggi'), formatEnergy(importedDay));
+setLiveValue(metricNode(house, 'Importazione oggi'), formatEnergy(importedDay));
 setLiveValue(metricNode(house, 'Costo stimato'), Number.isFinite(importedDay) ? formatMoney(importedDay * IMPORT_RATE_EUR_KWH) : 'NULL');
-setLiveValue(metricNode(house, 'Consumo mensile'), formatEnergy(importedMonth));
+setLiveValue(metricNode(house, 'Importazione mensile'), formatEnergy(importedMonth));
 setLiveValue(metricNode(house, 'Vs ieri'), Number.isFinite(vsYesterday) ? `${sspNumber.format(vsYesterday)}%` : 'NULL');
+setLiveValue(house.querySelector('[data-house-total-today] strong'), formatEnergy(totalDay));
+setLiveValue(house.querySelector('[data-house-pv-covered] strong'), formatEnergy(pvCovered));
 }
 function patchHouseNetCosts(states) {
 const view = currentView();
