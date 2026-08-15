@@ -46,15 +46,18 @@ window.CASA_DASHBOARD_CONFIG = {
       'sensor.vano_tecnico_solarnet_grid_import'
     ],
 
-    heatPumpPower: ['sensor.heat_pump_power', 'sensor.pompa_di_calore_potenza'],
-    heatPumpToday: ['sensor.heat_pump_today_energy', 'sensor.pompa_di_calore_energia_oggi'],
-    heatPumpYesterday: ['sensor.heat_pump_yesterday_energy', 'sensor.pompa_di_calore_energia_ieri'],
-    heatPumpMonth: ['sensor.heat_pump_month_energy', 'sensor.pompa_di_calore_energia_mese'],
+    // Linee Shelly: stessi sensori/helper usati in consumi-test.
+    heatPumpPower: ['sensor.vano_tecnico_shelly_pompa_di_calore_potenza'],
+    heatPumpToday: ['sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore'],
+    heatPumpYesterday: [],
+    heatPumpMonth: ['sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore'],
+    heatPumpYear: ['sensor.vano_tecnico_shelly_pompa_di_calore_annuale_pompa_di_calore'],
     heatPumpMode: ['sensor.heat_pump_mode', 'sensor.modalita_pompa_di_calore'],
-    inductionPower: ['sensor.induction_power', 'sensor.induzione_potenza'],
-    inductionToday: ['sensor.induction_today_energy', 'sensor.induzione_energia_oggi'],
-    inductionYesterday: ['sensor.induction_yesterday_energy', 'sensor.induzione_energia_ieri'],
-    inductionMonth: ['sensor.induction_month_energy', 'sensor.induzione_energia_mese'],
+    inductionPower: ['sensor.cucina_shelly_induzione_potenza'],
+    inductionToday: ['sensor.cucina_shelly_induzione_giornaliero_induzione'],
+    inductionYesterday: [],
+    inductionMonth: ['sensor.cucina_shelly_induzione_mensile_induzione'],
+    inductionYear: ['sensor.cucina_shelly_induzione_annuale_induzione'],
     inductionPeak: ['sensor.induction_peak_power', 'sensor.induzione_picco'],
 
     washerPower: ['sensor.washer_power', 'sensor.lavatrice_potenza'],
