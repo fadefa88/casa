@@ -49,8 +49,90 @@
   <aside id="object-list" class="object-list glass legacy" hidden><div class="object-list-head"><strong>Lista oggetti</strong><button id="close-list">×</button></div><input id="object-search" type="search" placeholder="Cerca oggetto, stanza o codice..."><div id="object-count" class="object-count"></div><div id="object-results" class="object-results"></div></aside>
   <div id="hint" class="hint glass legacy">.</div>
 </main>
-<script src="./config.js?v=64"></script>
+<script src="./config.js?v=65"></script>
 <script src="./rooms-config.js?v=66"></script>
+<style>
+  .energy-period-strip[data-energy-group="shelly"]{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+</style>
+<script>
+(() => {
+  'use strict';
+
+  // Il bundle energetico usa ancora i vecchi entity_id nella tabella dei totali.
+  // Manteniamo nella sola Map degli stati HA quattro alias verso i nuovi helper:
+  // in questo modo tutte le somme Oggi/Ieri/Mese continuano a essere calcolate
+  // dal resolver esistente, ma usando esclusivamente i nuovi Utility Meter.
+  const ENERGY_ENTITY_ALIASES = Object.freeze({
+    'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero': 'sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore',
+    'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile': 'sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore',
+    'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero': 'sensor.cucina_shelly_induzione_giornaliero_induzione',
+    'sensor.cucina_shelly_induzione_induzione_consumo_mensile': 'sensor.cucina_shelly_induzione_mensile_induzione'
+  });
+  const ANNUAL_HELPERS = [
+    'sensor.vano_tecnico_shelly_pompa_di_calore_annuale_pompa_di_calore',
+    'sensor.cucina_shelly_induzione_annuale_induzione'
+  ];
+  const fmtAnnual = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+  const normalizeUnit = (value) => String(value || '').trim().toLowerCase();
+
+  function stateMap() {
+    const states = window.CASA_HA?.state?.states;
+    return states instanceof Map ? states : null;
+  }
+
+  function syncEnergyAliases(states) {
+    if (!states) return;
+    for (const [legacyId, currentId] of Object.entries(ENERGY_ENTITY_ALIASES)) {
+      const current = states.get(currentId);
+      if (current) states.set(legacyId, current);
+      else states.delete(legacyId);
+    }
+  }
+
+  function helperKwh(entity) {
+    if (!entity || !Number.isFinite(Number(entity.state))) return null;
+    const raw = Number(entity.state);
+    const unit = normalizeUnit(entity.attributes?.unit_of_measurement);
+    if (unit === 'wh') return raw / 1000;
+    if (unit === 'mwh') return raw * 1000;
+    return raw;
+  }
+
+  function patchShellyAnnualTotal(states) {
+    if (!states) return;
+    const strip = document.querySelector('.energy-period-strip[data-energy-group="shelly"]');
+    if (!strip) return;
+
+    let annual = strip.querySelector('[data-period="annual"]');
+    if (!annual) {
+      const cell = document.createElement('div');
+      cell.innerHTML = '<small>Anno</small><strong data-period="annual">NULL</strong>';
+      strip.appendChild(cell);
+      annual = cell.querySelector('strong');
+    }
+
+    let total = 0;
+    let found = 0;
+    for (const entityId of ANNUAL_HELPERS) {
+      const value = helperKwh(states.get(entityId));
+      if (!Number.isFinite(value)) continue;
+      total += value;
+      found += 1;
+    }
+    annual.textContent = found ? `${fmtAnnual.format(total)} kWh` : 'NULL';
+    annual.classList.toggle('ha-null-value', !found);
+  }
+
+  function refreshEnergyHelpers() {
+    const states = stateMap();
+    syncEnergyAliases(states);
+    patchShellyAnnualTotal(states);
+  }
+
+  const energyHelperTimer = setInterval(refreshEnergyHelpers, 200);
+  window.addEventListener('beforeunload', () => clearInterval(energyHelperTimer), { once: true });
+})();
+</script>
 <script type="module" src="./dashboard-v38.js?v=81"></script>
 </body>
 </html>
