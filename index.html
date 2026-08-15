@@ -66,6 +66,23 @@
     'sensor.cucina_shelly_induzione_induzione_consumo_mensile': 'sensor.cucina_shelly_induzione_mensile_induzione'
   });
 
+  const SSP_RATE_EUR_KWH = 0.16;
+  const SSP_ENTITIES = Object.freeze({
+    power: 'sensor.vano_tecnico_solarnet_power_grid_export',
+    day: 'sensor.vano_tecnico_solarnet_energia_esportata_giorno',
+    month: 'sensor.vano_tecnico_solarnet_energia_esportata_mese',
+    year: 'sensor.vano_tecnico_solarnet_energia_esportata_anno'
+  });
+  const sspNumber = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
+  const sspMoney = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const normalize = (value) => String(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
   function stateMap() {
     const states = window.CASA_HA?.state?.states;
     return states instanceof Map ? states : null;
@@ -80,8 +97,122 @@
     }
   }
 
+  function currentView() {
+    return normalize(document.querySelector('#view-title')?.textContent);
+  }
+
+  function entityNumber(states, entityId) {
+    const entity = states?.get(entityId);
+    if (!entity || ['unknown', 'unavailable', 'null', 'none', ''].includes(normalize(entity.state))) return null;
+    const value = Number(entity.state);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  function energyKwh(states, entityId) {
+    const entity = states?.get(entityId);
+    const value = entityNumber(states, entityId);
+    if (value === null) return null;
+    const unit = normalize(entity?.attributes?.unit_of_measurement);
+    if (unit === 'wh') return value / 1000;
+    if (unit === 'mwh') return value * 1000;
+    return value;
+  }
+
+  function powerWatts(states, entityId) {
+    const entity = states?.get(entityId);
+    const value = entityNumber(states, entityId);
+    if (value === null) return null;
+    const unit = normalize(entity?.attributes?.unit_of_measurement);
+    if (unit === 'kw') return value * 1000;
+    if (unit === 'mw') return value * 1000000;
+    return value;
+  }
+
+  function formatPower(value) {
+    if (!Number.isFinite(value)) return 'NULL';
+    return Math.abs(value) >= 1000
+      ? `${sspNumber.format(value / 1000)} kW`
+      : `${sspNumber.format(value)} W`;
+  }
+
+  function formatEnergy(value) {
+    return Number.isFinite(value) ? `${sspNumber.format(value)} kWh` : 'NULL';
+  }
+
+  function formatGain(value) {
+    return Number.isFinite(value) ? sspMoney.format(value * SSP_RATE_EUR_KWH) : 'NULL';
+  }
+
+  function findHouseCard(left) {
+    return [...(left?.querySelectorAll('.card') || [])].find((card) =>
+      normalize(card.querySelector('.card-head .title')?.textContent) === 'bilancio casa'
+    ) || null;
+  }
+
+  function setSspValue(node, value) {
+    if (!node) return;
+    if (node.textContent !== value) node.textContent = value;
+    node.classList.toggle('ha-null-value', value === 'NULL');
+  }
+
+  function patchSspCard(states) {
+    const view = currentView();
+    const left = document.querySelector('#left-rail');
+    if (!left) return;
+
+    if (!['panoramica', 'energia'].includes(view)) {
+      left.querySelector('[data-ssp-card]')?.remove();
+      return;
+    }
+
+    const house = findHouseCard(left);
+    if (!house) return;
+
+    let card = left.querySelector('[data-ssp-card]');
+    if (!card) {
+      card = document.createElement('section');
+      card.dataset.sspCard = 'true';
+      card.innerHTML = `
+        <div class="card-head"><span class="title"><i class="fa-solid fa-coins"></i> Scambio sul posto</span><strong>NULL</strong></div>
+        <div class="metric-grid two">
+          <div><small>Esportati oggi</small><strong>NULL</strong></div>
+          <div><small>Guadagno oggi</small><strong>NULL</strong></div>
+          <div><small>Guadagno mese</small><strong>NULL</strong></div>
+          <div><small>Guadagno anno</small><strong>NULL</strong></div>
+        </div>`;
+    }
+
+    card.className = `card energy-card ssp-card${view === 'panoramica' ? ' clickable-card' : ''}`;
+    if (view === 'panoramica') {
+      card.dataset.viewTarget = 'energy';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+    } else {
+      delete card.dataset.viewTarget;
+      card.removeAttribute('role');
+      card.removeAttribute('tabindex');
+    }
+
+    if (house.nextElementSibling !== card) house.insertAdjacentElement('afterend', card);
+
+    const connected = window.CASA_HA?.state?.connected === true;
+    const exportPower = connected ? powerWatts(states, SSP_ENTITIES.power) : null;
+    const exportedToday = connected ? energyKwh(states, SSP_ENTITIES.day) : null;
+    const exportedMonth = connected ? energyKwh(states, SSP_ENTITIES.month) : null;
+    const exportedYear = connected ? energyKwh(states, SSP_ENTITIES.year) : null;
+
+    setSspValue(card.querySelector('.card-head > strong'), formatPower(exportPower));
+    const metrics = [...card.querySelectorAll('.metric-grid > div')];
+    setSspValue(metrics[0]?.querySelector('strong'), formatEnergy(exportedToday));
+    setSspValue(metrics[1]?.querySelector('strong'), formatGain(exportedToday));
+    setSspValue(metrics[2]?.querySelector('strong'), formatGain(exportedMonth));
+    setSspValue(metrics[3]?.querySelector('strong'), formatGain(exportedYear));
+  }
+
   function refreshEnergyHelpers() {
-    syncEnergyAliases(stateMap());
+    const states = stateMap();
+    syncEnergyAliases(states);
+    patchSspCard(states);
   }
 
   const energyHelperTimer = setInterval(refreshEnergyHelpers, 200);
