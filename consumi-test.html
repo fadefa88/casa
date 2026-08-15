@@ -55,8 +55,8 @@
     monitor:{label:'Monitor',powerKey:'monitorPower',aliases:['monitor','monitor studio','office monitor'],dailyHelper:'sensor.studio_monitor_energia_giornaliera',monthlyHelper:'sensor.studio_monitor_energia_mensile'},
     ps5:{label:'PS5',powerKey:'ps5Power',aliases:['ps 5','ps5','playstation 5','playstation5'],dailyHelper:'sensor.studio_ps_5_ps5_energia_giornaliera',monthlyHelper:'sensor.studio_ps_5_ps5_energia_mensile'},
     dock:{label:'Splitter',powerKey:'dockPower',aliases:['splitter','dock studio','office dock','dock'],dailyHelper:'sensor.studio_splitter_energia_giornaliera',monthlyHelper:'sensor.studio_splitter_energia_mensile'},
-    heatPump:{label:'Pompa di calore',powerKey:'heatPumpPower',aliases:['pompa di calore','pdc','heat pump'],dailyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero',monthlyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile'},
-    induction:{label:'Induzione',powerKey:'inductionPower',aliases:['induzione','piano induzione','piano cottura','induction'],dailyHelper:'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero',monthlyHelper:'sensor.cucina_shelly_induzione_induzione_consumo_mensile'}
+    heatPump:{label:'Pompa di calore',powerEntity:'sensor.vano_tecnico_shelly_pompa_di_calore_potenza',dailyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero',monthlyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile'},
+    induction:{label:'Induzione',powerEntity:'sensor.cucina_shelly_induzione_potenza',dailyHelper:'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero',monthlyHelper:'sensor.cucina_shelly_induzione_induzione_consumo_mensile'}
   };
   const GROUPS={appliances:['washer','fridge','oven','dishwasher','dryer'],tv:['tv','shield','mediaPc','hdd'],studio:['pc','monitor','ps5','dock'],shelly:['heatPump','induction']};
   const TOTAL_LABELS={appliances:'Totale Elettrodomestici',tv:'Totale Zona TV',studio:'Totale Studio / gaming',shelly:'Totale Linee Shelly'};
@@ -72,6 +72,7 @@
   function energyKwh(entity,raw=entity?.state){if(!entity||!Number.isFinite(Number(raw)))return null;return Number(raw)}
   function entityText(entity){return normalize(`${entity?.entity_id||''} ${entity?.attributes?.friendly_name||''}`)}
   function resolvePower(device){
+    if(device.powerEntity){const e=state.states.get(device.powerEntity);return isPower(e)?e:null}
     for(const id of configuredCandidates(device.powerKey)){const e=state.states.get(id);if(isPower(e))return e}
     let best=null,bestScore=0;
     for(const e of state.states.values()){
