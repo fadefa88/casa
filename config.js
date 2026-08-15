@@ -54,10 +54,10 @@ window.CASA_DASHBOARD_CONFIG = {
     heatPumpYear: ['sensor.vano_tecnico_shelly_pompa_di_calore_annuale_pompa_di_calore'],
     heatPumpMode: ['sensor.heat_pump_mode', 'sensor.modalita_pompa_di_calore'],
     inductionPower: ['sensor.cucina_shelly_induzione_potenza'],
-    inductionToday: ['sensor.cucina_shelly_induzione_giornaliero_induzione'],
+    inductionToday: ['sensor.cucina_shelly_induzione_induzione_gg'],
     inductionYesterday: [],
-    inductionMonth: ['sensor.cucina_shelly_induzione_mensile_induzione'],
-    inductionYear: ['sensor.cucina_shelly_induzione_annuale_induzione'],
+    inductionMonth: ['sensor.cucina_shelly_induzione_induzione_kwh_mese'],
+    inductionYear: ['sensor.cucina_shelly_induzione_induzione_kwh_anno'],
     inductionPeak: ['sensor.induction_peak_power', 'sensor.induzione_picco'],
 
     washerPower: ['sensor.washer_power', 'sensor.lavatrice_potenza'],
