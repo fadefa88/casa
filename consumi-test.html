@@ -55,7 +55,7 @@
     monitor:{label:'Monitor',powerKey:'monitorPower',aliases:['monitor','monitor studio','office monitor'],dailyHelper:'sensor.studio_monitor_energia_giornaliera',monthlyHelper:'sensor.studio_monitor_energia_mensile'},
     ps5:{label:'PS5',powerKey:'ps5Power',aliases:['ps 5','ps5','playstation 5','playstation5'],dailyHelper:'sensor.studio_ps_5_ps5_energia_giornaliera',monthlyHelper:'sensor.studio_ps_5_ps5_energia_mensile'},
     dock:{label:'Splitter',powerKey:'dockPower',aliases:['splitter','dock studio','office dock','dock'],dailyHelper:'sensor.studio_splitter_energia_giornaliera',monthlyHelper:'sensor.studio_splitter_energia_mensile'},
-    heatPump:{label:'Pompa di calore',powerEntity:'sensor.vano_tecnico_shelly_pompa_di_calore_potenza',dailyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero',monthlyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile'},
+    heatPump:{label:'Pompa di calore',powerEntity:'sensor.vano_tecnico_shelly_pompa_di_calore_potenza',dailyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore',monthlyHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore',annualHelper:'sensor.vano_tecnico_shelly_pompa_di_calore_annuale_pompa_di_calore'},
     induction:{label:'Induzione',powerEntity:'sensor.cucina_shelly_induzione_potenza',dailyHelper:'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero',monthlyHelper:'sensor.cucina_shelly_induzione_induzione_consumo_mensile'}
   };
   const GROUPS={appliances:['washer','fridge','oven','dishwasher','dryer'],tv:['tv','shield','mediaPc','hdd'],studio:['pc','monitor','ps5','dock'],shelly:['heatPump','induction']};
@@ -83,17 +83,19 @@
     return bestScore>=72?best:null;
   }
   function periodValue(device,period){
-    const daily=state.states.get(device.dailyHelper)||null,monthly=state.states.get(device.monthlyHelper)||null;
+    const daily=state.states.get(device.dailyHelper)||null,monthly=state.states.get(device.monthlyHelper)||null,annual=state.states.get(device.annualHelper)||null;
     if(period==='today')return energyKwh(daily)??0;
     if(period==='yesterday')return energyKwh(daily,daily?.attributes?.last_period)??0;
-    return energyKwh(monthly)??0;
+    if(period==='month')return energyKwh(monthly)??0;
+    if(period==='annual')return energyKwh(annual)??0;
+    return 0;
   }
   function formatPower(v){const x=Number.isFinite(v)?v:0;return Math.abs(x)>=1000?`${fmt.format(x/1000)} kW`:`${fmt.format(x)} W`}
   function formatEnergy(v){return`${fmt.format(Number.isFinite(v)?v:0)} kWh`}
   function formatCost(v){return costFmt.format(Math.max(0,Number.isFinite(v)?v:0)*ENERGY_PRICE_EUR_KWH)}
   function metricHtml(label,kind){const cost=kind==='power'?'<span class="cost" hidden></span>':'<span class="cost">Costo stimato: € 0,00</span>';return`<div class="metric loading" data-kind="${kind}"><small>${label}</small><strong>…</strong>${cost}</div>`}
   function metricsHtml(powerLabel='Attuale'){return`${metricHtml(powerLabel,'power')}${metricHtml('Oggi','today')}${metricHtml('Ieri','yesterday')}${metricHtml('Mese','month')}`}
-  function deviceHtml(id){return`<article class="device" data-device="${id}"><div class="device-head"><h3>${DEVICES[id].label}</h3></div><div class="metrics">${metricsHtml()}</div></article>`}
+  function deviceHtml(id){const device=DEVICES[id];const annual=device.annualHelper?metricHtml('Annuale','annual'):'';return`<article class="device" data-device="${id}"><div class="device-head"><h3>${device.label}</h3></div><div class="metrics">${metricsHtml()}${annual}</div></article>`}
   function totalHtml(group){return`<article class="device total-device" data-total="${group}"><div class="device-head"><h3>${TOTAL_LABELS[group]}</h3></div><div class="metrics">${metricsHtml()}</div></article>`}
   function grandTotalHtml(){return`<article class="device total-device grand-total" data-grand-total><div class="device-head"><h3>Totale complessivo</h3></div><div class="metrics">${metricsHtml('Consumo attuale')}</div></article>`}
   function render(){
@@ -107,7 +109,7 @@
   function patchDevice(id,kind,value){patchNode(document.querySelector(`[data-device="${id}"] [data-kind="${kind}"]`),kind,value)}
   function patchTotal(group,kind,value){patchNode(document.querySelector(`[data-total="${group}"] [data-kind="${kind}"]`),kind,value)}
   function patchGrand(kind,value){patchNode(document.querySelector(`[data-grand-total] [data-kind="${kind}"]`),kind,value)}
-  function updateDevice(id){const d=DEVICES[id],p=watts(resolvePower(d));const values={power:Number.isFinite(p)?p:0,today:periodValue(d,'today'),yesterday:periodValue(d,'yesterday'),month:periodValue(d,'month')};state.metrics.set(id,values);for(const[k,v]of Object.entries(values))patchDevice(id,k,v)}
+  function updateDevice(id){const d=DEVICES[id],p=watts(resolvePower(d));const values={power:Number.isFinite(p)?p:0,today:periodValue(d,'today'),yesterday:periodValue(d,'yesterday'),month:periodValue(d,'month')};if(d.annualHelper)values.annual=periodValue(d,'annual');state.metrics.set(id,values);for(const[k,v]of Object.entries(values))patchDevice(id,k,v)}
   function updateTotals(){
     for(const[group,ids]of Object.entries(GROUPS)){const t={power:0,today:0,yesterday:0,month:0};for(const id of ids){const v=state.metrics.get(id)||{};for(const k of Object.keys(t))t[k]+=Number.isFinite(Number(v[k]))?Number(v[k]):0}for(const[k,v]of Object.entries(t))patchTotal(group,k,v)}
     const all={power:0,today:0,yesterday:0,month:0};for(const id of Object.keys(DEVICES)){const v=state.metrics.get(id)||{};for(const k of Object.keys(all))all[k]+=Number.isFinite(Number(v[k]))?Number(v[k]):0}for(const[k,v]of Object.entries(all))patchGrand(k,v)
