@@ -23,8 +23,8 @@ window.CASA_DASHBOARD_CONFIG = {
       'sensor.house_power',
       'sensor.potenza_casa'
     ],
-    houseToday: ['sensor.vano_tecnico_solarnet_power_import_giornaliero'],
-    houseMonth: ['sensor.vano_tecnico_solarnet_power_import_mensile'],
+    houseToday: ['sensor.vano_tecnico_solarnet_giornaliero_import'],
+    houseMonth: ['sensor.vano_tecnico_solarnet_mensile_import'],
 
     pvPower: ['sensor.fronius_power', 'sensor.fotovoltaico_potenza'],
     pvToday: ['sensor.fronius_today', 'sensor.fotovoltaico_energia_oggi'],
