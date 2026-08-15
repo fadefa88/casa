@@ -53,221 +53,430 @@
 <script src="./rooms-config.js?v=66"></script>
 <script>
 (() => {
-  'use strict';
-
-  // Il bundle energetico usa ancora i vecchi entity_id nella tabella dei totali.
-  // Manteniamo nella sola Map degli stati HA quattro alias verso i nuovi helper:
-  // in questo modo tutte le somme Oggi/Ieri/Mese continuano a essere calcolate
-  // dal resolver esistente, ma usando esclusivamente i nuovi Utility Meter.
-  const ENERGY_ENTITY_ALIASES = Object.freeze({
-    'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero': 'sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore',
-    'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile': 'sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore',
-    'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero': 'sensor.cucina_shelly_induzione_giornaliero_induzione',
-    'sensor.cucina_shelly_induzione_induzione_consumo_mensile': 'sensor.cucina_shelly_induzione_mensile_induzione'
-  });
-
-  const IMPORT_RATE_EUR_KWH = 0.287;
-  const SSP_RATE_EUR_KWH = 0.16;
-  const IMPORT_ENTITIES = Object.freeze({
-    day: 'sensor.vano_tecnico_solarnet_giornaliero_import',
-    month: 'sensor.vano_tecnico_solarnet_mensile_import',
-    year: 'sensor.vano_tecnico_solarnet_annuale_import'
-  });
-  const SSP_ENTITIES = Object.freeze({
-    power: 'sensor.vano_tecnico_solarnet_power_grid_export',
-    day: 'sensor.vano_tecnico_solarnet_energia_esportata_giorno',
-    month: 'sensor.vano_tecnico_solarnet_energia_esportata_mese',
-    year: 'sensor.vano_tecnico_solarnet_energia_esportata_anno'
-  });
-  const sspNumber = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
-  const sspMoney = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const normalize = (value) => String(value ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-
-  function stateMap() {
-    const states = window.CASA_HA?.state?.states;
-    return states instanceof Map ? states : null;
-  }
-
-  function syncEnergyAliases(states) {
-    if (!states) return;
-    for (const [legacyId, currentId] of Object.entries(ENERGY_ENTITY_ALIASES)) {
-      const current = states.get(currentId);
-      if (current) states.set(legacyId, current);
-      else states.delete(legacyId);
-    }
-  }
-
-  function currentView() {
-    return normalize(document.querySelector('#view-title')?.textContent);
-  }
-
-  function entityNumber(states, entityId) {
-    const entity = states?.get(entityId);
-    if (!entity || ['unknown', 'unavailable', 'null', 'none', ''].includes(normalize(entity.state))) return null;
-    const value = Number(entity.state);
-    return Number.isFinite(value) ? value : null;
-  }
-
-  function energyKwh(states, entityId) {
-    const entity = states?.get(entityId);
-    const value = entityNumber(states, entityId);
-    if (value === null) return null;
-    const unit = normalize(entity?.attributes?.unit_of_measurement);
-    if (unit === 'wh') return value / 1000;
-    if (unit === 'mwh') return value * 1000;
-    return value;
-  }
-
-  function powerWatts(states, entityId) {
-    const entity = states?.get(entityId);
-    const value = entityNumber(states, entityId);
-    if (value === null) return null;
-    const unit = normalize(entity?.attributes?.unit_of_measurement);
-    if (unit === 'kw') return value * 1000;
-    if (unit === 'mw') return value * 1000000;
-    return value;
-  }
-
-  function formatPower(value) {
-    if (!Number.isFinite(value)) return 'NULL';
-    return Math.abs(value) >= 1000
-      ? `${sspNumber.format(value / 1000)} kW`
-      : `${sspNumber.format(value)} W`;
-  }
-
-  function formatEnergy(value) {
-    return Number.isFinite(value) ? `${sspNumber.format(value)} kWh` : 'NULL';
-  }
-
-  function formatGain(value) {
-    return Number.isFinite(value) ? sspMoney.format(value * SSP_RATE_EUR_KWH) : 'NULL';
-  }
-
-  function formatNetCost(imported, exported) {
-    if (!Number.isFinite(imported) || !Number.isFinite(exported)) return 'NULL';
-    return sspMoney.format((imported * IMPORT_RATE_EUR_KWH) - (exported * SSP_RATE_EUR_KWH));
-  }
-
-  function findHouseCard(left) {
-    return [...(left?.querySelectorAll('.card') || [])].find((card) =>
-      normalize(card.querySelector('.card-head .title')?.textContent) === 'bilancio casa'
-    ) || null;
-  }
-
-  function setSspValue(node, value) {
-    if (!node) return;
-    if (node.textContent !== value) node.textContent = value;
-    node.classList.toggle('ha-null-value', value === 'NULL');
-  }
-
-  function patchHouseNetCosts(states) {
-    const view = currentView();
-    const left = document.querySelector('#left-rail');
-    if (!left) return;
-
-    const house = findHouseCard(left);
-    if (!house || !['panoramica', 'energia'].includes(view)) {
-      house?.querySelector('[data-house-net-costs]')?.remove();
-      return;
-    }
-
-    let strip = house.querySelector('[data-house-net-costs]');
-    if (!strip) {
-      strip = document.createElement('div');
-      strip.className = 'energy-period-strip house-net-cost-strip';
-      strip.dataset.houseNetCosts = 'true';
-      strip.innerHTML = `
-        <div><small>Costo netto giorno</small><strong>NULL</strong></div>
-        <div><small>Costo netto mese</small><strong>NULL</strong></div>
-        <div><small>Costo netto anno</small><strong>NULL</strong></div>`;
-      house.appendChild(strip);
-    }
-
-    const connected = window.CASA_HA?.state?.connected === true;
-    const importedDay = connected ? energyKwh(states, IMPORT_ENTITIES.day) : null;
-    const importedMonth = connected ? energyKwh(states, IMPORT_ENTITIES.month) : null;
-    const importedYear = connected ? energyKwh(states, IMPORT_ENTITIES.year) : null;
-    const exportedDay = connected ? energyKwh(states, SSP_ENTITIES.day) : null;
-    const exportedMonth = connected ? energyKwh(states, SSP_ENTITIES.month) : null;
-    const exportedYear = connected ? energyKwh(states, SSP_ENTITIES.year) : null;
-    const values = [
-      formatNetCost(importedDay, exportedDay),
-      formatNetCost(importedMonth, exportedMonth),
-      formatNetCost(importedYear, exportedYear)
-    ];
-
-    [...strip.querySelectorAll('strong')].forEach((node, index) => setSspValue(node, values[index]));
-  }
-
-  function patchSspCard(states) {
-    const view = currentView();
-    const left = document.querySelector('#left-rail');
-    if (!left) return;
-
-    if (!['panoramica', 'energia'].includes(view)) {
-      left.querySelector('[data-ssp-card]')?.remove();
-      return;
-    }
-
-    const house = findHouseCard(left);
-    if (!house) return;
-
-    let card = left.querySelector('[data-ssp-card]');
-    if (!card) {
-      card = document.createElement('section');
-      card.dataset.sspCard = 'true';
-      card.innerHTML = `
-        <div class="card-head"><span class="title"><i class="fa-solid fa-coins"></i> Scambio sul posto</span><strong>NULL</strong></div>
-        <div class="metric-grid two">
-          <div><small>Esportati oggi</small><strong>NULL</strong></div>
-          <div><small>Guadagno oggi</small><strong>NULL</strong></div>
-          <div><small>Guadagno mese</small><strong>NULL</strong></div>
-          <div><small>Guadagno anno</small><strong>NULL</strong></div>
-        </div>`;
-    }
-
-    card.className = `card energy-card ssp-card${view === 'panoramica' ? ' clickable-card' : ''}`;
-    if (view === 'panoramica') {
-      card.dataset.viewTarget = 'energy';
-      card.setAttribute('role', 'button');
-      card.setAttribute('tabindex', '0');
-    } else {
-      delete card.dataset.viewTarget;
-      card.removeAttribute('role');
-      card.removeAttribute('tabindex');
-    }
-
-    if (house.nextElementSibling !== card) house.insertAdjacentElement('afterend', card);
-
-    const connected = window.CASA_HA?.state?.connected === true;
-    const exportPower = connected ? powerWatts(states, SSP_ENTITIES.power) : null;
-    const exportedToday = connected ? energyKwh(states, SSP_ENTITIES.day) : null;
-    const exportedMonth = connected ? energyKwh(states, SSP_ENTITIES.month) : null;
-    const exportedYear = connected ? energyKwh(states, SSP_ENTITIES.year) : null;
-
-    setSspValue(card.querySelector('.card-head > strong'), formatPower(exportPower));
-    const metrics = [...card.querySelectorAll('.metric-grid > div')];
-    setSspValue(metrics[0]?.querySelector('strong'), formatEnergy(exportedToday));
-    setSspValue(metrics[1]?.querySelector('strong'), formatGain(exportedToday));
-    setSspValue(metrics[2]?.querySelector('strong'), formatGain(exportedMonth));
-    setSspValue(metrics[3]?.querySelector('strong'), formatGain(exportedYear));
-  }
-
-  function refreshEnergyHelpers() {
-    const states = stateMap();
-    syncEnergyAliases(states);
-    patchHouseNetCosts(states);
-    patchSspCard(states);
-  }
-
-  const energyHelperTimer = setInterval(refreshEnergyHelpers, 200);
-  window.addEventListener('beforeunload', () => clearInterval(energyHelperTimer), { once: true });
+'use strict';
+const nativeSetInterval = window.setInterval.bind(window);
+const nativeClearInterval = window.clearInterval.bind(window);
+const alignedTasks = new Map();
+let nextAlignedTimerId = -1;
+let sharedTickRunning = false;
+let fastHaRefreshing = false;
+let fastHaFailures = 0;
+let railGuardInstalled = false;
+function callbackSource(callback) {
+try { return Function.prototype.toString.call(callback); }
+catch (_error) { return ''; }
+}
+function isMainHaRefresh(callback) {
+const source = callbackSource(callback);
+return source.includes('syncHomeAssistant') && source.includes('quiet: true');
+}
+window.setInterval = (callback, delay = 0, ...args) => {
+if (typeof callback !== 'function') return nativeSetInterval(callback, delay, ...args);
+const id = nextAlignedTimerId--;
+if (isMainHaRefresh(callback)) {
+return id;
+}
+const milliseconds = Number(delay);
+if (Number.isFinite(milliseconds) && milliseconds >= 150 && milliseconds <= 5000) {
+alignedTasks.set(id, { callback, args });
+return id;
+}
+return nativeSetInterval(callback, delay, ...args);
+};
+window.clearInterval = (id) => {
+if (alignedTasks.delete(id) || (typeof id === 'number' && id < 0)) return;
+nativeClearInterval(id);
+};
+const ENERGY_ENTITY_ALIASES = Object.freeze({
+'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_giornaliero': 'sensor.vano_tecnico_shelly_pompa_di_calore_giornaliero_pompa_calore',
+'sensor.vano_tecnico_shelly_pompa_di_calore_pompa_di_calore_consumo_mensile': 'sensor.vano_tecnico_shelly_pompa_di_calore_mensile_pompa_calore',
+'sensor.cucina_shelly_induzione_induzione_consumo_giornaliero': 'sensor.cucina_shelly_induzione_giornaliero_induzione',
+'sensor.cucina_shelly_induzione_induzione_consumo_mensile': 'sensor.cucina_shelly_induzione_mensile_induzione'
+});
+const IMPORT_RATE_EUR_KWH = 0.287;
+const SSP_RATE_EUR_KWH = 0.16;
+const IMPORT_ENTITIES = Object.freeze({
+day: 'sensor.vano_tecnico_solarnet_giornaliero_import',
+month: 'sensor.vano_tecnico_solarnet_mensile_import',
+year: 'sensor.vano_tecnico_solarnet_annuale_import'
+});
+const SSP_ENTITIES = Object.freeze({
+power: 'sensor.vano_tecnico_solarnet_power_grid_export',
+day: 'sensor.vano_tecnico_solarnet_energia_esportata_giorno',
+month: 'sensor.vano_tecnico_solarnet_energia_esportata_mese',
+year: 'sensor.vano_tecnico_solarnet_energia_esportata_anno'
+});
+const sspNumber = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 });
+const sspMoney = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const normalize = (value) => String(value ?? '')
+.toLowerCase()
+.normalize('NFD')
+.replace(/[\u0300-\u036f]/g, '')
+.replace(/[^a-z0-9]+/g, ' ')
+.trim();
+function stateMap() {
+const states = window.CASA_HA?.state?.states;
+return states instanceof Map ? states : null;
+}
+function syncEnergyAliases(states) {
+if (!states) return;
+for (const [legacyId, currentId] of Object.entries(ENERGY_ENTITY_ALIASES)) {
+const current = states.get(currentId);
+if (current) states.set(legacyId, current);
+else states.delete(legacyId);
+}
+}
+function currentView() {
+return normalize(document.querySelector('#view-title')?.textContent);
+}
+function entityNumber(states, entityId) {
+const entity = states?.get(entityId);
+if (!entity || ['unknown', 'unavailable', 'null', 'none', ''].includes(normalize(entity.state))) return null;
+const value = Number(entity.state);
+return Number.isFinite(value) ? value : null;
+}
+function energyKwh(states, entityId) {
+const entity = states?.get(entityId);
+const value = entityNumber(states, entityId);
+if (value === null) return null;
+const unit = normalize(entity?.attributes?.unit_of_measurement);
+if (unit === 'wh') return value / 1000;
+if (unit === 'mwh') return value * 1000;
+return value;
+}
+function attributeEnergyKwh(states, entityId, attribute) {
+const entity = states?.get(entityId);
+if (!entity) return null;
+const value = Number(entity.attributes?.[attribute]);
+if (!Number.isFinite(value)) return null;
+const unit = normalize(entity.attributes?.unit_of_measurement);
+if (unit === 'wh') return value / 1000;
+if (unit === 'mwh') return value * 1000;
+return value;
+}
+function powerWatts(states, entityId) {
+const entity = states?.get(entityId);
+const value = entityNumber(states, entityId);
+if (value === null) return null;
+const unit = normalize(entity?.attributes?.unit_of_measurement);
+if (unit === 'kw') return value * 1000;
+if (unit === 'mw') return value * 1000000;
+return value;
+}
+function configuredIds(key) {
+const configured = window.CASA_DASHBOARD_CONFIG?.entities?.[key];
+return (Array.isArray(configured) ? configured : [configured]).filter(Boolean);
+}
+function configuredPower(states, key) {
+for (const entityId of configuredIds(key)) {
+const value = powerWatts(states, entityId);
+if (Number.isFinite(value)) return value;
+}
+return null;
+}
+function formatPower(value) {
+if (!Number.isFinite(value)) return 'NULL';
+return Math.abs(value) >= 1000
+? `${sspNumber.format(value / 1000)} kW`
+: `${sspNumber.format(value)} W`;
+}
+function formatEnergy(value) {
+return Number.isFinite(value) ? `${sspNumber.format(value)} kWh` : 'NULL';
+}
+function formatMoney(value) {
+return Number.isFinite(value) ? sspMoney.format(value) : 'NULL';
+}
+function formatGain(value) {
+return Number.isFinite(value) ? formatMoney(value * SSP_RATE_EUR_KWH) : 'NULL';
+}
+function formatNetCost(imported, exported) {
+if (!Number.isFinite(imported) || !Number.isFinite(exported)) return 'NULL';
+return formatMoney((imported * IMPORT_RATE_EUR_KWH) - (exported * SSP_RATE_EUR_KWH));
+}
+function findHouseCard(left) {
+return [...(left?.querySelectorAll('.card') || [])].find((card) =>
+normalize(card.querySelector('.card-head .title')?.textContent) === 'bilancio casa'
+) || null;
+}
+function metricNode(card, label) {
+const wanted = normalize(label);
+const row = [...(card?.querySelectorAll('.metric-grid > div') || [])].find((item) =>
+normalize(item.querySelector('small')?.textContent) === wanted
+);
+return row?.querySelector('strong') || null;
+}
+function setLiveValue(node, value) {
+if (!node) return;
+if (node.textContent !== value) node.textContent = value;
+node.classList.toggle('ha-null-value', value === 'NULL');
+}
+function configuredEntity(states, key) {
+for (const entityId of configuredIds(key)) {
+const entity = states?.get(entityId);
+if (entity && !['unknown', 'unavailable', 'null', 'none', ''].includes(normalize(entity.state))) return entity;
+}
+return null;
+}
+function roomLightEntities(states) {
+const rooms = Array.isArray(window.CASA_ROOMS) ? window.CASA_ROOMS : [];
+const resolved = [];
+for (const room of rooms) {
+const candidates = [];
+const primary = room?.entities?.lights;
+const extra = room?.candidates?.lights;
+if (Array.isArray(primary)) candidates.push(...primary); else if (primary) candidates.push(primary);
+if (Array.isArray(extra)) candidates.push(...extra); else if (extra) candidates.push(extra);
+const entity = candidates.map((id) => states?.get(id)).find((item) =>
+item && !['unknown', 'unavailable', 'null', 'none', ''].includes(normalize(item.state))
+);
+if (entity) resolved.push(entity);
+}
+return resolved;
+}
+function alarmLabel(state) {
+const value = normalize(state);
+if (value === 'armed away') return 'Inserito totale';
+if (value === 'armed home') return 'Inserito notte';
+if (value === 'triggered') return 'ALLARME';
+if (value === 'disarmed') return 'Disattivato';
+return state ? String(state).replaceAll('_', ' ') : 'NULL';
+}
+function patchSecurity(states) {
+if (window.CASA_HA?.state?.connected !== true) return;
+const alarm = configuredEntity(states, 'alarm');
+const label = alarm ? alarmLabel(alarm.state) : 'NULL';
+const lights = roomLightEntities(states);
+const lightsOn = lights.filter((entity) => normalize(entity.state) === 'on').length;
+const camera = configuredEntity(states, 'doorbellCamera');
+const alarmPill = document.querySelector('#alarm-pill');
+if (alarmPill) {
+const cls = normalize(alarm?.state) === 'triggered' ? 'bad'
+: normalize(alarm?.state) === 'disarmed' ? 'ok' : alarm ? 'warn' : 'bad';
+alarmPill.className = `pill ${cls}`;
+alarmPill.innerHTML = `<i class="fa-solid fa-shield-halved"></i> ${label}`;
+}
+const security = [...document.querySelectorAll('.card')].find((card) =>
+normalize(card.querySelector('.card-head .title')?.textContent) === 'sicurezza'
+);
+if (!security) return;
+setLiveValue(security.querySelector('.card-head > strong'), label);
+const rows = [...security.querySelectorAll('.status-line')];
+for (const row of rows) {
+const rowLabel = normalize(row.querySelector('span')?.textContent);
+if (rowLabel === 'allarme') setLiveValue(row.querySelector('strong'), label);
+if (rowLabel === 'videocitofono') setLiveValue(row.querySelector('strong'), camera ? 'Online' : 'NULL');
+if (rowLabel === 'luci accese') setLiveValue(row.querySelector('strong'), String(lightsOn));
+}
+}
+function patchHouseCard(states) {
+const view = currentView();
+if (!['panoramica', 'energia'].includes(view)) return;
+const house = findHouseCard(document.querySelector('#left-rail'));
+if (!house) return;
+const connected = window.CASA_HA?.state?.connected === true;
+const currentPower = connected ? configuredPower(states, 'housePower') : null;
+const importedDay = connected ? energyKwh(states, IMPORT_ENTITIES.day) : null;
+const importedMonth = connected ? energyKwh(states, IMPORT_ENTITIES.month) : null;
+const yesterday = connected ? attributeEnergyKwh(states, IMPORT_ENTITIES.day, 'last_period') : null;
+const vsYesterday = Number.isFinite(importedDay) && Number.isFinite(yesterday) && yesterday > 0
+? ((importedDay - yesterday) / yesterday) * 100
+: null;
+setLiveValue(house.querySelector('.card-head > strong'), formatPower(currentPower));
+setLiveValue(metricNode(house, 'Consumo oggi'), formatEnergy(importedDay));
+setLiveValue(metricNode(house, 'Costo stimato'), Number.isFinite(importedDay) ? formatMoney(importedDay * IMPORT_RATE_EUR_KWH) : 'NULL');
+setLiveValue(metricNode(house, 'Consumo mensile'), formatEnergy(importedMonth));
+setLiveValue(metricNode(house, 'Vs ieri'), Number.isFinite(vsYesterday) ? `${sspNumber.format(vsYesterday)}%` : 'NULL');
+}
+function patchHouseNetCosts(states) {
+const view = currentView();
+const left = document.querySelector('#left-rail');
+if (!left) return;
+const house = findHouseCard(left);
+if (!house || !['panoramica', 'energia'].includes(view)) {
+house?.querySelector('[data-house-net-costs]')?.remove();
+return;
+}
+let strip = house.querySelector('[data-house-net-costs]');
+if (!strip) {
+strip = document.createElement('div');
+strip.className = 'energy-period-strip house-net-cost-strip';
+strip.dataset.houseNetCosts = 'true';
+strip.innerHTML = `
+<div><small>Costo netto giorno</small><strong>NULL</strong></div>
+<div><small>Costo netto mese</small><strong>NULL</strong></div>
+<div><small>Costo netto anno</small><strong>NULL</strong></div>`;
+house.appendChild(strip);
+}
+const connected = window.CASA_HA?.state?.connected === true;
+const importedDay = connected ? energyKwh(states, IMPORT_ENTITIES.day) : null;
+const importedMonth = connected ? energyKwh(states, IMPORT_ENTITIES.month) : null;
+const importedYear = connected ? energyKwh(states, IMPORT_ENTITIES.year) : null;
+const exportedDay = connected ? energyKwh(states, SSP_ENTITIES.day) : null;
+const exportedMonth = connected ? energyKwh(states, SSP_ENTITIES.month) : null;
+const exportedYear = connected ? energyKwh(states, SSP_ENTITIES.year) : null;
+const values = [
+formatNetCost(importedDay, exportedDay),
+formatNetCost(importedMonth, exportedMonth),
+formatNetCost(importedYear, exportedYear)
+];
+[...strip.querySelectorAll('strong')].forEach((node, index) => setLiveValue(node, values[index]));
+}
+function patchSspCard(states) {
+const view = currentView();
+const left = document.querySelector('#left-rail');
+if (!left) return;
+if (!['panoramica', 'energia'].includes(view)) {
+left.querySelector('[data-ssp-card]')?.remove();
+return;
+}
+const house = findHouseCard(left);
+if (!house) return;
+let card = left.querySelector('[data-ssp-card]');
+if (!card) {
+card = document.createElement('section');
+card.dataset.sspCard = 'true';
+card.innerHTML = `
+<div class="card-head"><span class="title"><i class="fa-solid fa-coins"></i> Scambio sul posto</span><strong>NULL</strong></div>
+<div class="metric-grid two">
+<div><small>Esportati oggi</small><strong>NULL</strong></div>
+<div><small>Guadagno oggi</small><strong>NULL</strong></div>
+<div><small>Guadagno mese</small><strong>NULL</strong></div>
+<div><small>Guadagno anno</small><strong>NULL</strong></div>
+</div>`;
+}
+card.className = `card energy-card ssp-card${view === 'panoramica' ? ' clickable-card' : ''}`;
+if (view === 'panoramica') {
+card.dataset.viewTarget = 'energy';
+card.setAttribute('role', 'button');
+card.setAttribute('tabindex', '0');
+} else {
+delete card.dataset.viewTarget;
+card.removeAttribute('role');
+card.removeAttribute('tabindex');
+}
+if (house.nextElementSibling !== card) house.insertAdjacentElement('afterend', card);
+const connected = window.CASA_HA?.state?.connected === true;
+const exportPower = connected ? powerWatts(states, SSP_ENTITIES.power) : null;
+const exportedToday = connected ? energyKwh(states, SSP_ENTITIES.day) : null;
+const exportedMonth = connected ? energyKwh(states, SSP_ENTITIES.month) : null;
+const exportedYear = connected ? energyKwh(states, SSP_ENTITIES.year) : null;
+setLiveValue(card.querySelector('.card-head > strong'), formatPower(exportPower));
+const metrics = [...card.querySelectorAll('.metric-grid > div')];
+setLiveValue(metrics[0]?.querySelector('strong'), formatEnergy(exportedToday));
+setLiveValue(metrics[1]?.querySelector('strong'), formatGain(exportedToday));
+setLiveValue(metrics[2]?.querySelector('strong'), formatGain(exportedMonth));
+setLiveValue(metrics[3]?.querySelector('strong'), formatGain(exportedYear));
+}
+function refreshEnergyHelpers() {
+const states = stateMap();
+syncEnergyAliases(states);
+patchHouseCard(states);
+patchHouseNetCosts(states);
+patchSspCard(states);
+patchSecurity(states);
+}
+async function refreshHaSnapshot() {
+const ha = window.CASA_HA;
+if (document.hidden || fastHaRefreshing || !ha?.fetch || !ha?.state || ha.state.connecting) return;
+fastHaRefreshing = true;
+try {
+const payload = await ha.fetch('/api/states');
+if (!Array.isArray(payload)) throw new Error('Risposta /api/states non valida');
+const states = new Map(payload.map((entity) => [entity.entity_id, entity]));
+syncEnergyAliases(states);
+ha.state.states = states;
+ha.state.entityCache?.clear?.();
+ha.state.connected = true;
+ha.state.source = 'home-assistant';
+ha.state.lastSync = new Date();
+fastHaFailures = 0;
+} catch (error) {
+fastHaFailures += 1;
+if (fastHaFailures >= 3 && window.CASA_HA?.state) window.CASA_HA.state.connected = false;
+if (fastHaFailures === 3) console.warn('[Casa 5B] Refresh HA 1s non disponibile; mantengo l’ultimo snapshot utile.', error);
+} finally {
+fastHaRefreshing = false;
+}
+}
+function isBaseRailRender(html, railId, view) {
+const value = String(html || '');
+if (view === 'panoramica') {
+return railId === 'left-rail'
+? value.includes('Fotovoltaico casa') && value.includes('Bilancio casa')
+: value.includes('Comfort e stanze') && value.includes('Internet');
+}
+if (view === 'energia') {
+return railId === 'left-rail'
+? value.includes('Fotovoltaico casa') && value.includes('Bilancio casa')
+: value.includes('Linee Shelly') && value.includes('Tecnologia');
+}
+if (view === 'stanze') return value.includes('room-card') && !value.includes('room-device-floor');
+if (view === 'rete') return value.includes('FRITZ!Box 7690') || value.includes('Connessione WAN') || value.includes('Dispositivi connessi');
+if (view === 'sicurezza') return value.includes('Allarme') || value.includes('Tapparelle');
+return false;
+}
+function installRailGuard() {
+const haState = window.CASA_HA?.state;
+if (railGuardInstalled || !haState || haState.connecting || haState.connected !== true) return;
+const prototypeDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+if (!prototypeDescriptor?.get || !prototypeDescriptor?.set) return;
+for (const railId of ['left-rail', 'right-rail']) {
+const rail = document.getElementById(railId);
+if (!rail) continue;
+const currentDescriptor = Object.getOwnPropertyDescriptor(rail, 'innerHTML');
+const getter = currentDescriptor?.get || prototypeDescriptor.get;
+const setter = currentDescriptor?.set || prototypeDescriptor.set;
+if (!getter || !setter) continue;
+rail.dataset.stableBaseView = currentView();
+Object.defineProperty(rail, 'innerHTML', {
+configurable: true,
+enumerable: false,
+get() {
+return getter.call(this);
+},
+set(value) {
+const view = currentView();
+const baseRender = isBaseRailRender(value, railId, view);
+if (baseRender && this.dataset.stableBaseView === view && this.childElementCount) return;
+setter.call(this, value);
+if (baseRender) this.dataset.stableBaseView = view;
+},
+});
+}
+railGuardInstalled = true;
+}
+async function alignedTick() {
+if (sharedTickRunning) return;
+sharedTickRunning = true;
+try {
+await refreshHaSnapshot();
+installRailGuard();
+for (const task of [...alignedTasks.values()]) {
+try {
+task.callback(...task.args);
+} catch (error) {
+console.error('[Casa 5B] Errore aggiornamento sincronizzato 1s', error);
+}
+}
+} finally {
+sharedTickRunning = false;
+}
+}
+const sharedClock = nativeSetInterval(alignedTick, 1000);
+const energyHelperTimer = setInterval(refreshEnergyHelpers, 1000);
+document.addEventListener('click', (event) => {
+if (event.target.closest('[data-view], [data-view-target]')) {
+setTimeout(refreshEnergyHelpers, 0);
+}
+}, true);
+document.addEventListener('visibilitychange', () => {
+if (!document.hidden) alignedTick();
+});
+window.addEventListener('beforeunload', () => {
+clearInterval(energyHelperTimer);
+alignedTasks.clear();
+nativeClearInterval(sharedClock);
+}, { once: true });
 })();
 </script>
 <script type="module" src="./dashboard-v38.js?v=81"></script>
