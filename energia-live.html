@@ -30,36 +30,56 @@
     button,a{font:inherit}
     .app{width:min(1240px,100%);margin:0 auto}
     .topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-    .back{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:1.5px solid var(--line);border-radius:16px;background:rgba(255,253,248,.84);color:var(--ink);text-decoration:none;font-size:24px;box-shadow:0 8px 24px rgba(38,76,65,.08)}
+    .back{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;flex:0 0 auto;border:1.5px solid var(--line);border-radius:16px;background:rgba(255,253,248,.84);color:var(--ink);text-decoration:none;font-size:24px;box-shadow:0 8px 24px rgba(38,76,65,.08)}
     .titlebox{min-width:0;flex:1}.titlebox small{display:block;color:var(--muted);font-weight:750;font-size:12px;letter-spacing:.08em;text-transform:uppercase}.titlebox h1{margin:2px 0 0;font-size:clamp(26px,4vw,42px);line-height:1.02;letter-spacing:-.04em}
     .live-pill{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--line);border-radius:999px;background:rgba(255,253,248,.82);font-weight:800;font-size:13px;white-space:nowrap}.live-dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 5px rgba(59,155,114,.12)}.live-pill.off .live-dot{background:#c66d64;box-shadow:0 0 0 5px rgba(198,109,100,.12)}
 
-    .hero{position:relative;overflow:hidden;border:1.5px solid var(--line);border-radius:32px;background:linear-gradient(180deg,#fffdf8 0%,#f7fbf6 100%);box-shadow:var(--shadow);padding:18px;min-height:520px}
+    .hero{position:relative;overflow:hidden;border:1.5px solid var(--line);border-radius:32px;background:linear-gradient(180deg,#fffdf8 0%,#f7fbf6 100%);box-shadow:var(--shadow);padding:16px 18px 14px;min-height:480px}
     .hero::before,.hero::after{content:"";position:absolute;border-radius:999px;filter:blur(1px);pointer-events:none}.hero::before{width:240px;height:240px;background:rgba(246,200,95,.11);left:-72px;top:-68px}.hero::after{width:320px;height:320px;background:rgba(100,169,141,.08);right:-120px;bottom:-120px}
-    .hero-head{position:relative;z-index:2;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.hero-head h2{margin:0;font-size:18px}.hero-head p{margin:4px 0 0;color:var(--muted);font-size:13px}.updated{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;font-weight:700}
-    .scene{position:relative;z-index:1;height:410px;margin-top:8px}
+    .updated{position:absolute;z-index:5;right:16px;top:13px;padding:6px 9px;border:1px solid rgba(214,226,218,.9);border-radius:999px;background:rgba(255,253,248,.86);font-variant-numeric:tabular-nums;color:var(--muted);font-size:11px;font-weight:800;backdrop-filter:blur(8px)}
+    .scene{position:relative;z-index:1;height:405px;margin-top:6px}
     .scene svg{width:100%;height:100%;display:block;overflow:visible}
     .draw-stroke{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-    .sketch{stroke-dasharray:1 0}
     .flow{fill:none;stroke-width:8;stroke-linecap:round;stroke-dasharray:12 14;opacity:.16;transition:opacity .25s,stroke-width .25s}
     .flow.active{opacity:.9;animation:flowdash .9s linear infinite}.flow.solar{stroke:var(--solar)}.flow.import{stroke:var(--import)}.flow.export{stroke:var(--export)}
     @keyframes flowdash{to{stroke-dashoffset:-52}}
-    .value-card{position:absolute;z-index:3;min-width:155px;padding:12px 14px;border:1.5px solid var(--line);border-radius:20px;background:rgba(255,253,248,.92);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(38,76,65,.10)}
+    .value-card{position:absolute;z-index:3;min-width:155px;padding:12px 14px;border:1.5px solid var(--line);border-radius:20px;background:rgba(255,253,248,.94);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(38,76,65,.10)}
     .value-card small{display:block;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}.value-card strong{display:block;margin-top:3px;font-size:clamp(22px,3vw,32px);line-height:1;font-variant-numeric:tabular-nums}.value-card span{display:block;margin-top:6px;color:var(--muted);font-size:11px;font-weight:700}
-    .value-card.solar{left:4%;top:9%}.value-card.house{left:50%;top:56%;transform:translate(-50%,-50%)}.value-card.import{right:2%;top:25%}.value-card.export{right:2%;bottom:11%}
+    .value-card.solar{left:3%;top:8%}.value-card.house{left:50%;top:57%;transform:translate(-50%,-50%)}.value-card.import{right:1%;top:23%}.value-card.export{right:1%;bottom:7%}
     .value-card.solar strong{color:var(--solar)}.value-card.house strong{color:var(--house)}.value-card.import strong{color:var(--import)}.value-card.export strong{color:var(--export)}
 
-    .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#f7faf6;border:1px solid var(--line);font-size:11px;font-weight:780;color:var(--muted)}.chip i{width:9px;height:9px;border-radius:50%}.chip .solar{background:var(--solar)}.chip .house{background:var(--house)}.chip .import{background:var(--import)}.chip .export{background:var(--export)}
+    .legend{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}.chip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#f7faf6;border:1px solid var(--line);font-size:11px;font-weight:780;color:var(--muted)}.chip i{width:9px;height:9px;border-radius:50%}.chip .solar{background:var(--solar)}.chip .house{background:var(--house)}.chip .import{background:var(--import)}.chip .export{background:var(--export)}
 
     .periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
     .period{border:1.5px solid var(--line);border-radius:28px;background:var(--card);box-shadow:0 12px 38px rgba(38,76,65,.08);padding:16px}
     .period-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:12px}.period-head h3{margin:0;font-size:20px;letter-spacing:-.02em}.period-head span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
     .metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{min-width:0;padding:12px;border-radius:18px;border:1px solid #e4ebe5;background:#f9fbf8}.metric small{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}.metric small::before{content:"";width:8px;height:8px;border-radius:50%;flex:0 0 auto}.metric[data-type="pv"] small::before{background:var(--solar)}.metric[data-type="house"] small::before{background:var(--house)}.metric[data-type="import"] small::before{background:var(--import)}.metric[data-type="export"] small::before{background:var(--export)}.metric strong{display:block;margin-top:5px;font-size:clamp(18px,2vw,25px);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .coverage{margin-top:12px;padding:11px 12px;border-radius:18px;background:#f3f8f4;border:1px solid #dde9e0}.coverage-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:var(--muted)}.coverage-top strong{color:var(--ink);font-variant-numeric:tabular-nums}.bar{height:9px;margin-top:8px;border-radius:999px;background:#e5ece7;overflow:hidden}.bar>i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--solar),var(--house));transition:width .35s ease}
-    .footnote{margin:14px 4px 0;color:var(--muted);font-size:11px;line-height:1.45;text-align:center}
 
-    @media(max-width:900px){.periods{grid-template-columns:1fr}.hero{min-height:500px}.scene{height:385px}.value-card{min-width:135px;padding:10px 12px}.value-card.solar{left:1%;top:7%}.value-card.import{right:0;top:23%}.value-card.export{right:0;bottom:7%}}
-    @media(max-width:620px){body{padding:9px}.topbar{gap:9px}.back{width:42px;height:42px;border-radius:14px}.live-pill{padding:8px 10px}.hero{border-radius:24px;padding:13px;min-height:550px}.hero-head p{max-width:210px}.scene{height:440px}.value-card{min-width:122px}.value-card strong{font-size:21px}.value-card.solar{left:0;top:5%}.value-card.house{left:42%;top:58%}.value-card.import{right:0;top:25%}.value-card.export{right:0;bottom:2%}.metrics{grid-template-columns:1fr 1fr}.period{border-radius:23px;padding:13px}}
+    @media(max-width:900px) and (orientation:portrait){
+      .periods{grid-template-columns:1fr}
+    }
+
+    @media(max-width:620px) and (orientation:portrait){
+      body{padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+      .topbar{gap:8px;margin-bottom:9px}.back{width:40px;height:40px;border-radius:13px;font-size:21px}.titlebox small{display:none}.titlebox h1{font-size:24px;letter-spacing:-.035em}.live-pill{padding:7px 9px;font-size:11px;gap:6px}.live-dot{width:8px;height:8px;box-shadow:0 0 0 4px rgba(59,155,114,.12)}
+      .hero{min-height:0;border-radius:22px;padding:10px;overflow:hidden}.updated{top:9px;right:10px;font-size:9px;padding:4px 7px}
+      .scene{height:auto;margin-top:8px;padding-top:226px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .scene svg{position:absolute;left:0;top:0;width:100%;height:220px}
+      .value-card,.value-card.solar,.value-card.house,.value-card.import,.value-card.export{position:relative;left:auto;right:auto;top:auto;bottom:auto;transform:none;min-width:0;width:auto;padding:9px 10px;border-radius:15px}
+      .value-card span{display:none}.value-card small{font-size:9px;letter-spacing:.04em}.value-card strong{font-size:19px;margin-top:3px}
+      .legend{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.chip{justify-content:center;padding:6px 7px;font-size:9.5px;gap:5px}.chip i{width:7px;height:7px}
+      .periods{gap:9px;margin-top:9px}.period{border-radius:21px;padding:12px}.period-head{margin-bottom:8px}.period-head h3{font-size:18px}.period-head span{font-size:9px}.metrics{gap:7px}.metric{padding:10px;border-radius:15px}.metric small{font-size:9px}.metric strong{font-size:19px}.coverage{margin-top:8px;padding:9px 10px;border-radius:15px}.coverage-top{font-size:10px}.bar{height:7px;margin-top:6px}
+    }
+
+    @media(orientation:landscape) and (max-height:500px){
+      body{padding:max(5px,env(safe-area-inset-top)) max(9px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(9px,env(safe-area-inset-left))}
+      .app{width:100%;max-width:none}.topbar{gap:8px;margin-bottom:6px}.back{width:38px;height:38px;border-radius:12px;font-size:20px}.titlebox small{display:none}.titlebox h1{font-size:23px}.live-pill{padding:6px 9px;font-size:10px}.live-dot{width:7px;height:7px;box-shadow:0 0 0 3px rgba(59,155,114,.12)}
+      .hero{min-height:0;border-radius:20px;padding:8px 12px 9px}.updated{top:8px;right:10px;font-size:9px;padding:4px 7px}.scene{height:255px;margin-top:0}.scene svg{height:100%}
+      .value-card{min-width:118px;padding:8px 9px;border-radius:14px}.value-card span{display:none}.value-card small{font-size:8.5px}.value-card strong{font-size:18px}.value-card.solar{left:2%;top:8%}.value-card.house{left:49%;top:59%}.value-card.import{right:1%;top:18%}.value-card.export{right:1%;bottom:3%}
+      .legend{gap:5px;margin-top:1px}.chip{padding:5px 7px;font-size:9px;gap:5px}.chip i{width:7px;height:7px}
+      .periods{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.period{border-radius:18px;padding:9px}.period-head{margin-bottom:6px}.period-head h3{font-size:16px}.period-head span{font-size:8px}.metrics{gap:5px}.metric{padding:7px;border-radius:12px}.metric small{font-size:7.5px;gap:4px}.metric small::before{width:6px;height:6px}.metric strong{font-size:15px;margin-top:3px}.coverage{margin-top:6px;padding:7px 8px;border-radius:12px}.coverage-top{font-size:8.5px}.bar{height:6px;margin-top:5px}
+    }
   </style>
 </head>
 <body>
@@ -71,13 +91,9 @@
   </header>
 
   <section class="hero">
-    <div class="hero-head">
-      <div><h2>La casa, disegnata dall'energia</h2><p>Produzione, consumo e scambio con la rete aggiornati ogni secondo.</p></div>
-      <div id="updated" class="updated">--:--:--</div>
-    </div>
-
+    <div id="updated" class="updated">--:--:--</div>
     <div class="scene" aria-label="Schema dei flussi energetici">
-      <svg viewBox="0 0 1100 440" role="img">
+      <svg viewBox="70 0 970 420" preserveAspectRatio="xMidYMid meet" role="img">
         <defs>
           <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#305b4f" flood-opacity=".12"/></filter>
         </defs>
@@ -88,9 +104,7 @@
 
         <g transform="translate(160 72)" filter="url(#softShadow)">
           <circle cx="0" cy="0" r="42" fill="#f9d879" stroke="#18312d" stroke-width="3"/>
-          <g class="draw-stroke">
-            <path d="M0-67v-22M0 67v22M-67 0h-22M67 0h22M-48-48l-16-16M48 48l16 16M48-48l16-16M-48 48l-16 16"/>
-          </g>
+          <g class="draw-stroke"><path d="M0-67v-22M0 67v22M-67 0h-22M67 0h22M-48-48l-16-16M48 48l16 16M48-48l16-16M-48 48l-16 16"/></g>
           <path d="M-76 82 C-40 60 20 62 70 83" fill="none" stroke="#d9e6dc" stroke-width="3" stroke-linecap="round"/>
         </g>
 
@@ -162,8 +176,6 @@
       <div class="coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
     </article>
   </section>
-
-  <p class="footnote">I valori di consumo mensile/annuale vengono letti direttamente quando l'helper esiste; altrimenti sono ricavati come produzione FV + importazione − esportazione. La pagina mantiene l'ultimo dato valido in caso di una lettura Home Assistant temporaneamente fallita.</p>
 </main>
 
 <script>
