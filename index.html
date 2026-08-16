@@ -101,7 +101,7 @@ month: 'sensor.vano_tecnico_solarnet_mensile_import',
 year: 'sensor.vano_tecnico_solarnet_annuale_import'
 });
 const HOUSE_ENTITIES = Object.freeze({
-totalDay: 'sensor.solarnet_energia_giornaliera'
+totalDay: 'sensor.vano_tecnico_solarnet_consumo_casa_oggi'
 });
 const SSP_ENTITIES = Object.freeze({
 power: 'sensor.vano_tecnico_solarnet_power_grid_export',
@@ -303,9 +303,8 @@ const connected = window.CASA_HA?.state?.connected === true;
 const currentPower = connected ? configuredPower(states, 'housePower') : null;
 const importedDay = connected ? energyKwh(states, IMPORT_ENTITIES.day) : null;
 const importedMonth = connected ? energyKwh(states, IMPORT_ENTITIES.month) : null;
-const solarNetDay = connected ? energyKwh(states, HOUSE_ENTITIES.totalDay) : null;
-const pvCovered = Number.isFinite(solarNetDay) && Number.isFinite(importedDay) ? solarNetDay - importedDay : null;
-const totalDay = Number.isFinite(pvCovered) && Number.isFinite(importedDay) ? pvCovered + importedDay : null;
+const totalDay = connected ? energyKwh(states, HOUSE_ENTITIES.totalDay) : null;
+const pvCovered = Number.isFinite(totalDay) && Number.isFinite(importedDay) ? totalDay - importedDay : null;
 const yesterday = connected ? attributeEnergyKwh(states, IMPORT_ENTITIES.day, 'last_period') : null;
 const vsYesterday = Number.isFinite(importedDay) && Number.isFinite(yesterday) && yesterday > 0
 ? ((importedDay - yesterday) / yesterday) * 100
