@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#eef5ef">
+  <title>Energia Live · Casa 5B</title>
+  <script src="./config.js"></script>
+  <style>
+    :root{
+      color-scheme:light;
+      --paper:#eef5ef;
+      --ink:#18312d;
+      --muted:#71827d;
+      --card:#fffdf8;
+      --line:#d6e2da;
+      --sun:#f6c85f;
+      --solar:#e5a52f;
+      --house:#64a98d;
+      --import:#6e8ee8;
+      --export:#df806e;
+      --grid:#73827e;
+      --ok:#3b9b72;
+      --shadow:0 18px 55px rgba(38,76,65,.12);
+      font-family:Inter,ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink)}
+    body{padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+    button,a{font:inherit}
+    .app{width:min(1240px,100%);margin:0 auto}
+    .topbar{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+    .back{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border:1.5px solid var(--line);border-radius:16px;background:rgba(255,253,248,.84);color:var(--ink);text-decoration:none;font-size:24px;box-shadow:0 8px 24px rgba(38,76,65,.08)}
+    .titlebox{min-width:0;flex:1}.titlebox small{display:block;color:var(--muted);font-weight:750;font-size:12px;letter-spacing:.08em;text-transform:uppercase}.titlebox h1{margin:2px 0 0;font-size:clamp(26px,4vw,42px);line-height:1.02;letter-spacing:-.04em}
+    .live-pill{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--line);border-radius:999px;background:rgba(255,253,248,.82);font-weight:800;font-size:13px;white-space:nowrap}.live-dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 5px rgba(59,155,114,.12)}.live-pill.off .live-dot{background:#c66d64;box-shadow:0 0 0 5px rgba(198,109,100,.12)}
+
+    .hero{position:relative;overflow:hidden;border:1.5px solid var(--line);border-radius:32px;background:linear-gradient(180deg,#fffdf8 0%,#f7fbf6 100%);box-shadow:var(--shadow);padding:18px;min-height:520px}
+    .hero::before,.hero::after{content:"";position:absolute;border-radius:999px;filter:blur(1px);pointer-events:none}.hero::before{width:240px;height:240px;background:rgba(246,200,95,.11);left:-72px;top:-68px}.hero::after{width:320px;height:320px;background:rgba(100,169,141,.08);right:-120px;bottom:-120px}
+    .hero-head{position:relative;z-index:2;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.hero-head h2{margin:0;font-size:18px}.hero-head p{margin:4px 0 0;color:var(--muted);font-size:13px}.updated{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px;font-weight:700}
+    .scene{position:relative;z-index:1;height:410px;margin-top:8px}
+    .scene svg{width:100%;height:100%;display:block;overflow:visible}
+    .draw-stroke{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    .sketch{stroke-dasharray:1 0}
+    .flow{fill:none;stroke-width:8;stroke-linecap:round;stroke-dasharray:12 14;opacity:.16;transition:opacity .25s,stroke-width .25s}
+    .flow.active{opacity:.9;animation:flowdash .9s linear infinite}.flow.solar{stroke:var(--solar)}.flow.import{stroke:var(--import)}.flow.export{stroke:var(--export)}
+    @keyframes flowdash{to{stroke-dashoffset:-52}}
+    .value-card{position:absolute;z-index:3;min-width:155px;padding:12px 14px;border:1.5px solid var(--line);border-radius:20px;background:rgba(255,253,248,.92);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(38,76,65,.10)}
+    .value-card small{display:block;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}.value-card strong{display:block;margin-top:3px;font-size:clamp(22px,3vw,32px);line-height:1;font-variant-numeric:tabular-nums}.value-card span{display:block;margin-top:6px;color:var(--muted);font-size:11px;font-weight:700}
+    .value-card.solar{left:4%;top:9%}.value-card.house{left:50%;top:56%;transform:translate(-50%,-50%)}.value-card.import{right:2%;top:25%}.value-card.export{right:2%;bottom:11%}
+    .value-card.solar strong{color:var(--solar)}.value-card.house strong{color:var(--house)}.value-card.import strong{color:var(--import)}.value-card.export strong{color:var(--export)}
+
+    .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:999px;background:#f7faf6;border:1px solid var(--line);font-size:11px;font-weight:780;color:var(--muted)}.chip i{width:9px;height:9px;border-radius:50%}.chip .solar{background:var(--solar)}.chip .house{background:var(--house)}.chip .import{background:var(--import)}.chip .export{background:var(--export)}
+
+    .periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+    .period{border:1.5px solid var(--line);border-radius:28px;background:var(--card);box-shadow:0 12px 38px rgba(38,76,65,.08);padding:16px}
+    .period-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:12px}.period-head h3{margin:0;font-size:20px;letter-spacing:-.02em}.period-head span{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+    .metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{min-width:0;padding:12px;border-radius:18px;border:1px solid #e4ebe5;background:#f9fbf8}.metric small{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}.metric small::before{content:"";width:8px;height:8px;border-radius:50%;flex:0 0 auto}.metric[data-type="pv"] small::before{background:var(--solar)}.metric[data-type="house"] small::before{background:var(--house)}.metric[data-type="import"] small::before{background:var(--import)}.metric[data-type="export"] small::before{background:var(--export)}.metric strong{display:block;margin-top:5px;font-size:clamp(18px,2vw,25px);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .coverage{margin-top:12px;padding:11px 12px;border-radius:18px;background:#f3f8f4;border:1px solid #dde9e0}.coverage-top{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:var(--muted)}.coverage-top strong{color:var(--ink);font-variant-numeric:tabular-nums}.bar{height:9px;margin-top:8px;border-radius:999px;background:#e5ece7;overflow:hidden}.bar>i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--solar),var(--house));transition:width .35s ease}
+    .footnote{margin:14px 4px 0;color:var(--muted);font-size:11px;line-height:1.45;text-align:center}
+
+    @media(max-width:900px){.periods{grid-template-columns:1fr}.hero{min-height:500px}.scene{height:385px}.value-card{min-width:135px;padding:10px 12px}.value-card.solar{left:1%;top:7%}.value-card.import{right:0;top:23%}.value-card.export{right:0;bottom:7%}}
+    @media(max-width:620px){body{padding:9px}.topbar{gap:9px}.back{width:42px;height:42px;border-radius:14px}.live-pill{padding:8px 10px}.hero{border-radius:24px;padding:13px;min-height:550px}.hero-head p{max-width:210px}.scene{height:440px}.value-card{min-width:122px}.value-card strong{font-size:21px}.value-card.solar{left:0;top:5%}.value-card.house{left:42%;top:58%}.value-card.import{right:0;top:25%}.value-card.export{right:0;bottom:2%}.metrics{grid-template-columns:1fr 1fr}.period{border-radius:23px;padding:13px}}
+  </style>
+</head>
+<body>
+<main class="app">
+  <header class="topbar">
+    <a class="back" href="./index.html" aria-label="Torna a Casa 3D">←</a>
+    <div class="titlebox"><small>Casa 5B · Energia</small><h1>Flussi in tempo reale</h1></div>
+    <div id="live-pill" class="live-pill off"><i class="live-dot"></i><span>Connessione</span></div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-head">
+      <div><h2>La casa, disegnata dall'energia</h2><p>Produzione, consumo e scambio con la rete aggiornati ogni secondo.</p></div>
+      <div id="updated" class="updated">--:--:--</div>
+    </div>
+
+    <div class="scene" aria-label="Schema dei flussi energetici">
+      <svg viewBox="0 0 1100 440" role="img">
+        <defs>
+          <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#305b4f" flood-opacity=".12"/></filter>
+        </defs>
+
+        <path id="flow-solar" class="flow solar" d="M220 120 C330 95 420 145 505 205"/>
+        <path id="flow-import" class="flow import" d="M900 155 C820 155 760 185 686 230"/>
+        <path id="flow-export" class="flow export" d="M684 278 C770 315 835 325 920 326"/>
+
+        <g transform="translate(160 72)" filter="url(#softShadow)">
+          <circle cx="0" cy="0" r="42" fill="#f9d879" stroke="#18312d" stroke-width="3"/>
+          <g class="draw-stroke">
+            <path d="M0-67v-22M0 67v22M-67 0h-22M67 0h22M-48-48l-16-16M48 48l16 16M48-48l16-16M-48 48l-16 16"/>
+          </g>
+          <path d="M-76 82 C-40 60 20 62 70 83" fill="none" stroke="#d9e6dc" stroke-width="3" stroke-linecap="round"/>
+        </g>
+
+        <g transform="translate(475 190)" filter="url(#softShadow)">
+          <path d="M0 105V18L91-48l91 66v87z" fill="#fff9ee" stroke="#18312d" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M35 105V52h48v53M114 36h34v30h-34z" fill="#dff0e7" stroke="#18312d" stroke-width="3"/>
+          <path d="M-13 25L91-57 195 25" class="draw-stroke"/>
+          <path d="M44-5h95" stroke="#64a98d" stroke-width="12" stroke-linecap="round" opacity=".4"/>
+          <path d="M52-18l78 0" stroke="#64a98d" stroke-width="5" stroke-linecap="round"/>
+          <path d="M91 120c-43 0-84 7-118 22M91 120c43 0 84 7 118 22" fill="none" stroke="#d9e6dc" stroke-width="4" stroke-linecap="round"/>
+        </g>
+
+        <g transform="translate(930 205)" filter="url(#softShadow)">
+          <path d="M0-80L-48 94M0-80L48 94M-34-25H34M-42 18H42M-52 60H52M-62 94H62" class="draw-stroke"/>
+          <path d="M-84-56C-50-64-24-64 0-56M0-56c24-8 50-8 84 0" fill="none" stroke="#73827e" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="-84" cy="-56" r="4" fill="#73827e"/><circle cx="84" cy="-56" r="4" fill="#73827e"/>
+          <path d="M-80 110 C-38 96 39 96 82 110" fill="none" stroke="#d9e6dc" stroke-width="4" stroke-linecap="round"/>
+        </g>
+
+        <g transform="translate(300 340)">
+          <path d="M0 20c52-20 122-18 170 2M18 36c36-12 88-12 124 0" fill="none" stroke="#dce9df" stroke-width="5" stroke-linecap="round"/>
+          <path d="M50 0c18-18 44-22 67-11" fill="none" stroke="#84b99f" stroke-width="4" stroke-linecap="round"/>
+          <path d="M90-7c6-20 19-34 35-43" fill="none" stroke="#84b99f" stroke-width="4" stroke-linecap="round"/>
+        </g>
+      </svg>
+
+      <div class="value-card solar"><small>Fotovoltaico</small><strong id="live-pv">--</strong><span>produzione istantanea</span></div>
+      <div class="value-card house"><small>Consumo casa</small><strong id="live-house">--</strong><span>carico istantaneo</span></div>
+      <div class="value-card import"><small>Import rete</small><strong id="live-import">--</strong><span>energia dalla rete</span></div>
+      <div class="value-card export"><small>Export rete</small><strong id="live-export">--</strong><span>energia immessa</span></div>
+    </div>
+
+    <div class="legend">
+      <span class="chip"><i class="solar"></i>FV → casa</span><span class="chip"><i class="import"></i>Rete → casa</span><span class="chip"><i class="export"></i>Casa → rete</span><span class="chip"><i class="house"></i>Consumo domestico</span>
+    </div>
+  </section>
+
+  <section class="periods">
+    <article class="period" data-period="day">
+      <div class="period-head"><h3>Oggi</h3><span>giornaliero</span></div>
+      <div class="metrics">
+        <div class="metric" data-type="pv"><small>Produzione FV</small><strong>--</strong></div>
+        <div class="metric" data-type="house"><small>Consumo casa</small><strong>--</strong></div>
+        <div class="metric" data-type="import"><small>Import rete</small><strong>--</strong></div>
+        <div class="metric" data-type="export"><small>Export rete</small><strong>--</strong></div>
+      </div>
+      <div class="coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
+    </article>
+
+    <article class="period" data-period="month">
+      <div class="period-head"><h3>Mese</h3><span>mensile</span></div>
+      <div class="metrics">
+        <div class="metric" data-type="pv"><small>Produzione FV</small><strong>--</strong></div>
+        <div class="metric" data-type="house"><small>Consumo casa</small><strong>--</strong></div>
+        <div class="metric" data-type="import"><small>Import rete</small><strong>--</strong></div>
+        <div class="metric" data-type="export"><small>Export rete</small><strong>--</strong></div>
+      </div>
+      <div class="coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
+    </article>
+
+    <article class="period" data-period="year">
+      <div class="period-head"><h3>Anno</h3><span>annuale</span></div>
+      <div class="metrics">
+        <div class="metric" data-type="pv"><small>Produzione FV</small><strong>--</strong></div>
+        <div class="metric" data-type="house"><small>Consumo casa</small><strong>--</strong></div>
+        <div class="metric" data-type="import"><small>Import rete</small><strong>--</strong></div>
+        <div class="metric" data-type="export"><small>Export rete</small><strong>--</strong></div>
+      </div>
+      <div class="coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
+    </article>
+  </section>
+
+  <p class="footnote">I valori di consumo mensile/annuale vengono letti direttamente quando l'helper esiste; altrimenti sono ricavati come produzione FV + importazione − esportazione. La pagina mantiene l'ultimo dato valido in caso di una lettura Home Assistant temporaneamente fallita.</p>
+</main>
+
+<script>
+(()=>{
+  'use strict';
+
+  const config=window.CASA_DASHBOARD_CONFIG||{};
+  const haConfig=config.homeAssistant||{};
+  const fmt=new Intl.NumberFormat('it-IT',{maximumFractionDigits:2});
+  const state={states:new Map(),syncing:false,failures:0};
+
+  const IDS={
+    live:{
+      house:['sensor.vano_tecnico_solarnet_power_load_consumed','sensor.vano_tecnico_solarnet_power_load'],
+      import:['sensor.vano_tecnico_solarnet_power_grid_import','sensor.vano_tecnico_solarnet_grid_import'],
+      export:['sensor.vano_tecnico_solarnet_power_grid_export','sensor.vano_tecnico_solarnet_grid_export'],
+      pv:['sensor.vano_tecnico_solarnet_power_pv','sensor.vano_tecnico_solarnet_power_p_ac','sensor.solarnet_power_pv','sensor.solarnet_power_p_ac','sensor.fronius_power','sensor.fotovoltaico_potenza']
+    },
+    day:{
+      pv:['sensor.solarnet_energia_giornaliera','sensor.vano_tecnico_solarnet_energia_giornaliera'],
+      house:['sensor.vano_tecnico_solarnet_consumo_casa_oggi'],
+      import:['sensor.vano_tecnico_solarnet_giornaliero_import'],
+      export:['sensor.vano_tecnico_solarnet_energia_esportata_giorno']
+    },
+    month:{
+      pv:['sensor.solarnet_energia_mensile','sensor.vano_tecnico_solarnet_energia_mensile','sensor.vano_tecnico_solarnet_produzione_mensile','sensor.solarnet_produzione_mensile'],
+      house:['sensor.vano_tecnico_solarnet_consumo_casa_mese','sensor.vano_tecnico_solarnet_consumo_casa_mensile'],
+      import:['sensor.vano_tecnico_solarnet_mensile_import'],
+      export:['sensor.vano_tecnico_solarnet_energia_esportata_mese']
+    },
+    year:{
+      pv:['sensor.solarnet_energia_annuale','sensor.vano_tecnico_solarnet_energia_annuale','sensor.vano_tecnico_solarnet_produzione_annuale','sensor.solarnet_produzione_annuale'],
+      house:['sensor.vano_tecnico_solarnet_consumo_casa_anno','sensor.vano_tecnico_solarnet_consumo_casa_annuale'],
+      import:['sensor.vano_tecnico_solarnet_annuale_import'],
+      export:['sensor.vano_tecnico_solarnet_energia_esportata_anno']
+    }
+  };
+
+  const normalize=v=>String(v??'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  const valid=e=>Boolean(e&&!['unknown','unavailable','none','null',''].includes(normalize(e.state))&&Number.isFinite(Number(e.state)));
+  const unit=e=>normalize(e?.attributes?.unit_of_measurement);
+  const text=e=>normalize(`${e?.entity_id||''} ${e?.attributes?.friendly_name||''}`);
+  const haBase=()=>String(haConfig.url||'').trim().replace(/\/$/,'');
+  const usableConfig=()=>{const token=String(haConfig.token||'');return Boolean(haBase()&&token&&token!=='insert token'&&!token.includes('REPLACE_'))};
+
+  function powerW(e){if(!valid(e))return null;const n=Number(e.state),u=unit(e);if(u==='kw')return n*1000;if(u==='mw')return n*1000000;return n}
+  function energyKwh(e){if(!valid(e))return null;const n=Number(e.state),u=unit(e);if(u==='wh')return n/1000;if(u==='mwh')return n*1000;return n}
+  function first(ids,converter){for(const id of ids||[]){const e=state.states.get(id);const v=converter(e);if(Number.isFinite(v))return {entity:e,value:v}}return null}
+
+  function dynamicPvPower(){
+    let best=null,bestScore=-1;
+    for(const e of state.states.values()){
+      if(!valid(e)||!['w','kw','mw'].includes(unit(e)))continue;
+      const t=text(e);if(!t.includes('solarnet')&&!t.includes('fronius'))continue;
+      if(['grid','import','export','load','consumo','meter','rete'].some(x=>t.includes(x)))continue;
+      let score=0;if(t.includes('power'))score+=25;if(t.includes('pv'))score+=35;if(t.includes('pac')||t.includes('p ac'))score+=25;if(t.includes('fotovolta'))score+=30;
+      if(score>bestScore){bestScore=score;best=e}
+    }
+    return best?powerW(best):null;
+  }
+
+  function dynamicPvEnergy(period){
+    const words=period==='day'?['giornal','today','daily']:period==='month'?['mensil','month']:['annual','anno','year'];
+    let best=null,bestScore=-1;
+    for(const e of state.states.values()){
+      if(!valid(e)||!['wh','kwh','mwh'].includes(unit(e)))continue;
+      const t=text(e);if(!t.includes('solarnet')&&!t.includes('fronius'))continue;
+      if(['import','export','consumo casa','grid'].some(x=>t.includes(x)))continue;
+      let score=0;if(t.includes('energia')||t.includes('energy'))score+=20;if(t.includes('produz')||t.includes('yield'))score+=25;if(words.some(w=>t.includes(w)))score+=45;
+      if(score>bestScore){bestScore=score;best=e}
+    }
+    return bestScore>=45?energyKwh(best):null;
+  }
+
+  function dynamicHouseEnergy(period){
+    const words=period==='day'?['oggi','giornal','today']:period==='month'?['mese','mensil','month']:['anno','annual','year'];
+    let best=null,bestScore=-1;
+    for(const e of state.states.values()){
+      if(!valid(e)||!['wh','kwh','mwh'].includes(unit(e)))continue;
+      const t=text(e);if(!t.includes('solarnet'))continue;
+      if(!(t.includes('consumo casa')||t.includes('house consumption')||t.includes('load energy')))continue;
+      let score=30;if(words.some(w=>t.includes(w)))score+=50;
+      if(score>bestScore){bestScore=score;best=e}
+    }
+    return bestScore>=50?energyKwh(best):null;
+  }
+
+  function getLive(){
+    const house=first(IDS.live.house,powerW)?.value??0;
+    const imported=Math.max(0,first(IDS.live.import,powerW)?.value??0);
+    const exported=Math.max(0,first(IDS.live.export,powerW)?.value??0);
+    let pv=first(IDS.live.pv,powerW)?.value;
+    if(!Number.isFinite(pv))pv=dynamicPvPower();
+    if(!Number.isFinite(pv))pv=Math.max(0,house+exported-imported);
+    return {pv:Math.max(0,pv||0),house:Math.max(0,house||0),import:imported,export:exported};
+  }
+
+  function getPeriod(period){
+    const ids=IDS[period];
+    let pv=first(ids.pv,energyKwh)?.value;
+    if(!Number.isFinite(pv))pv=dynamicPvEnergy(period);
+    const imported=first(ids.import,energyKwh)?.value;
+    const exported=first(ids.export,energyKwh)?.value;
+    let house=first(ids.house,energyKwh)?.value;
+    if(!Number.isFinite(house))house=dynamicHouseEnergy(period);
+    if(!Number.isFinite(house)&&[pv,imported,exported].every(Number.isFinite))house=Math.max(0,pv+imported-exported);
+    return {pv,house,import:imported,export:exported};
+  }
+
+  function fmtPower(v){if(!Number.isFinite(v))return 'NULL';return Math.abs(v)>=1000?`${fmt.format(v/1000)} kW`:`${fmt.format(v)} W`}
+  function fmtEnergy(v){return Number.isFinite(v)?`${fmt.format(v)} kWh`:'NULL'}
+  function setText(sel,value){const n=document.querySelector(sel);if(n&&n.textContent!==value)n.textContent=value}
+
+  function renderLive(values){
+    setText('#live-pv',fmtPower(values.pv));setText('#live-house',fmtPower(values.house));setText('#live-import',fmtPower(values.import));setText('#live-export',fmtPower(values.export));
+    document.querySelector('#flow-solar')?.classList.toggle('active',values.pv>8);
+    document.querySelector('#flow-import')?.classList.toggle('active',values.import>8);
+    document.querySelector('#flow-export')?.classList.toggle('active',values.export>8);
+  }
+
+  function renderPeriod(period,values){
+    const root=document.querySelector(`[data-period="${period}"]`);if(!root)return;
+    for(const type of ['pv','house','import','export']){const node=root.querySelector(`[data-type="${type}"] strong`);const value=values[type];if(node){const next=fmtEnergy(value);if(node.textContent!==next)node.textContent=next}}
+    const selfUsed=Number.isFinite(values.pv)&&Number.isFinite(values.export)?Math.max(0,values.pv-values.export):null;
+    const coverage=Number.isFinite(selfUsed)&&Number.isFinite(values.house)&&values.house>0?Math.max(0,Math.min(100,(selfUsed/values.house)*100)):null;
+    const label=root.querySelector('.coverage strong');const bar=root.querySelector('.bar i');
+    if(label)label.textContent=Number.isFinite(coverage)?`${fmt.format(coverage)}%`:'NULL';
+    if(bar)bar.style.width=`${Number.isFinite(coverage)?coverage:0}%`;
+  }
+
+  function markConnection(ok){const pill=document.querySelector('#live-pill');if(!pill)return;pill.classList.toggle('off',!ok);pill.querySelector('span').textContent=ok?'Live':'Offline'}
+
+  async function sync(){
+    if(state.syncing||document.hidden)return;state.syncing=true;
+    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),4500);
+    try{
+      if(!usableConfig())throw new Error('Home Assistant non configurato');
+      const response=await fetch(`${haBase()}/api/states`,{headers:{Authorization:`Bearer ${haConfig.token}`,'Content-Type':'application/json'},cache:'no-store',signal:controller.signal});
+      if(!response.ok)throw new Error(`Home Assistant ${response.status}`);
+      const payload=await response.json();if(!Array.isArray(payload))throw new Error('Risposta non valida');
+      state.states=new Map(payload.map(e=>[e.entity_id,e]));state.failures=0;markConnection(true);
+      renderLive(getLive());renderPeriod('day',getPeriod('day'));renderPeriod('month',getPeriod('month'));renderPeriod('year',getPeriod('year'));
+      const now=new Date();setText('#updated',now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
+    }catch(error){
+      state.failures+=1;if(state.failures>=3)markConnection(false);
+      if(state.failures===3)console.warn('[Energia Live] Mantengo gli ultimi valori validi.',error);
+    }finally{clearTimeout(timeout);state.syncing=false}
+  }
+
+  sync();const timer=setInterval(sync,1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+  window.addEventListener('beforeunload',()=>clearInterval(timer),{once:true});
+})();
+</script>
+</body>
+</html>
