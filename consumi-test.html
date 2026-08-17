@@ -41,6 +41,10 @@
   const fmt=new Intl.NumberFormat('it-IT',{maximumFractionDigits:3});
   const costFmt=new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',minimumFractionDigits:2,maximumFractionDigits:3});
   const ENERGY_PRICE_EUR_KWH=.287;
+  const FIXED_POWER_LOADS=[
+    {label:'Alexa',power:3.2},
+    {label:'Dispositivi Shelly',power:7}
+  ];
   const state={states:new Map(),metrics:new Map(),syncing:false};
 
   const DEVICES={
@@ -116,7 +120,10 @@
   function patchGrandLive(countedPower){
     const breakdown=document.querySelector('[data-power-breakdown]');
     if(breakdown){
-      const active=Object.entries(DEVICES).map(([id,device])=>({label:device.label,power:Number(state.metrics.get(id)?.power)||0})).filter(item=>item.power>0.05).sort((a,b)=>b.power-a.power);
+      const active=[
+        ...Object.entries(DEVICES).map(([id,device])=>({label:device.label,power:Number(state.metrics.get(id)?.power)||0})).filter(item=>item.power>0.05),
+        ...FIXED_POWER_LOADS
+      ].sort((a,b)=>b.power-a.power);
       breakdown.innerHTML=active.length?active.map(item=>`<span class="power-chip"><span>${item.label}</span><strong>+${formatPower(item.power)}</strong></span>`).join(''):'<span class="power-empty">Nessun oggetto con consumo rilevato.</span>';
     }
     const housePower=configuredPower('housePower');
@@ -137,7 +144,9 @@
   function updateDevice(id){const d=DEVICES[id],p=watts(resolvePower(d));const values={power:Number.isFinite(p)?p:0,today:periodValue(d,'today'),yesterday:periodValue(d,'yesterday'),month:periodValue(d,'month')};if(d.annualHelper)values.annual=periodValue(d,'annual');state.metrics.set(id,values);for(const[k,v]of Object.entries(values))patchDevice(id,k,v)}
   function updateTotals(){
     for(const[group,ids]of Object.entries(GROUPS)){const t={power:0,today:0,yesterday:0,month:0};for(const id of ids){const v=state.metrics.get(id)||{};for(const k of Object.keys(t))t[k]+=Number.isFinite(Number(v[k]))?Number(v[k]):0}for(const[k,v]of Object.entries(t))patchTotal(group,k,v)}
-    const all={power:0,today:0,yesterday:0,month:0};for(const id of Object.keys(DEVICES)){const v=state.metrics.get(id)||{};for(const k of Object.keys(all))all[k]+=Number.isFinite(Number(v[k]))?Number(v[k]):0}for(const[k,v]of Object.entries(all))patchGrand(k,v);patchGrandLive(all.power)
+    const all={power:0,today:0,yesterday:0,month:0};for(const id of Object.keys(DEVICES)){const v=state.metrics.get(id)||{};for(const k of Object.keys(all))all[k]+=Number.isFinite(Number(v[k]))?Number(v[k]):0}
+    all.power+=FIXED_POWER_LOADS.reduce((sum,item)=>sum+item.power,0);
+    for(const[k,v]of Object.entries(all))patchGrand(k,v);patchGrandLive(all.power)
   }
   async function sync(){if(state.syncing)return;state.syncing=true;try{if(!usableConfig())throw new Error('URL o token non configurati in config.js');const payload=await haFetch('/api/states');state.states=new Map(payload.map(e=>[e.entity_id,e]));Object.keys(DEVICES).forEach(updateDevice);updateTotals()}catch(e){console.error('[Consumi Totali]',e)}finally{state.syncing=false}}
   render();sync();setInterval(sync,5000);
