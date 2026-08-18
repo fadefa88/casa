@@ -1,34 +1,52 @@
 #!/usr/bin/env python3
-"""Public IP and failover monitor for the Casa dashboard.
+"""Public IP/failover monitor and small Casa dashboard backend.
 
-The process checks the public IP from the mini-PC, resolves the routed prefix
-and origin ASN through RIPEstat, classifies the active WAN, records failover
-start/end events, persists a JSON status file and exposes a small local HTTP
-API. It uses only the Python standard library.
+Besides the network-status API, the same service exposes a restricted Home
+Assistant energy proxy. Browser clients never receive the HA token: the token
+is kept server-side and the frontend only receives SolarNet/Fronius energy
+states plus aggregated long-term statistics.
 """
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import ipaddress
 import json
 import logging
 import os
 import signal
+import socket
+import ssl
+import struct
 import threading
 import time
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, time as dt_time, timedelta, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Iterable
 from urllib.error import URLError
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse, urlsplit
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 LOG = logging.getLogger("casa-network-monitor")
 STOP_EVENT = threading.Event()
 STATUS_LOCK = threading.Lock()
+
+ENERGY_TIMEZONE = ZoneInfo("Europe/Rome")
+ENERGY_HISTORY_START = date(2026, 8, 17)
+ENERGY_ENTITY_IDS: dict[str, tuple[str, ...]] = {
+    "pv": (
+        "sensor.solarnet_energia_giornaliera",
+        "sensor.vano_tecnico_solarnet_energia_giornaliera",
+    ),
+    "house": ("sensor.vano_tecnico_solarnet_consumo_casa_oggi",),
+    "import": ("sensor.vano_tecnico_solarnet_giornaliero_import",),
+    "export": ("sensor.vano_tecnico_solarnet_energia_esportata_giorno",),
+}
 
 
 def utc_now() -> str:
@@ -72,6 +90,8 @@ class Config:
     listen_port: int
     cors_origin: str
     data_dir: Path
+    home_assistant_url: str
+    home_assistant_token: str
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -95,6 +115,8 @@ class Config:
             listen_port=int(os.getenv("LISTEN_PORT", "8787")),
             cors_origin=os.getenv("CORS_ORIGIN", "*"),
             data_dir=Path(os.getenv("DATA_DIR", "/var/lib/casa-network-monitor")),
+            home_assistant_url=os.getenv("HA_URL", "http://homeassistant.local:8123").rstrip("/"),
+            home_assistant_token=os.getenv("HA_TOKEN", "").strip(),
         )
 
 
@@ -116,6 +138,129 @@ class Status:
     last_failover_duration_seconds: int | None = None
     consecutive_failures: int = 0
     error: str | None = None
+
+
+class HomeAssistantError(RuntimeError):
+    """Home Assistant API or websocket failure."""
+
+
+def _read_exact(sock: socket.socket, length: int) -> bytes:
+    data = bytearray()
+    while len(data) < length:
+        chunk = sock.recv(length - len(data))
+        if not chunk:
+            raise HomeAssistantError("Home Assistant websocket closed unexpectedly")
+        data.extend(chunk)
+    return bytes(data)
+
+
+def _ws_send_frame(sock: socket.socket, payload: bytes, opcode: int = 0x1) -> None:
+    mask = os.urandom(4)
+    first = 0x80 | (opcode & 0x0F)
+    length = len(payload)
+    if length < 126:
+        header = struct.pack("!BB", first, 0x80 | length)
+    elif length <= 0xFFFF:
+        header = struct.pack("!BBH", first, 0x80 | 126, length)
+    else:
+        header = struct.pack("!BBQ", first, 0x80 | 127, length)
+    masked = bytes(value ^ mask[index % 4] for index, value in enumerate(payload))
+    sock.sendall(header + mask + masked)
+
+
+def _ws_receive_message(sock: socket.socket) -> str:
+    fragments = bytearray()
+    started = False
+    while True:
+        first, second = struct.unpack("!BB", _read_exact(sock, 2))
+        fin = bool(first & 0x80)
+        opcode = first & 0x0F
+        masked = bool(second & 0x80)
+        length = second & 0x7F
+        if length == 126:
+            length = struct.unpack("!H", _read_exact(sock, 2))[0]
+        elif length == 127:
+            length = struct.unpack("!Q", _read_exact(sock, 8))[0]
+        if length > 16 * 1024 * 1024:
+            raise HomeAssistantError("Home Assistant websocket response too large")
+        mask = _read_exact(sock, 4) if masked else b""
+        payload = _read_exact(sock, length)
+        if masked:
+            payload = bytes(value ^ mask[index % 4] for index, value in enumerate(payload))
+
+        if opcode == 0x8:
+            raise HomeAssistantError("Home Assistant websocket closed")
+        if opcode == 0x9:
+            _ws_send_frame(sock, payload, opcode=0xA)
+            continue
+        if opcode == 0xA:
+            continue
+        if opcode == 0x1:
+            fragments = bytearray(payload)
+            started = True
+        elif opcode == 0x0 and started:
+            fragments.extend(payload)
+        else:
+            continue
+        if fin:
+            return fragments.decode("utf-8")
+
+
+def _ws_connect(url: str, timeout: int) -> socket.socket:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"ws", "wss"} or not parsed.hostname:
+        raise HomeAssistantError("Invalid Home Assistant websocket URL")
+    port = parsed.port or (443 if parsed.scheme == "wss" else 80)
+    raw = socket.create_connection((parsed.hostname, port), timeout=timeout)
+    sock: socket.socket
+    if parsed.scheme == "wss":
+        context = ssl.create_default_context()
+        sock = context.wrap_socket(raw, server_hostname=parsed.hostname)
+    else:
+        sock = raw
+    sock.settimeout(timeout)
+
+    path = parsed.path or "/"
+    if parsed.query:
+        path += f"?{parsed.query}"
+    default_port = 443 if parsed.scheme == "wss" else 80
+    host = parsed.hostname if port == default_port else f"{parsed.hostname}:{port}"
+    key = base64.b64encode(os.urandom(16)).decode("ascii")
+    request = (
+        f"GET {path} HTTP/1.1\r\n"
+        f"Host: {host}\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        f"Sec-WebSocket-Key: {key}\r\n"
+        "Sec-WebSocket-Version: 13\r\n"
+        "\r\n"
+    )
+    sock.sendall(request.encode("ascii"))
+
+    response = bytearray()
+    while b"\r\n\r\n" not in response:
+        chunk = sock.recv(4096)
+        if not chunk:
+            raise HomeAssistantError("Home Assistant websocket handshake failed")
+        response.extend(chunk)
+        if len(response) > 65536:
+            raise HomeAssistantError("Home Assistant websocket handshake too large")
+    header = bytes(response).split(b"\r\n\r\n", 1)[0].decode("latin-1")
+    status_line = header.split("\r\n", 1)[0]
+    if " 101 " not in f" {status_line} ":
+        raise HomeAssistantError(f"Home Assistant websocket handshake rejected: {status_line}")
+
+    accept_expected = base64.b64encode(
+        hashlib.sha1((key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode("ascii")).digest()
+    ).decode("ascii")
+    headers = {}
+    for line in header.split("\r\n")[1:]:
+        if ":" in line:
+            name, value = line.split(":", 1)
+            headers[name.strip().lower()] = value.strip()
+    if headers.get("sec-websocket-accept") != accept_expected:
+        raise HomeAssistantError("Home Assistant websocket handshake validation failed")
+    return sock
 
 
 class Monitor:
@@ -292,7 +437,7 @@ class Monitor:
             origin_asns: list[int] = []
             try:
                 routed_prefix, origin_asns = self.fetch_network_info(public_ip)
-            except Exception as exc:  # noqa: BLE001 - ASN lookup has a local fallback
+            except Exception as exc:
                 LOG.warning("Network-info lookup failed for %s: %s", public_ip, exc)
 
             new_link, reason = self.classify(public_ip, origin_asns)
@@ -318,7 +463,7 @@ class Monitor:
                 new_link,
                 reason,
             )
-        except Exception as exc:  # noqa: BLE001 - keep monitor alive
+        except Exception as exc:
             LOG.warning("Public IP check failed: %s", exc)
             with STATUS_LOCK:
                 self.status.checked_at = utc_now()
@@ -338,12 +483,177 @@ class Monitor:
             elapsed = time.monotonic() - started
             STOP_EVENT.wait(max(1.0, self.config.interval_seconds - elapsed))
 
+    def _require_ha(self) -> None:
+        if not self.config.home_assistant_url or not self.config.home_assistant_token:
+            raise HomeAssistantError("Home Assistant URL/token not configured server-side")
+
+    def _ha_request_json(self, path: str) -> object:
+        self._require_ha()
+        request = Request(
+            f"{self.config.home_assistant_url}{path}",
+            headers={
+                "Authorization": f"Bearer {self.config.home_assistant_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "CasaDashboardBackend/1.0",
+            },
+        )
+        with urlopen(request, timeout=self.config.request_timeout_seconds) as response:
+            return json.loads(response.read(8 * 1024 * 1024).decode("utf-8"))
+
+    def energy_states(self) -> list[dict[str, object]]:
+        payload = self._ha_request_json("/api/states")
+        if not isinstance(payload, list):
+            raise HomeAssistantError("Invalid Home Assistant states response")
+        result: list[dict[str, object]] = []
+        for raw in payload:
+            if not isinstance(raw, dict):
+                continue
+            entity_id = str(raw.get("entity_id") or "").lower()
+            if not entity_id.startswith("sensor."):
+                continue
+            if not any(word in entity_id for word in ("solarnet", "fronius", "fotovoltaico")):
+                continue
+            result.append(raw)
+        return result
+
+    def _ha_ws_url(self) -> str:
+        base = self.config.home_assistant_url
+        if base.startswith("https://"):
+            return "wss://" + base.removeprefix("https://") + "/api/websocket"
+        if base.startswith("http://"):
+            return "ws://" + base.removeprefix("http://") + "/api/websocket"
+        raise HomeAssistantError("Unsupported Home Assistant URL")
+
+    def _ha_ws_command(self, command: dict[str, object]) -> object:
+        self._require_ha()
+        sock = _ws_connect(self._ha_ws_url(), self.config.request_timeout_seconds)
+        try:
+            sent_command = False
+            while True:
+                message = json.loads(_ws_receive_message(sock))
+                message_type = message.get("type")
+                if message_type == "auth_required":
+                    _ws_send_frame(
+                        sock,
+                        json.dumps({
+                            "type": "auth",
+                            "access_token": self.config.home_assistant_token,
+                        }).encode("utf-8"),
+                    )
+                    continue
+                if message_type == "auth_invalid":
+                    raise HomeAssistantError("Home Assistant authentication rejected")
+                if message_type == "auth_ok" and not sent_command:
+                    payload = {"id": 1, **command}
+                    _ws_send_frame(sock, json.dumps(payload).encode("utf-8"))
+                    sent_command = True
+                    continue
+                if message_type == "result" and message.get("id") == 1:
+                    if not message.get("success"):
+                        error = message.get("error") or {}
+                        raise HomeAssistantError(str(error.get("message") or "Home Assistant statistics error"))
+                    return message.get("result")
+        finally:
+            try:
+                _ws_send_frame(sock, b"", opcode=0x8)
+            except Exception:
+                pass
+            try:
+                sock.close()
+            except Exception:
+                pass
+
+    @staticmethod
+    def _row_change(rows: object, start_ms: int, end_ms: int) -> float | None:
+        if not isinstance(rows, list):
+            return None
+        values: list[float] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            try:
+                change = float(row["change"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            row_start = row.get("start")
+            row_end = row.get("end")
+            if isinstance(row_start, (int, float)) and isinstance(row_end, (int, float)):
+                if row_end <= start_ms or row_start >= end_ms:
+                    continue
+            values.append(change)
+        return sum(values) if values else None
+
+    def energy_history(self, date_text: str) -> dict[str, object]:
+        try:
+            selected = date.fromisoformat(date_text)
+        except ValueError as exc:
+            raise ValueError("Invalid date; expected YYYY-MM-DD") from exc
+        if selected < ENERGY_HISTORY_START:
+            raise ValueError("Energy history starts on 2026-08-17")
+        today = datetime.now(ENERGY_TIMEZONE).date()
+        if selected >= today:
+            raise ValueError("Persistent history is available for completed days only")
+
+        start = datetime.combine(selected, dt_time.min, tzinfo=ENERGY_TIMEZONE)
+        end = start + timedelta(days=1)
+        statistic_ids = sorted({entity for ids in ENERGY_ENTITY_IDS.values() for entity in ids})
+        result = self._ha_ws_command({
+            "type": "recorder/statistics_during_period",
+            "start_time": start.isoformat(),
+            "end_time": end.isoformat(),
+            "statistic_ids": statistic_ids,
+            "period": "day",
+            "types": ["change"],
+            "units": {"energy": "kWh"},
+        })
+        if not isinstance(result, dict):
+            raise HomeAssistantError("Invalid Home Assistant statistics response")
+
+        start_ms = int(start.timestamp() * 1000)
+        end_ms = int(end.timestamp() * 1000)
+        values: dict[str, float | None] = {}
+        for kind, candidates in ENERGY_ENTITY_IDS.items():
+            value = None
+            for entity_id in candidates:
+                candidate = self._row_change(result.get(entity_id), start_ms, end_ms)
+                if candidate is not None:
+                    value = candidate
+                    break
+            values[kind] = value
+
+        if values["house"] is None and all(values[key] is not None for key in ("pv", "import", "export")):
+            values["house"] = max(
+                0.0,
+                float(values["pv"]) + float(values["import"]) - float(values["export"]),
+            )
+
+        coverage = None
+        if (
+            values["pv"] is not None
+            and values["export"] is not None
+            and values["house"] is not None
+            and float(values["house"]) > 0
+        ):
+            self_used = max(0.0, float(values["pv"]) - float(values["export"]))
+            coverage = max(0.0, min(100.0, self_used / float(values["house"]) * 100.0))
+
+        rounded = {
+            key: round(float(value), 4) if value is not None else None
+            for key, value in values.items()
+        }
+        return {
+            "date": selected.isoformat(),
+            **rounded,
+            "coverage": round(coverage, 2) if coverage is not None else None,
+            "source": "home_assistant_long_term_statistics",
+        }
+
 
 class ApiHandler(BaseHTTPRequestHandler):
     monitor: Monitor
     cors_origin: str
 
-    def _send_json(self, status: HTTPStatus, payload: dict[str, object]) -> None:
+    def _send_json(self, status: HTTPStatus, payload: object) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status.value)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -355,14 +665,40 @@ class ApiHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_OPTIONS(self) -> None:  # noqa: N802
+    def do_OPTIONS(self) -> None:
         self._send_json(HTTPStatus.NO_CONTENT, {})
 
-    def do_GET(self) -> None:  # noqa: N802
-        if self.path.rstrip("/") == "/api/network-status":
+    def do_GET(self) -> None:
+        parsed = urlsplit(self.path)
+        if parsed.path.rstrip("/") == "/api/network-status":
+            query = parse_qs(parsed.query)
+            view = (query.get("view") or [""])[0]
+            try:
+                if view == "energy-states":
+                    self._send_json(HTTPStatus.OK, self.monitor.energy_states())
+                    return
+                if view == "energy-history":
+                    date_text = (query.get("date") or [""])[0]
+                    if not date_text:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing_date"})
+                        return
+                    self._send_json(HTTPStatus.OK, self.monitor.energy_history(date_text))
+                    return
+            except ValueError as exc:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid_request", "message": str(exc)})
+                return
+            except (HomeAssistantError, URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+                LOG.warning("Energy API request failed: %s", exc)
+                self._send_json(
+                    HTTPStatus.SERVICE_UNAVAILABLE,
+                    {"error": "home_assistant_unavailable", "message": str(exc)},
+                )
+                return
+
             self._send_json(HTTPStatus.OK, self.monitor.snapshot())
             return
-        if self.path.rstrip("/") == "/healthz":
+
+        if parsed.path.rstrip("/") == "/healthz":
             snapshot = self.monitor.snapshot()
             status = HTTPStatus.OK if snapshot.get("healthy") else HTTPStatus.SERVICE_UNAVAILABLE
             self._send_json(status, {
@@ -370,6 +706,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                 "checked_at": snapshot.get("checked_at"),
             })
             return
+
         self._send_json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
 
     def log_message(self, format_string: str, *args: object) -> None:
@@ -398,7 +735,7 @@ def main() -> int:
 
     worker = threading.Thread(target=monitor.run, name="ip-monitor", daemon=True)
     worker.start()
-    LOG.info("Network status API listening on http://%s:%s", config.listen_host, config.listen_port)
+    LOG.info("Casa backend listening on http://%s:%s", config.listen_host, config.listen_port)
     try:
         server.serve_forever(poll_interval=0.5)
     finally:
