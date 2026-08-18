@@ -201,9 +201,8 @@
   const config=window.CASA_DASHBOARD_CONFIG||{};
   const haConfig=config.homeAssistant||{};
   const fmt=new Intl.NumberFormat('it-IT',{maximumFractionDigits:2});
-  const state={states:new Map(),syncing:false,failures:0};
+  const state={states:new Map(),syncing:false,failures:0,currentDayValues:null,historyRequestSeq:0};
   const HISTORY_START='2026-08-17';
-  const HISTORY_KEY='casa5b_energy_daily_history_v1';
 
   const IDS={
     live:{
@@ -304,24 +303,6 @@
     return {pv,house,import:imported,export:exported};
   }
 
-  function lastPeriod(ids){
-    for(const id of ids||[]){
-      const e=state.states.get(id);
-      const value=rawEnergyKwh(e,e?.attributes?.last_period);
-      if(Number.isFinite(value))return value;
-    }
-    return null;
-  }
-
-  function getPreviousDayPeriod(){
-    let pv=lastPeriod(IDS.day.pv);
-    const imported=lastPeriod(IDS.day.import);
-    const exported=lastPeriod(IDS.day.export);
-    let house=lastPeriod(IDS.day.house);
-    if(!Number.isFinite(house)&&[pv,imported,exported].every(Number.isFinite))house=Math.max(0,pv+imported-exported);
-    return {pv,house,import:imported,export:exported};
-  }
-
   function fmtPower(v){if(!Number.isFinite(v))return 'NULL';return Math.abs(v)>=1000?`${fmt.format(v/1000)} kW`:`${fmt.format(v)} W`}
   function fmtEnergy(v){return Number.isFinite(v)?`${fmt.format(v)} kWh`:'NULL'}
   function setText(sel,value){const n=document.querySelector(sel);if(n&&n.textContent!==value)n.textContent=value}
@@ -351,64 +332,127 @@
     return `${y}-${m}-${d}`;
   }
   function dateFromKey(key){const [y,m,d]=String(key).split('-').map(Number);return new Date(y,m-1,d,12,0,0)}
-  function previousDateKey(date=new Date()){const d=new Date(date.getFullYear(),date.getMonth(),date.getDate()-1,12,0,0);return dateKey(d)}
-  function roundHistory(v){return Number.isFinite(v)?Math.round(v*10000)/10000:null}
-  function readHistory(){
-    try{const parsed=JSON.parse(localStorage.getItem(HISTORY_KEY)||'{}');return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{}}
-    catch(_){return {}}
-  }
-  function writeHistory(history){try{localStorage.setItem(HISTORY_KEY,JSON.stringify(history));return true}catch(_){return false}}
-  function saveHistoryDay(key,values,finalized=false){
-    if(key<HISTORY_START)return;
-    const history=readHistory(),old=history[key]||{},next={date:key};
-    for(const type of ['pv','house','import','export']){
-      const value=roundHistory(values?.[type]);
-      next[type]=Number.isFinite(value)?value:(Number.isFinite(old[type])?old[type]:null);
-    }
-    next.coverage=roundHistory(coverageOf(next));
-    next.finalized=Boolean(finalized||old.finalized);
-    next.updatedAt=new Date().toISOString();
-    history[key]=next;
-    writeHistory(history);
-  }
-  function saveCurrentHistory(values,now){
-    const key=dateKey(now);if(key>=HISTORY_START)saveHistoryDay(key,values,false);
-  }
-  function closePreviousHistory(now){
-    const key=previousDateKey(now);if(key<HISTORY_START)return;
-    const values=getPreviousDayPeriod();
-    if(Object.values(values).some(Number.isFinite))saveHistoryDay(key,values,true);
-  }
   function historyLabel(key){
     if(!key)return '--';
     try{return dateFromKey(key).toLocaleDateString('it-IT',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}
     catch(_){return key}
   }
-  function renderHistory(key){
-    const history=readHistory(),record=history[key]||null;
+  function historyEntityId(type){
+    for(const id of IDS.day[type]||[])if(state.states.has(id))return id;
+    return IDS.day[type]?.[0]||null;
+  }
+  function historyRange(key){
+    const [y,m,d]=String(key).split('-').map(Number);
+    const start=new Date(y,m-1,d,0,0,0,0);
+    const end=new Date(y,m-1,d+1,0,0,0,0);
+    return {start,end,startIso:start.toISOString(),endIso:end.toISOString()};
+  }
+  function wsUrl(){
+    const base=haBase();
+    if(!base)return '';
+    return `${base.replace(/^http:/i,'ws:').replace(/^https:/i,'wss:')}/api/websocket`;
+  }
+  function haWsCommand(command,timeoutMs=8000){
+    return new Promise((resolve,reject)=>{
+      let socket=null,settled=false,timer=null,commandId=1;
+      const finish=(error,result)=>{
+        if(settled)return;settled=true;if(timer)clearTimeout(timer);
+        try{socket?.close()}catch(_){}
+        error?reject(error):resolve(result);
+      };
+      try{socket=new WebSocket(wsUrl())}catch(error){finish(error);return}
+      timer=setTimeout(()=>finish(new Error('Timeout statistiche Home Assistant')),timeoutMs);
+      socket.addEventListener('error',()=>finish(new Error('WebSocket Home Assistant non disponibile')));
+      socket.addEventListener('message',event=>{
+        let msg;try{msg=JSON.parse(event.data)}catch(_){return}
+        if(msg.type==='auth_required'){
+          socket.send(JSON.stringify({type:'auth',access_token:haConfig.token}));
+          return;
+        }
+        if(msg.type==='auth_invalid'){finish(new Error('Autenticazione Home Assistant non valida'));return}
+        if(msg.type==='auth_ok'){
+          socket.send(JSON.stringify({id:commandId,...command}));
+          return;
+        }
+        if(msg.type==='result'&&msg.id===commandId){
+          if(msg.success)finish(null,msg.result);
+          else finish(new Error(msg.error?.message||'Errore statistiche Home Assistant'));
+        }
+      });
+    });
+  }
+  async function fetchHistoryDay(key){
+    const ids={};
+    for(const type of ['pv','house','import','export'])ids[type]=historyEntityId(type);
+    const statisticIds=[...new Set(Object.values(ids).filter(Boolean))];
+    if(statisticIds.length<4)throw new Error('Uno o più sensori giornalieri non sono disponibili');
+    const range=historyRange(key);
+    const result=await haWsCommand({
+      type:'recorder/statistics_during_period',
+      start_time:range.startIso,
+      end_time:range.endIso,
+      statistic_ids:statisticIds,
+      period:'day',
+      types:['change'],
+      units:{energy:'kWh'}
+    });
+    const values={pv:null,house:null,import:null,export:null};
+    const startMs=range.start.getTime(),endMs=range.end.getTime();
+    for(const [type,id] of Object.entries(ids)){
+      const rows=Array.isArray(result?.[id])?result[id]:[];
+      const changes=rows.filter(row=>{
+        const rowStart=Number(row?.start),rowEnd=Number(row?.end);
+        return Number.isFinite(Number(row?.change))&&(!Number.isFinite(rowStart)||!Number.isFinite(rowEnd)||(rowEnd>startMs&&rowStart<endMs));
+      }).map(row=>Number(row.change));
+      if(changes.length)values[type]=changes.reduce((sum,value)=>sum+value,0);
+    }
+    if(!Number.isFinite(values.house)&&[values.pv,values.import,values.export].every(Number.isFinite))values.house=Math.max(0,values.pv+values.import-values.export);
+    return values;
+  }
+  function renderHistoryValues(key,values,statusText){
     setText('#history-date-label',historyLabel(key));
     for(const type of ['pv','house','import','export']){
       const node=document.querySelector(`[data-history-type="${type}"] strong`);
-      if(node)node.textContent=record?fmtEnergy(record[type]):'--';
+      if(node)node.textContent=values?fmtEnergy(values[type]):'--';
     }
-    const coverage=record&&Number.isFinite(record.coverage)?record.coverage:null;
+    const coverage=values?coverageOf(values):null;
     const root=document.querySelector('.history-coverage');
     if(root){
       const label=root.querySelector('strong'),bar=root.querySelector('.bar i');
       if(label)label.textContent=Number.isFinite(coverage)?`${fmt.format(coverage)}%`:'--';
       if(bar)bar.style.width=`${Number.isFinite(coverage)?coverage:0}%`;
     }
-    const status=document.querySelector('#history-status');
-    if(status){
-      const today=dateKey();
-      status.textContent=!record?'Nessun dato':record.finalized?'Giorno chiuso':key===today?'In aggiornamento':'Salvato';
+    setText('#history-status',statusText||'Nessun dato');
+  }
+  async function loadHistoryDay(key){
+    if(!key||key<HISTORY_START)return;
+    const today=dateKey();
+    if(key===today){
+      renderHistoryValues(key,state.currentDayValues,'Oggi · live');
+      return;
+    }
+    const requestSeq=++state.historyRequestSeq;
+    renderHistoryValues(key,null,'Caricamento…');
+    try{
+      const values=await fetchHistoryDay(key);
+      if(requestSeq!==state.historyRequestSeq)return;
+      const hasData=Object.values(values).some(Number.isFinite);
+      renderHistoryValues(key,hasData?values:null,hasData?'Storico HA':'Nessun dato');
+    }catch(error){
+      if(requestSeq!==state.historyRequestSeq)return;
+      console.warn('[Energia Live] Storico Home Assistant non disponibile.',error);
+      renderHistoryValues(key,null,'Errore storico');
     }
   }
   function updateHistoryCalendar(now=new Date()){
     const input=document.querySelector('#history-date');if(!input)return;
     const today=dateKey(now);input.min=HISTORY_START;input.max=today;
-    if(!input.value||input.value<HISTORY_START||input.value>today)input.value=today>=HISTORY_START?today:HISTORY_START;
-    renderHistory(input.value);
+    if(!input.value||input.value<HISTORY_START||input.value>today){
+      input.value=today>=HISTORY_START?today:HISTORY_START;
+      loadHistoryDay(input.value);
+    }else if(input.value===today){
+      renderHistoryValues(today,state.currentDayValues,'Oggi · live');
+    }
   }
 
   function markConnection(ok){const pill=document.querySelector('#live-pill');if(!pill)return;pill.classList.toggle('off',!ok);pill.querySelector('span').textContent=ok?'Live':'Offline'}
@@ -422,11 +466,9 @@
       if(!response.ok)throw new Error(`Home Assistant ${response.status}`);
       const payload=await response.json();if(!Array.isArray(payload))throw new Error('Risposta non valida');
       state.states=new Map(payload.map(e=>[e.entity_id,e]));state.failures=0;markConnection(true);
-      const dayValues=getPeriod('day');
+      const dayValues=getPeriod('day');state.currentDayValues=dayValues;
       renderLive(getLive());renderPeriod('day',dayValues);renderPeriod('month',getPeriod('month'));renderPeriod('year',getPeriod('year'));
       const now=new Date();
-      closePreviousHistory(now);
-      saveCurrentHistory(dayValues,now);
       updateHistoryCalendar(now);
       setText('#updated',now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
     }catch(error){
@@ -436,7 +478,7 @@
   }
 
   const historyInput=document.querySelector('#history-date');
-  if(historyInput)historyInput.addEventListener('change',()=>renderHistory(historyInput.value));
+  if(historyInput)historyInput.addEventListener('change',()=>loadHistoryDay(historyInput.value));
   updateHistoryCalendar(new Date());
   sync();const timer=setInterval(sync,1000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
