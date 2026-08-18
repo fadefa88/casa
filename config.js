@@ -174,3 +174,69 @@ window.CASA_DASHBOARD_CONFIG = {
     gateButton: ['button.apri_cancello', 'button.cancello']
   }
 };
+
+// Energia Live usa il backend same-origin: il browser non deve raggiungere
+// direttamente Home Assistant quando la pagina e' pubblicata tramite Cloudflare.
+(()=>{
+  if(!/\/energia-live\.html$/i.test(window.location.pathname))return;
+
+  const nativeFetch=window.fetch.bind(window);
+  const backendUrl=(view,date='')=>{
+    const url=new URL('/api/network-status',window.location.origin);
+    url.searchParams.set('view',view);
+    if(date)url.searchParams.set('date',date);
+    return url.toString();
+  };
+  const romeDateKey=value=>{
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(value));
+    const get=type=>parts.find(part=>part.type===type)?.value||'';
+    return `${get('year')}-${get('month')}-${get('day')}`;
+  };
+
+  window.fetch=(input,init={})=>{
+    try{
+      const raw=typeof input==='string'||input instanceof URL?String(input):String(input?.url||'');
+      const url=new URL(raw,window.location.href);
+      if(url.pathname.endsWith('/api/states')){
+        return nativeFetch(backendUrl('energy-states'),{cache:'no-store',signal:init?.signal,credentials:'same-origin'});
+      }
+    }catch(_){ }
+    return nativeFetch(input,init);
+  };
+
+  class EnergyHistorySocket{
+    constructor(url){
+      this.url=String(url||'');this.readyState=0;this.listeners=new Map();
+      setTimeout(()=>{this.readyState=1;this.emit('open',{});this.message({type:'auth_required',ha_version:'backend'});},0);
+    }
+    addEventListener(type,callback){if(typeof callback!=='function')return;const list=this.listeners.get(type)||[];list.push(callback);this.listeners.set(type,list)}
+    removeEventListener(type,callback){const list=this.listeners.get(type)||[];this.listeners.set(type,list.filter(item=>item!==callback))}
+    emit(type,event){for(const callback of this.listeners.get(type)||[]){try{callback.call(this,event)}catch(error){console.error('[Energia Live proxy]',error)}}}
+    message(payload){this.emit('message',{data:JSON.stringify(payload)})}
+    send(raw){
+      let msg;try{msg=JSON.parse(raw)}catch(_){return}
+      if(msg.type==='auth'){
+        setTimeout(()=>this.message({type:'auth_ok',ha_version:'backend'}),0);return;
+      }
+      if(msg.type!=='recorder/statistics_during_period')return;
+      const date=romeDateKey(msg.start_time);
+      nativeFetch(backendUrl('energy-history',date),{cache:'no-store',credentials:'same-origin'})
+        .then(async response=>{
+          const payload=await response.json().catch(()=>({}));
+          if(!response.ok)throw new Error(payload?.message||`Backend energia ${response.status}`);
+          const kindFor=id=>id.includes('consumo_casa')?'house':id.includes('import')?'import':id.includes('esportata')?'export':'pv';
+          const start=Date.parse(msg.start_time),end=Date.parse(msg.end_time);
+          const result={};
+          for(const id of msg.statistic_ids||[]){
+            const value=Number(payload[kindFor(id)]);
+            result[id]=Number.isFinite(value)?[{start,end,change:value}]:[];
+          }
+          this.message({id:msg.id,type:'result',success:true,result});
+        })
+        .catch(error=>this.message({id:msg.id,type:'result',success:false,error:{code:'energy_backend',message:String(error?.message||error)}}));
+    }
+    close(){if(this.readyState===3)return;this.readyState=3;this.emit('close',{})}
+  }
+  EnergyHistorySocket.CONNECTING=0;EnergyHistorySocket.OPEN=1;EnergyHistorySocket.CLOSING=2;EnergyHistorySocket.CLOSED=3;
+  window.WebSocket=EnergyHistorySocket;
+})();
