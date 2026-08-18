@@ -1,5 +1,5 @@
 [Unit]
-Description=Casa public IP and failover monitor
+Description=Casa public IP, failover and energy backend
 Wants=network-online.target
 After=network-online.target
 
@@ -7,6 +7,7 @@ After=network-online.target
 Type=simple
 DynamicUser=yes
 WorkingDirectory=/opt/casa-repo/backend
+EnvironmentFile=-/etc/casa3d.env
 EnvironmentFile=-/etc/casa-network-monitor.env
 Environment=DATA_DIR=/var/lib/casa-network-monitor
 ExecStart=/usr/bin/python3 /opt/casa-repo/backend/network_monitor.py
