@@ -122,7 +122,6 @@ window.CASA_DASHBOARD_CONFIG = {
       'sensor.media_hdd_power'
     ],
 
-
     tvToday: ['sensor.tv_today_energy', 'sensor.tv_energia_oggi'],
     tvYesterday: ['sensor.tv_yesterday_energy', 'sensor.tv_energia_ieri'],
     tvMonth: ['sensor.tv_month_energy', 'sensor.tv_energia_mese'],
@@ -175,10 +174,11 @@ window.CASA_DASHBOARD_CONFIG = {
   }
 };
 
-// Energia Live usa il backend same-origin: il browser non deve raggiungere
-// direttamente Home Assistant quando la pagina e' pubblicata tramite Cloudflare.
+// Energia Live usa il backend same-origin solo sul dominio pubblico.
+// In locale casa3d.fritz.box continua a parlare direttamente con Home Assistant.
 (()=>{
   if(!/\/energia-live\.html$/i.test(window.location.pathname))return;
+  if(window.location.hostname!=='consumi.lucahome.uk')return;
 
   const nativeFetch=window.fetch.bind(window);
   const backendUrl=(view,date='')=>{
