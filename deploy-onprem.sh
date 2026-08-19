@@ -71,6 +71,11 @@ chown -R www-data:www-data "$WEBROOT"
 find "$WEBROOT" -type d -exec chmod 755 {} +
 find "$WEBROOT" -type f -exec chmod 644 {} +
 
+if systemctl list-unit-files --type=service 2>/dev/null | grep -q '^casa-network-monitor\.service'; then
+  echo "Riavvio backend Casa..."
+  systemctl restart casa-network-monitor.service
+fi
+
 nginx -t
 systemctl reload nginx
 
