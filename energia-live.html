@@ -177,7 +177,6 @@
       <div class="coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
     </article>
   </section>
-
   <section class="history" aria-label="Storico giornaliero energia">
     <div class="history-head">
       <div class="history-title"><small>Dal 17 agosto 2026</small><h2>Storico giornaliero</h2></div>
@@ -267,7 +266,6 @@
     }
     return bestScore>=45?energyKwh(best):null;
   }
-
   function dynamicHouseEnergy(period){
     const words=period==='day'?['oggi','giornal','today']:period==='month'?['mese','mensil','month']:['anno','annual','year'];
     let best=null,bestScore=-1;
@@ -382,6 +380,21 @@
     });
   }
   async function fetchHistoryDay(key){
+    if(window.location.hostname==='consumi.lucahome.uk'){
+      const url=new URL('/api/network-status',window.location.origin);
+      url.searchParams.set('view','energy-history');
+      url.searchParams.set('date',key);
+      const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(payload?.message||`Backend energia ${response.status}`);
+      const asNumber=value=>{const n=Number(value);return Number.isFinite(n)?n:null};
+      return {
+        pv:asNumber(payload.pv),
+        house:asNumber(payload.house),
+        import:asNumber(payload.import),
+        export:asNumber(payload.export)
+      };
+    }
     const ids={};
     for(const type of ['pv','house','import','export'])ids[type]=historyEntityId(type);
     const statisticIds=[...new Set(Object.values(ids).filter(Boolean))];
