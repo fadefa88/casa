@@ -60,6 +60,18 @@
     .history-day{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.history-day strong{font-size:17px}.history-status{padding:6px 9px;border-radius:999px;background:#f3f8f4;border:1px solid #dde9e0;color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.05em}
     .history .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
 
+    .charts{margin-top:16px;border:1.5px solid var(--line);border-radius:28px;background:var(--card);box-shadow:0 12px 38px rgba(38,76,65,.08);padding:16px}
+    .charts-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}.charts-title small{display:block;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}.charts-title h2{margin:3px 0 0;font-size:24px;letter-spacing:-.03em}
+    .chart-controls{display:flex;align-items:end;flex-wrap:wrap;gap:8px}.chart-field{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.05em;text-transform:uppercase}.chart-field input{min-height:40px;padding:7px 9px;border:1.5px solid var(--line);border-radius:13px;background:#f9fbf8;color:var(--ink);font-weight:800;color-scheme:light}
+    .chart-btn{min-height:40px;padding:8px 12px;border:1.5px solid var(--line);border-radius:13px;background:#f9fbf8;color:var(--ink);font-weight:850;cursor:pointer}.chart-btn.primary{background:var(--ink);border-color:var(--ink);color:#fffdf8}.chart-btn.active{border-color:var(--house);box-shadow:inset 0 0 0 1px var(--house)}
+    .chart-status-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:var(--muted);font-size:11px;font-weight:750}.chart-status-row strong{color:var(--ink)}
+    .chart-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:10px}.chart-legend span{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:800}.chart-legend i{width:10px;height:10px;border-radius:50%}.chart-legend .pv i{background:var(--solar)}.chart-legend .house i{background:var(--house)}.chart-legend .import i{background:var(--import)}.chart-legend .export i{background:var(--export)}
+    .chart-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.65fr);gap:12px}.chart-card{min-width:0;border:1px solid #e2eae3;border-radius:20px;background:#f9fbf8;padding:12px}.chart-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.chart-card-head h3{margin:0;font-size:16px}.chart-card-head span{color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+    .chart-shell{position:relative;min-height:320px;overflow:hidden;border-radius:14px;background:#fffdf8}.chart-svg{display:block;width:100%;height:320px;touch-action:none}.chart-empty{position:absolute;inset:0;display:grid;place-items:center;padding:20px;color:var(--muted);font-size:12px;font-weight:800;text-align:center;pointer-events:none}.chart-empty[hidden]{display:none}
+    .chart-tooltip{position:absolute;z-index:4;top:10px;min-width:150px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,253,248,.96);box-shadow:0 8px 26px rgba(38,76,65,.14);font-size:10px;pointer-events:none;transform:translateX(-50%)}.chart-tooltip[hidden]{display:none}.chart-tooltip strong{display:block;margin-bottom:5px;font-size:11px}.chart-tooltip div{display:flex;justify-content:space-between;gap:12px;margin-top:3px;color:var(--muted)}.chart-tooltip b{color:var(--ink);font-variant-numeric:tabular-nums}
+    .totals-bars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end;height:256px;padding:12px 4px 0}.total-col{min-width:0;display:grid;grid-template-rows:1fr auto auto;gap:6px;height:100%;text-align:center}.total-track{position:relative;align-self:stretch;border-radius:10px 10px 5px 5px;background:#eaf0eb;overflow:hidden}.total-track i{position:absolute;left:0;right:0;bottom:0;min-height:2px;border-radius:8px 8px 4px 4px;transition:height .35s ease}.total-col.pv .total-track i{background:var(--solar)}.total-col.house .total-track i{background:var(--house)}.total-col.import .total-track i{background:var(--import)}.total-col.export .total-track i{background:var(--export)}.total-col strong{font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}.total-col small{color:var(--muted);font-size:9px;font-weight:850;text-transform:uppercase;line-height:1.1}
+    .chart-note{margin:9px 2px 0;color:var(--muted);font-size:10px;line-height:1.4}
+
     @media(max-width:900px) and (orientation:portrait){
       .periods{grid-template-columns:1fr}
       .history .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -75,6 +87,7 @@
       .value-card span{display:none}.value-card small{font-size:9px;letter-spacing:.04em}.value-card strong{font-size:19px;margin-top:3px}
       .periods{gap:9px;margin-top:9px}.period{border-radius:21px;padding:12px}.period-head{margin-bottom:8px}.period-head h3{font-size:18px}.period-head span{font-size:9px}.metrics{gap:7px}.metric{padding:10px;border-radius:15px}.metric small{font-size:9px}.metric strong{font-size:19px}.coverage{margin-top:8px;padding:9px 10px;border-radius:15px}.coverage-top{font-size:10px}.bar{height:7px;margin-top:6px}
       .history{margin-top:9px;border-radius:21px;padding:12px}.history-head{align-items:stretch;flex-direction:column;margin-bottom:10px;gap:9px}.history-title h2{font-size:20px}.history-picker input{width:100%}.history-day{align-items:flex-start;flex-direction:column;gap:6px}.history .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .charts{margin-top:9px;border-radius:21px;padding:12px}.charts-head{align-items:stretch;flex-direction:column;gap:9px}.charts-title h2{font-size:20px}.chart-controls{display:grid;grid-template-columns:1fr 1fr;align-items:end}.chart-field input{width:100%}.chart-btn{width:100%}.chart-grid{grid-template-columns:1fr}.chart-shell{min-height:270px}.chart-svg{height:270px}.totals-bars{height:220px}.chart-status-row{align-items:flex-start;flex-direction:column;gap:4px}
     }
 
     @media(orientation:landscape) and (max-height:500px){
@@ -84,6 +97,7 @@
       .value-card{min-width:118px;padding:8px 9px;border-radius:14px}.value-card span{display:none}.value-card small{font-size:8.5px}.value-card strong{font-size:18px}.value-card.solar{left:2%;top:8%}.value-card.house{left:49%;top:59%}.value-card.import{right:1%;top:18%}.value-card.export{right:1%;bottom:3%}
       .periods{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.period{border-radius:18px;padding:9px}.period-head{margin-bottom:6px}.period-head h3{font-size:16px}.period-head span{font-size:8px}.metrics{gap:5px}.metric{padding:7px;border-radius:12px}.metric small{font-size:7.5px;gap:4px}.metric small::before{width:6px;height:6px}.metric strong{font-size:15px;margin-top:3px}.coverage{margin-top:6px;padding:7px 8px;border-radius:12px}.coverage-top{font-size:8.5px}.bar{height:6px;margin-top:5px}
       .history{margin-top:8px;border-radius:18px;padding:9px}.history-head{margin-bottom:7px}.history-title h2{font-size:17px}.history-picker input{min-height:34px;padding:5px 8px}.history-day{margin-bottom:6px}.history-day strong{font-size:14px}.history .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .charts{margin-top:8px;border-radius:18px;padding:9px}.charts-head{margin-bottom:8px}.charts-title h2{font-size:17px}.chart-field input,.chart-btn{min-height:32px;padding:5px 8px}.chart-grid{grid-template-columns:minmax(0,1.6fr) minmax(260px,.6fr)}.chart-shell{min-height:235px}.chart-svg{height:235px}.totals-bars{height:176px}.chart-card{padding:8px}
     }
   </style>
 </head>
@@ -177,6 +191,7 @@
       <div class="coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
     </article>
   </section>
+
   <section class="history" aria-label="Storico giornaliero energia">
     <div class="history-head">
       <div class="history-title"><small>Dal 17 agosto 2026</small><h2>Storico giornaliero</h2></div>
@@ -191,6 +206,41 @@
     </div>
     <div class="coverage history-coverage"><div class="coverage-top"><span>Copertura FV del consumo</span><strong>--</strong></div><div class="bar"><i></i></div></div>
   </section>
+
+  <section class="charts" aria-label="Grafici andamento energia">
+    <div class="charts-head">
+      <div class="charts-title"><small>Statistiche giornaliere</small><h2>Andamento energia</h2></div>
+      <div class="chart-controls">
+        <button id="chart-year" class="chart-btn active" type="button">Anno</button>
+        <button id="chart-30d" class="chart-btn" type="button">Ultimi 30 gg</button>
+        <label class="chart-field">Dal<input id="chart-from" type="date" min="2026-08-17"></label>
+        <label class="chart-field">Al<input id="chart-to" type="date" min="2026-08-17"></label>
+        <button id="chart-apply" class="chart-btn primary" type="button">Aggiorna</button>
+      </div>
+    </div>
+    <div class="chart-status-row"><strong id="chart-range-label">--</strong><span id="chart-status">In attesa dei dati…</span></div>
+    <div class="chart-legend" aria-label="Legenda grafico">
+      <span class="pv"><i></i>Produzione FV</span>
+      <span class="house"><i></i>Consumo casa</span>
+      <span class="import"><i></i>Import rete</span>
+      <span class="export"><i></i>Export rete</span>
+    </div>
+    <div class="chart-grid">
+      <article class="chart-card">
+        <div class="chart-card-head"><h3>Andamento giornaliero</h3><span>kWh / giorno</span></div>
+        <div id="trend-shell" class="chart-shell">
+          <svg id="energy-trend-chart" class="chart-svg" viewBox="0 0 1000 340" preserveAspectRatio="none" role="img" aria-label="Andamento giornaliero produzione fotovoltaico, consumo casa, import ed export"></svg>
+          <div id="trend-empty" class="chart-empty">Seleziona un periodo per caricare lo storico.</div>
+          <div id="trend-tooltip" class="chart-tooltip" hidden></div>
+        </div>
+      </article>
+      <article class="chart-card">
+        <div class="chart-card-head"><h3>Totale periodo</h3><span id="chart-days-count">0 giorni</span></div>
+        <div id="energy-total-bars" class="totals-bars" aria-label="Totali del periodo"></div>
+        <div class="chart-note">I dati dei giorni conclusi arrivano dallo storico persistente di Home Assistant. Il giorno corrente usa i contatori live.</div>
+      </article>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -200,7 +250,7 @@
   const config=window.CASA_DASHBOARD_CONFIG||{};
   const haConfig=config.homeAssistant||{};
   const fmt=new Intl.NumberFormat('it-IT',{maximumFractionDigits:2});
-  const state={states:new Map(),syncing:false,failures:0,currentDayValues:null,historyRequestSeq:0};
+  const state={states:new Map(),syncing:false,failures:0,currentDayValues:null,historyRequestSeq:0,chartCache:new Map(),chartRows:[],chartRequestSeq:0,chartInitialized:false,lastChartLiveRender:0};
   const HISTORY_START='2026-08-17';
 
   const IDS={
@@ -236,7 +286,6 @@
   const text=e=>normalize(`${e?.entity_id||''} ${e?.attributes?.friendly_name||''}`);
   const haBase=()=>String(haConfig.url||'').trim().replace(/\/$/,'');
   const usableConfig=()=>{const token=String(haConfig.token||'');return Boolean(haBase()&&token&&token!=='insert token'&&!token.includes('REPLACE_'))};
-
   function powerW(e){if(!valid(e))return null;const n=Number(e.state),u=unit(e);if(u==='kw')return n*1000;if(u==='mw')return n*1000000;return n}
   function rawEnergyKwh(e,raw){if(!e||!Number.isFinite(Number(raw)))return null;const n=Number(raw),u=unit(e);if(u==='wh')return n/1000;if(u==='mwh')return n*1000;return n}
   function energyKwh(e){return valid(e)?rawEnergyKwh(e,e.state):null}
@@ -266,6 +315,7 @@
     }
     return bestScore>=45?energyKwh(best):null;
   }
+
   function dynamicHouseEnergy(period){
     const words=period==='day'?['oggi','giornal','today']:period==='month'?['mese','mensil','month']:['anno','annual','year'];
     let best=null,bestScore=-1;
@@ -468,6 +518,206 @@
     }
   }
 
+  function addDays(key,days){
+    const date=dateFromKey(key);date.setDate(date.getDate()+days);return dateKey(date);
+  }
+  function chartRangeLabel(from,to){
+    const opts={day:'2-digit',month:'short',year:'numeric'};
+    const left=dateFromKey(from).toLocaleDateString('it-IT',opts);
+    const right=dateFromKey(to).toLocaleDateString('it-IT',opts);
+    return from===to?left:`${left} → ${right}`;
+  }
+  function chartKeys(from,to){
+    const keys=[];let key=from,guard=0;
+    while(key<=to&&guard<370){keys.push(key);key=addDays(key,1);guard+=1}
+    return keys;
+  }
+  function yesterdayKey(){return addDays(dateKey(),-1)}
+  function chartColor(type){
+    const names={pv:'--solar',house:'--house',import:'--import',export:'--export'};
+    return getComputedStyle(document.documentElement).getPropertyValue(names[type]).trim()||'#73827e';
+  }
+  function svgNode(name,attrs={},textContent=''){
+    const node=document.createElementNS('http://www.w3.org/2000/svg',name);
+    for(const [key,value] of Object.entries(attrs))node.setAttribute(key,String(value));
+    if(textContent!=='')node.textContent=textContent;
+    return node;
+  }
+  function chartTick(v){return v>=100?fmt.format(Math.round(v)):fmt.format(Math.round(v*10)/10)}
+  function renderTrendChart(rows){
+    const svg=document.querySelector('#energy-trend-chart'),empty=document.querySelector('#trend-empty'),tooltip=document.querySelector('#trend-tooltip');
+    if(!svg)return;
+    svg.replaceChildren();
+    if(tooltip)tooltip.hidden=true;
+    if(!rows.length){if(empty)empty.hidden=false;return}
+    if(empty)empty.hidden=true;
+
+    const W=1000,H=340,left=62,right=18,top=18,bottom=46,plotW=W-left-right,plotH=H-top-bottom;
+    const types=['pv','house','import','export'];
+    let maxValue=0;
+    for(const row of rows)for(const type of types)if(Number.isFinite(row[type]))maxValue=Math.max(maxValue,row[type]);
+    maxValue=Math.max(1,maxValue*1.12);
+
+    for(let i=0;i<=5;i++){
+      const y=top+plotH*i/5;
+      svg.appendChild(svgNode('line',{x1:left,y1:y,x2:W-right,y2:y,stroke:'#dfe8e1','stroke-width':1}));
+      const value=maxValue*(1-i/5);
+      svg.appendChild(svgNode('text',{x:left-10,y:y+4,'text-anchor':'end',fill:'#71827d','font-size':11,'font-weight':700},chartTick(value)));
+    }
+    svg.appendChild(svgNode('text',{x:16,y:top+plotH/2,fill:'#71827d','font-size':10,'font-weight':800,transform:`rotate(-90 16 ${top+plotH/2})`},'kWh'));
+
+    const labelCount=Math.min(7,rows.length);
+    const xIndexes=[...new Set(Array.from({length:labelCount},(_,i)=>Math.round(i*(rows.length-1)/Math.max(1,labelCount-1))))];
+    for(const index of xIndexes){
+      const x=rows.length===1?left+plotW/2:left+plotW*index/(rows.length-1);
+      const label=dateFromKey(rows[index].date).toLocaleDateString('it-IT',{day:'2-digit',month:'short'});
+      svg.appendChild(svgNode('text',{x,y:H-18,'text-anchor':'middle',fill:'#71827d','font-size':10,'font-weight':700},label));
+    }
+
+    const positions={};
+    for(const type of types){
+      let path='',pen=false;
+      positions[type]=[];
+      rows.forEach((row,index)=>{
+        const value=row[type];
+        const x=rows.length===1?left+plotW/2:left+plotW*index/(rows.length-1);
+        if(!Number.isFinite(value)){pen=false;positions[type].push(null);return}
+        const y=top+plotH-(value/maxValue)*plotH;
+        positions[type].push({x,y});
+        path+=`${pen?'L':'M'}${x.toFixed(2)} ${y.toFixed(2)} `;
+        pen=true;
+      });
+      if(path)svg.appendChild(svgNode('path',{d:path.trim(),fill:'none',stroke:chartColor(type),'stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'}));
+      if(rows.length<=45){
+        positions[type].forEach(pos=>{if(pos)svg.appendChild(svgNode('circle',{cx:pos.x,cy:pos.y,r:2.6,fill:chartColor(type)}))});
+      }
+    }
+
+    const hover=svgNode('g',{'pointer-events':'none',visibility:'hidden'});
+    const hoverLine=svgNode('line',{x1:left,y1:top,x2:left,y2:top+plotH,stroke:'#18312d','stroke-width':1,'stroke-dasharray':'4 4',opacity:.45});
+    hover.appendChild(hoverLine);
+    const hoverDots={};
+    for(const type of types){hoverDots[type]=svgNode('circle',{r:5,fill:chartColor(type),stroke:'#fffdf8','stroke-width':2});hover.appendChild(hoverDots[type])}
+    svg.appendChild(hover);
+
+    const overlay=svgNode('rect',{x:left,y:top,width:plotW,height:plotH,fill:'transparent','pointer-events':'all'});
+    const showPoint=event=>{
+      const rect=svg.getBoundingClientRect();
+      const viewX=(event.clientX-rect.left)/Math.max(1,rect.width)*W;
+      const ratio=Math.max(0,Math.min(1,(viewX-left)/plotW));
+      const index=rows.length===1?0:Math.round(ratio*(rows.length-1));
+      const row=rows[index],x=rows.length===1?left+plotW/2:left+plotW*index/(rows.length-1);
+      hover.setAttribute('visibility','visible');hoverLine.setAttribute('x1',x);hoverLine.setAttribute('x2',x);
+      for(const type of types){
+        const pos=positions[type][index];
+        hoverDots[type].setAttribute('visibility',pos?'visible':'hidden');
+        if(pos){hoverDots[type].setAttribute('cx',pos.x);hoverDots[type].setAttribute('cy',pos.y)}
+      }
+      if(tooltip){
+        const labels={pv:'FV',house:'Casa',import:'Import',export:'Export'};
+        tooltip.innerHTML=`<strong>${historyLabel(row.date)}</strong>`+types.map(type=>`<div><span>${labels[type]}</span><b>${Number.isFinite(row[type])?fmt.format(row[type])+' kWh':'--'}</b></div>`).join('');
+        tooltip.hidden=false;
+        const pct=Math.max(15,Math.min(85,(x/W)*100));
+        tooltip.style.left=`${pct}%`;
+      }
+    };
+    overlay.addEventListener('pointermove',showPoint);
+    overlay.addEventListener('pointerdown',showPoint);
+    overlay.addEventListener('pointerleave',()=>{hover.setAttribute('visibility','hidden');if(tooltip)tooltip.hidden=true});
+    svg.appendChild(overlay);
+  }
+  function renderTotalBars(rows){
+    const root=document.querySelector('#energy-total-bars');if(!root)return;
+    const types=['pv','house','import','export'],labels={pv:'Produzione FV',house:'Consumo casa',import:'Import rete',export:'Export rete'};
+    const totals=Object.fromEntries(types.map(type=>[type,rows.reduce((sum,row)=>sum+(Number.isFinite(row[type])?row[type]:0),0)]));
+    const max=Math.max(1,...Object.values(totals));
+    root.innerHTML=types.map(type=>`<div class="total-col ${type}"><div class="total-track"><i style="height:${Math.max(1,totals[type]/max*100)}%"></i></div><strong>${fmt.format(totals[type])} kWh</strong><small>${labels[type]}</small></div>`).join('');
+    setText('#chart-days-count',`${rows.length} ${rows.length===1?'giorno':'giorni'}`);
+  }
+  function renderCharts(rows){
+    state.chartRows=rows;
+    renderTrendChart(rows);
+    renderTotalBars(rows);
+  }
+  async function loadChartRange(){
+    const fromInput=document.querySelector('#chart-from'),toInput=document.querySelector('#chart-to');
+    if(!fromInput||!toInput)return;
+    let from=fromInput.value,to=toInput.value,today=dateKey();
+    if(!from||!to)return;
+    if(from<HISTORY_START)from=HISTORY_START;
+    if(to>today)to=today;
+    if(from>to){[from,to]=[to,from];if(from<HISTORY_START)from=HISTORY_START}
+    fromInput.value=from;toInput.value=to;
+    setText('#chart-range-label',chartRangeLabel(from,to));
+    const requestSeq=++state.chartRequestSeq;
+    setText('#chart-status','Caricamento storico…');
+
+    const lastCompleted=yesterdayKey();
+    const pastTo=to<lastCompleted?to:lastCompleted;
+    const keys=from<=pastTo?chartKeys(from,pastTo):[];
+    const missing=keys.filter(key=>!state.chartCache.has(key));
+    let done=0,next=0;
+    const worker=async()=>{
+      while(next<missing.length&&requestSeq===state.chartRequestSeq){
+        const index=next++,key=missing[index];
+        try{state.chartCache.set(key,await fetchHistoryDay(key))}
+        catch(error){console.warn(`[Energia Live] Giorno ${key} non disponibile.`,error);state.chartCache.set(key,null)}
+        done+=1;
+        if(done===missing.length||done%5===0)setText('#chart-status',`Caricamento ${done}/${missing.length} giorni…`);
+      }
+    };
+    await Promise.all(Array.from({length:Math.min(6,Math.max(1,missing.length))},worker));
+    if(requestSeq!==state.chartRequestSeq)return;
+
+    const rows=[];
+    for(const key of keys){
+      const values=state.chartCache.get(key);
+      if(values&&Object.values(values).some(Number.isFinite))rows.push({date:key,...values});
+    }
+    if(from<=today&&to>=today&&state.currentDayValues&&Object.values(state.currentDayValues).some(Number.isFinite))rows.push({date:today,...state.currentDayValues});
+    renderCharts(rows);
+    setText('#chart-status',rows.length?`${rows.length} giorni caricati · aggiornato ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`:'Nessun dato nel periodo');
+  }
+  function setChartPreset(mode){
+    const today=dateKey(),fromInput=document.querySelector('#chart-from'),toInput=document.querySelector('#chart-to');
+    if(!fromInput||!toInput)return;
+    let from=HISTORY_START;
+    if(mode==='30d')from=addDays(today,-29);
+    else{
+      const yearStart=`${new Date().getFullYear()}-01-01`;
+      from=yearStart>HISTORY_START?yearStart:HISTORY_START;
+    }
+    if(from<HISTORY_START)from=HISTORY_START;
+    fromInput.value=from;toInput.value=today;
+    document.querySelector('#chart-year')?.classList.toggle('active',mode==='year');
+    document.querySelector('#chart-30d')?.classList.toggle('active',mode==='30d');
+    loadChartRange();
+  }
+  function initCharts(){
+    if(state.chartInitialized)return;state.chartInitialized=true;
+    const today=dateKey(),fromInput=document.querySelector('#chart-from'),toInput=document.querySelector('#chart-to');
+    if(!fromInput||!toInput)return;
+    fromInput.min=HISTORY_START;toInput.min=HISTORY_START;fromInput.max=today;toInput.max=today;
+    const yearStart=`${new Date().getFullYear()}-01-01`;
+    fromInput.value=yearStart>HISTORY_START?yearStart:HISTORY_START;toInput.value=today;
+    document.querySelector('#chart-year')?.addEventListener('click',()=>setChartPreset('year'));
+    document.querySelector('#chart-30d')?.addEventListener('click',()=>setChartPreset('30d'));
+    document.querySelector('#chart-apply')?.addEventListener('click',()=>{
+      document.querySelector('#chart-year')?.classList.remove('active');document.querySelector('#chart-30d')?.classList.remove('active');loadChartRange();
+    });
+    loadChartRange();
+  }
+  function refreshChartToday(now){
+    if(!state.chartInitialized||now.getTime()-state.lastChartLiveRender<60000)return;
+    state.lastChartLiveRender=now.getTime();
+    const from=document.querySelector('#chart-from')?.value,to=document.querySelector('#chart-to')?.value,today=dateKey(now);
+    if(!from||!to||today<from||today>to)return;
+    const rows=state.chartRows.filter(row=>row.date!==today);
+    if(state.currentDayValues&&Object.values(state.currentDayValues).some(Number.isFinite))rows.push({date:today,...state.currentDayValues});
+    rows.sort((a,b)=>a.date.localeCompare(b.date));renderCharts(rows);
+    setText('#chart-status',`${rows.length} giorni caricati · live ${now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}`);
+  }
+
   function markConnection(ok){const pill=document.querySelector('#live-pill');if(!pill)return;pill.classList.toggle('off',!ok);pill.querySelector('span').textContent=ok?'Live':'Offline'}
 
   async function sync(){
@@ -483,6 +733,7 @@
       renderLive(getLive());renderPeriod('day',dayValues);renderPeriod('month',getPeriod('month'));renderPeriod('year',getPeriod('year'));
       const now=new Date();
       updateHistoryCalendar(now);
+      if(!state.chartInitialized)initCharts();else refreshChartToday(now);
       setText('#updated',now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'}));
     }catch(error){
       state.failures+=1;if(state.failures>=3)markConnection(false);
